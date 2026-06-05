@@ -229,31 +229,33 @@ let STATE = { player: '', scores: {}, bracket: {}, bonuses: {} };
 const LS_DRAFT = 'mundial2026_draft';
 
 /* ================================================================
-   INIT — autenticación primero
+   INIT
 ================================================================ */
 document.addEventListener('DOMContentLoaded', async () => {
   initLoginUI();
+  initRouter();        // hashchange listener + render initial public view
 
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
     await loadCurrentUser(session.user.id);
-    showApp();
     await initApp();
-  } else {
-    showLogin();
+    route();           // re-render current view with auth data
   }
+  updateHeaderState(); // set header/tabs to guest or logged-in
 
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session) {
       await loadCurrentUser(session.user.id);
       showApp();
       await initApp();
+      updateHeaderState();
+      route();
     } else if (event === 'SIGNED_OUT') {
       CURRENT_USER = null;
       _appReady    = false;
       STATE        = { player: '', scores: {}, bracket: {}, bonuses: {} };
-      showLogin();
-      location.hash = '';
+      updateHeaderState();
+      location.hash = '#home';
     }
   });
 });
@@ -263,45 +265,47 @@ async function initApp() {
   _appReady = true;
 
   await loadDraft();
-  initRouter();
   initInnerTabs();
   initInnerTabsVer();
   initPollaControls();
   initThirdPlace();
   initBonusInputs();
   initAdminPanel();
-  updateHeaderUser();
 
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => { location.hash = btn.dataset.hash; });
   });
-
-  const adminTab = document.querySelector('.tab-btn[data-hash="#admin"]');
-  if (adminTab) adminTab.classList.toggle('hidden', !CURRENT_USER?.is_admin);
 }
 
 /* ================================================================
    AUTH
 ================================================================ */
 function showLogin() {
-  document.getElementById('app-shell').classList.add('hidden');
   document.getElementById('view-login').classList.remove('hidden');
   document.getElementById('login-email')?.focus();
 }
 
 function showApp() {
   document.getElementById('view-login').classList.add('hidden');
-  document.getElementById('app-shell').classList.remove('hidden');
+}
+
+function updateHeaderState() {
+  const isLogged = !!CURRENT_USER;
+  document.getElementById('header-user-name').classList.toggle('hidden', !isLogged);
+  document.getElementById('btn-logout').classList.toggle('hidden', !isLogged);
+  document.getElementById('btn-show-login').classList.toggle('hidden', isLogged);
+  document.querySelector('.tab-btn[data-hash="#polla"]').classList.toggle('hidden', !isLogged);
+  const adminTab = document.querySelector('.tab-btn[data-hash="#admin"]');
+  if (adminTab) adminTab.classList.toggle('hidden', !isLogged || !CURRENT_USER?.is_admin);
+  if (isLogged) {
+    const el = document.getElementById('header-user-name');
+    if (el) el.textContent = CURRENT_USER.name;
+  }
 }
 
 async function loadCurrentUser(userId) {
   const { data } = await sb.from('profiles').select('*').eq('id', userId).single();
   CURRENT_USER = data;
-}
-
-function updateHeaderUser() {
-  const el = document.getElementById('header-user-name');
-  if (el && CURRENT_USER) el.textContent = CURRENT_USER.name;
 }
 
 function initLoginUI() {
@@ -328,6 +332,12 @@ function initLoginUI() {
   document.getElementById('btn-logout')?.addEventListener('click', async () => {
     await sb.auth.signOut();
   });
+
+  document.getElementById('btn-close-login')?.addEventListener('click', () => {
+    document.getElementById('view-login').classList.add('hidden');
+  });
+
+  document.getElementById('btn-show-login')?.addEventListener('click', showLogin);
 }
 
 /* ================================================================
@@ -335,7 +345,7 @@ function initLoginUI() {
 ================================================================ */
 function initRouter() {
   window.addEventListener('hashchange', route);
-  route();
+  route(); // render initial public view
 }
 
 function route() {
@@ -347,6 +357,7 @@ function route() {
     setActiveTab('#home');
     loadAndRenderHome();
   } else if (hash === '#polla') {
+    if (!CURRENT_USER) { showLogin(); location.hash = '#home'; return; }
     showView('view-polla');
     setActiveTab('#polla');
     renderGroups();
@@ -493,6 +504,15 @@ function renderRanking(players, results) {
   }
 
   if (players.length === 0) {
+    if (!CURRENT_USER) {
+      emptyMsg.innerHTML =
+        '<p>Inicia sesión para ver el ranking de participantes</p>' +
+        '<button class="btn btn-gold" id="btn-ranking-login">Ingresar →</button>';
+      document.getElementById('btn-ranking-login')
+        ?.addEventListener('click', showLogin);
+    } else {
+      emptyMsg.textContent = 'Aún no hay participantes con polla guardada.';
+    }
     emptyMsg.classList.remove('hidden');
     podiumWrap.classList.add('hidden');
     tableWrap.classList.add('hidden');

@@ -1027,16 +1027,20 @@ footer {
    LOGIN
 ================================================================ */
 #view-login {
-  min-height: 100vh;
+  position: fixed;
+  inset: 0;
+  z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--dark);
+  background: rgba(8, 12, 26, 0.88);
+  backdrop-filter: blur(6px);
   padding: 20px;
 }
 #view-login.hidden { display: none; }
 
 .login-box {
+  position: relative;
   width: 100%;
   max-width: 400px;
   background: var(--card);
@@ -1045,6 +1049,24 @@ footer {
   padding: 36px 32px;
   box-shadow: var(--shadow);
 }
+
+.login-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 6px;
+  transition: color var(--transition);
+}
+.login-modal-close:hover { color: var(--text); }
+
+.empty-msg .btn { margin-top: 16px; }
 
 .login-header {
   text-align: center;

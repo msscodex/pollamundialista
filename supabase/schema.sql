@@ -11,7 +11,10 @@ create table public.profiles (
   created_at timestamptz not null default now()
 );
 
--- 2. POLLAS (una por usuario)
+-- 2. POLLAS (una por usuario)t_part(email, '@', 1), true
+from auth.users
+where email = 'maycolsanchez@150porciento.com'
+on conflict (id) do update set is_admin = true;
 create table public.pollas (
   id         uuid    primary key default gen_random_uuid(),
   user_id    uuid    references public.profiles(id) on delete cascade not null unique,

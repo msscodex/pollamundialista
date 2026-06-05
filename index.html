@@ -14,6 +14,7 @@
   ====================================================== -->
   <div id="view-login" class="hidden">
     <div class="login-box">
+      <button class="login-modal-close" id="btn-close-login" aria-label="Cerrar">✕</button>
       <div class="login-header">
         <div class="header-badge">FIFA</div>
         <h1>Polla <span class="gold">Mundialista 2026</span></h1>
@@ -39,7 +40,7 @@
   <!-- ======================================================
        APP SHELL (oculto hasta autenticar)
   ====================================================== -->
-  <div id="app-shell" class="hidden">
+  <div id="app-shell">
 
     <!-- HEADER -->
     <header>
@@ -49,15 +50,16 @@
         <p class="header-dates">11 Junio – 19 Julio 2026 &nbsp;·&nbsp; 🇺🇸 USA &nbsp;·&nbsp; 🇨🇦 Canadá &nbsp;·&nbsp; 🇲🇽 México</p>
       </div>
       <div class="header-user-bar">
-        <span class="header-user-name" id="header-user-name"></span>
-        <button class="btn btn-outline btn-sm" id="btn-logout">Cerrar sesión</button>
+        <span class="header-user-name hidden" id="header-user-name"></span>
+        <button class="btn btn-outline btn-sm hidden" id="btn-logout">Cerrar sesión</button>
+        <button class="btn btn-gold btn-sm" id="btn-show-login">Ingresar</button>
       </div>
     </header>
 
     <!-- NAV -->
     <nav class="tabs" role="tablist">
       <button class="tab-btn" data-hash="#home"       role="tab">🏠 Inicio</button>
-      <button class="tab-btn" data-hash="#polla"      role="tab">⚽ Mi Polla</button>
+      <button class="tab-btn hidden" data-hash="#polla" role="tab">⚽ Mi Polla</button>
       <button class="tab-btn" data-hash="#reglamento" role="tab">📋 Reglamento</button>
       <button class="tab-btn hidden" data-hash="#admin" role="tab">⚙️ Admin</button>
     </nav>
