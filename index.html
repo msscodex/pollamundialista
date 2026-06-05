@@ -276,7 +276,7 @@
 
       <nav class="inner-tabs" role="tablist">
         <button class="inner-tab active" data-inner="grupos"><i class="fa-solid fa-futbol"></i> Fase de Grupos</button>
-        <button class="inner-tab" data-inner="bracket"><i class="fa-solid fa-trophy"></i> Eliminatorias</button>
+        <button class="inner-tab" data-inner="bracket" id="tab-btn-bracket"><i class="fa-solid fa-trophy"></i> Eliminatorias</button>
         <button class="inner-tab" data-inner="bonos"><i class="fa-solid fa-star"></i> Bonos</button>
       </nav>
 
@@ -304,8 +304,14 @@
         </div>
         <div class="third-place-section">
           <h3 class="third-title"><i class="fa-solid fa-medal"></i> Tercer y Cuarto Lugar</h3>
-          <p class="third-sub">19 Julio 2026 · Miami Gardens, Florida</p>
           <div class="bracket-match" id="third-match">
+            <div class="bracket-match-meta">
+              <div class="bm-meta-row">
+                <span class="bm-meta-num">#103</span>
+                <span class="bm-meta-date">18 jul · 15:00 COT</span>
+              </div>
+              <div class="bm-meta-venue">Miami</div>
+            </div>
             <div class="bm-row">
               <input type="text" class="bm-team" data-key="3rd-t0" placeholder="Perdedor Semifinal 1"
                 autocomplete="off">
@@ -389,7 +395,7 @@
 
       <nav class="inner-tabs" role="tablist">
         <button class="inner-tab active" data-inner-ver="grupos-ver"><i class="fa-solid fa-futbol"></i> Grupos</button>
-        <button class="inner-tab" data-inner-ver="bracket-ver"><i class="fa-solid fa-trophy"></i> Eliminatorias</button>
+        <button class="inner-tab" data-inner-ver="bracket-ver" id="tab-btn-bracket-ver"><i class="fa-solid fa-trophy"></i> Eliminatorias</button>
         <button class="inner-tab" data-inner-ver="bonos-ver"><i class="fa-solid fa-star"></i> Bonos</button>
       </nav>
 
@@ -411,6 +417,13 @@
         <div class="third-place-section">
           <h3 class="third-title"><i class="fa-solid fa-medal"></i> Tercer y Cuarto Lugar</h3>
           <div class="bracket-match" id="third-match-ver">
+            <div class="bracket-match-meta">
+              <div class="bm-meta-row">
+                <span class="bm-meta-num">#103</span>
+                <span class="bm-meta-date">18 jul · 15:00 COT</span>
+              </div>
+              <div class="bm-meta-venue">Miami</div>
+            </div>
             <div class="bm-row">
               <input type="text" class="bm-team" data-key="3rd-t0" disabled placeholder="Perdedor SF1">
               <input type="number" class="bm-score" data-key="3rd-s0" disabled placeholder="0">
@@ -622,8 +635,14 @@
             </div>
             <div class="third-place-section">
               <h3 class="third-title"><i class="fa-solid fa-medal"></i> Tercer y Cuarto Lugar</h3>
-              <p class="third-sub">19 Julio 2026 · Miami Gardens, Florida</p>
               <div class="bracket-match" id="admin-third-match">
+                <div class="bracket-match-meta">
+                  <div class="bm-meta-row">
+                    <span class="bm-meta-num">#103</span>
+                    <span class="bm-meta-date">18 jul · 15:00 COT</span>
+                  </div>
+                  <div class="bm-meta-venue">Miami</div>
+                </div>
                 <div class="bm-row">
                   <div class="team-picker admin-bracket-picker" data-admin-key="3rd-t0">
                     <div class="team-picker-trigger">

@@ -451,40 +451,42 @@ header {
 ================================================================ */
 .bracket-wrapper {
   display: flex;
-  align-items: stretch;
-  overflow-x: auto;
-  padding: 16px 8px 24px;
-  gap: 0;
+  flex-direction: column;
+  gap: 24px;
+  padding: 16px 0;
 }
 .bracket {
   display: flex;
-  flex: 1;
-  min-width: 960px;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
 }
 .bracket-round {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  padding: 0 6px;
-  min-width: 140px;
+  min-width: 100%;
+  padding: 16px;
+  background: var(--card-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
 }
 .bracket-round-title {
-  text-align: center;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--muted);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--gold);
+  border-bottom: 2px solid var(--gold);
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  text-align: left;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 6px 0 8px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 6px;
+  letter-spacing: 1.5px;
 }
 .bracket-matches-col {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  flex: 1;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  justify-content: start;
 }
 
 /* ---- BRACKET MATCH ---- */
@@ -517,6 +519,39 @@ header {
 }
 .bm-team:focus { outline: none; background: rgba(255,255,255,.04); }
 .bm-team::placeholder { color: var(--muted); font-size: 10px; }
+
+/* Fixed team name set by admin — participant can only enter the score */
+.bm-team-fixed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(74, 222, 128, .06);
+  color: #4ADE80;
+  font-weight: 600;
+  cursor: default;
+  user-select: none;
+  letter-spacing: .3px;
+  border-right: 1px solid var(--border);
+}
+.bm-team-fixed .fi { font-size: 14px; flex-shrink: 0; }
+
+/* Locked placeholder when admin has NOT set teams yet */
+.bm-team-locked {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  opacity: .45;
+  font-size: 10px;
+  font-style: italic;
+  cursor: default;
+  user-select: none;
+}
+
+/* Pending match (admin hasn't filled both teams) */
+.bracket-match.bm-pending {
+  opacity: .5;
+  pointer-events: none;
+}
 
 .bm-score {
   width: 30px;
@@ -673,6 +708,7 @@ footer {
   .bracket-wrapper { overflow: visible; }
   .bracket { min-width: auto; }
   .bm-team { color: #111; }
+  .bm-team-fixed { color: #16a34a; background: rgba(22, 163, 74, .08); }
   .bm-score { color: #333; background: #f5f5f5 !important; }
   .bracket-match { border: 1px solid #bbb; }
 
@@ -2366,3 +2402,41 @@ h3 .fa-solid, h3 .fa-regular,
   margin: 24px auto 0;
   width: 100%;
 }
+
+/* ---- BRACKET MATCH METADATA ---- */
+.bracket-match-meta {
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border);
+  padding: 4px 8px;
+  font-size: 8px;
+  color: var(--muted);
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  user-select: none;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+.bm-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.bm-meta-num {
+  font-weight: 700;
+  color: var(--gold);
+}
+.bm-meta-date {
+  font-weight: 600;
+}
+.bm-meta-venue {
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 7.5px;
+}
+

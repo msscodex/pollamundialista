@@ -189,6 +189,63 @@ const MATCH_INFO = {
   ],
 };
 
+const ELIM_MATCH_INFO = {
+  r32: [
+    { num: 73, date: '28 jun', time: '17:00', venue: 'Los Ángeles' },
+    { num: 74, date: '29 jun', time: '17:00', venue: 'Boston' },
+    { num: 75, date: '29 jun', time: '20:00', venue: 'Monterrey' },
+    { num: 76, date: '29 jun', time: '21:00', venue: 'Houston' },
+    { num: 77, date: '30 jun', time: '18:00', venue: 'Nueva York / Nueva Jersey' },
+    { num: 78, date: '30 jun', time: '20:00', venue: 'Dallas' },
+    { num: 79, date: '30 jun', time: '21:00', venue: 'Ciudad de México' },
+    { num: 80, date: '1 jul', time: '18:00', venue: 'Atlanta' },
+    { num: 81, date: '1 jul', time: '19:00', venue: 'San Francisco Bay Area' },
+    { num: 82, date: '1 jul', time: '21:00', venue: 'Seattle' },
+    { num: 83, date: '2 jul', time: '18:00', venue: 'Toronto' },
+    { num: 84, date: '2 jul', time: '19:00', venue: 'Los Ángeles' },
+    { num: 85, date: '2 jul', time: '21:00', venue: 'Vancouver' },
+    { num: 86, date: '3 jul', time: '18:00', venue: 'Miami' },
+    { num: 87, date: '3 jul', time: '20:00', venue: 'Kansas City' },
+    { num: 88, date: '3 jul', time: '21:00', venue: 'Dallas' }
+  ],
+  r16: [
+    { num: 89, date: '4 jul', time: '16:00', venue: 'Filadelfia' },
+    { num: 90, date: '4 jul', time: '20:00', venue: 'Houston' },
+    { num: 91, date: '5 jul', time: '15:00', venue: 'Nueva York / Nueva Jersey' },
+    { num: 92, date: '5 jul', time: '19:00', venue: 'Ciudad de México' },
+    { num: 93, date: '6 jul', time: '16:00', venue: 'Dallas' },
+    { num: 94, date: '6 jul', time: '20:00', venue: 'Atlanta' },
+    { num: 95, date: '7 jul', time: '15:00', venue: 'Monterrey' },
+    { num: 96, date: '7 jul', time: '19:00', venue: 'Boston' }
+  ],
+  qf: [
+    { num: 97, date: '9 jul', time: '15:00', venue: 'Boston' },
+    { num: 98, date: '10 jul', time: '18:00', venue: 'Los Ángeles' },
+    { num: 99, date: '11 jul', time: '15:00', venue: 'Kansas City' },
+    { num: 100, date: '11 jul', time: '19:00', venue: 'Miami' }
+  ],
+  sf: [
+    { num: 101, date: '14 jul', time: '19:00', venue: 'Dallas' },
+    { num: 102, date: '15 jul', time: '19:00', venue: 'Atlanta' }
+  ],
+  fin: [
+    { num: 104, date: '19 jul', time: '14:00', venue: 'MetLife Stadium (NY/NJ)' }
+  ]
+};
+
+function getMatchMetaHTML(rondaId, idx) {
+  const info = ELIM_MATCH_INFO[rondaId]?.[idx];
+  if (!info) return '';
+  return `
+<div class="bracket-match-meta">
+  <div class="bm-meta-row">
+    <span class="bm-meta-num">#${info.num}</span>
+    <span class="bm-meta-date">${info.date} · ${info.time} COT</span>
+  </div>
+  <div class="bm-meta-venue">${info.venue}</div>
+</div>`;
+}
+
 const JORNADAS = [
   { label: 'Jornada 1', pares: [[0, 1], [2, 3]] },
   { label: 'Jornada 2', pares: [[0, 2], [1, 3]] },
@@ -261,6 +318,7 @@ const ROUND_KEY = { r32: 'r32', r16: 'r16', qf: 'qf', sf: 'sf', fin: 'fin', thir
 let STATE = { player: '', scores: {}, bracket: {}, bonuses: {} };
 const LS_DRAFT = 'mundial2026_draft';
 
+let _officialBracket = {};   // admin-set bracket (teams + scores) for participant pre-fill
 let _verPlayerData = null;
 let _verResults = null;
 
@@ -944,6 +1002,10 @@ async function loadPlayerView(nombre) {
   };
   _verResults = resultsRes.data || { scores: {}, bracket: {}, bonuses: {} };
 
+  const resultsBracket = _verResults.bracket || {};
+  const hasOfficialBracketInfo = Object.keys(resultsBracket).length > 0;
+  updateBracketTabsVisibility(hasOfficialBracketInfo);
+
   const score = calcScore(_verPlayerData, _verResults);
   document.getElementById('ver-score-badge').textContent = `${score.total} pts`;
 
@@ -1025,8 +1087,10 @@ function renderBracketReadonly(bracket, containerId, championId) {
       const isFin = ronda.id === 'fin';
       const s0 = parseFloat(bracket[ks0]), s1 = parseFloat(bracket[ks1]);
       const winner = !isNaN(s0) && !isNaN(s1) ? (s0 > s1 ? 't0' : s1 > s0 ? 't1' : null) : null;
+      const metaHTML = getMatchMetaHTML(ronda.id, i);
       return `
 <div class="bracket-match${isFin ? ' is-final' : ''}">
+  ${metaHTML}
   <div class="bm-row${winner === 't0' ? ' winner' : ''}">
     <input type="text"   class="bm-team"  value="${bracket[kt0] || ''}" placeholder="${ph0}" disabled>
     <input type="number" class="bm-score" value="${bracket[ks0] || ''}" disabled placeholder="0">
@@ -1296,7 +1360,8 @@ function renderBracket() {
   const container = document.getElementById('bracket-render');
   if (!container) return;
   container.innerHTML = RONDAS.map(ronda => buildRoundHTML(ronda)).join('');
-  container.querySelectorAll('.bm-team, .bm-score').forEach(inp => {
+  // Only bind input events on editable elements (inputs), not fixed spans
+  container.querySelectorAll('input.bm-team, input.bm-score').forEach(inp => {
     inp.addEventListener('input', onBracketInput);
   });
 }
@@ -1309,15 +1374,45 @@ function buildRoundHTML(ronda) {
     const ks0 = `${ronda.id}-${i}-s0`, ks1 = `${ronda.id}-${i}-s1`;
     const isFin = ronda.id === 'fin';
     const winner = detectWinner(ronda.id, i);
+    const metaHTML = getMatchMetaHTML(ronda.id, i);
+
+    // Check if admin has set BOTH teams for this match
+    const offT0 = _officialBracket[kt0];
+    const offT1 = _officialBracket[kt1];
+    const matchReady = offT0 && offT1; // only enable scores when both teams are set
+
+    // Team display: fixed label with flag when admin set, or locked placeholder when not
+    const teamHTML0 = offT0
+      ? `<span class="bm-team bm-team-fixed" data-key="${kt0}">${flagByName(offT0)} ${offT0}</span>`
+      : `<span class="bm-team bm-team-locked" data-key="${kt0}">${ph0}</span>`;
+    const teamHTML1 = offT1
+      ? `<span class="bm-team bm-team-fixed" data-key="${kt1}">${flagByName(offT1)} ${offT1}</span>`
+      : `<span class="bm-team bm-team-locked" data-key="${kt1}">${ph1}</span>`;
+
+    // Sync admin teams into participant state so scoring works
+    if (offT0) STATE.bracket[kt0] = offT0;
+    if (offT1) STATE.bracket[kt1] = offT1;
+
+    // Score inputs: editable only if both teams are set by admin
+    const scoreVal0 = STATE.bracket[ks0] || '';
+    const scoreVal1 = STATE.bracket[ks1] || '';
+    const scoreHTML0 = matchReady
+      ? `<input type="number" class="bm-score" data-key="${ks0}" value="${scoreVal0}" min="0" max="99" placeholder="0">`
+      : `<input type="number" class="bm-score" value="" disabled placeholder="-">`;
+    const scoreHTML1 = matchReady
+      ? `<input type="number" class="bm-score" data-key="${ks1}" value="${scoreVal1}" min="0" max="99" placeholder="0">`
+      : `<input type="number" class="bm-score" value="" disabled placeholder="-">`;
+
     return `
-<div class="bracket-match${isFin ? ' is-final' : ''}">
+<div class="bracket-match${isFin ? ' is-final' : ''}${!matchReady ? ' bm-pending' : ''}">
+  ${metaHTML}
   <div class="bm-row${winner === 't0' ? ' winner' : ''}">
-    <input type="text"   class="bm-team"  data-key="${kt0}" value="${STATE.bracket[kt0] || ''}" placeholder="${ph0}" autocomplete="off">
-    <input type="number" class="bm-score" data-key="${ks0}" value="${STATE.bracket[ks0] || ''}" min="0" max="99" placeholder="0">
+    ${teamHTML0}
+    ${scoreHTML0}
   </div>
   <div class="bm-row${winner === 't1' ? ' winner' : ''}">
-    <input type="text"   class="bm-team"  data-key="${kt1}" value="${STATE.bracket[kt1] || ''}" placeholder="${ph1}" autocomplete="off">
-    <input type="number" class="bm-score" data-key="${ks1}" value="${STATE.bracket[ks1] || ''}" min="0" max="99" placeholder="0">
+    ${teamHTML1}
+    ${scoreHTML1}
   </div>
 </div>`;
   }).join('');
@@ -1371,7 +1466,7 @@ function updateChampion() {
 }
 
 function loadSavedBracketInputs() {
-  document.querySelectorAll('#view-polla [data-key]').forEach(el => {
+  document.querySelectorAll('#view-polla input[data-key]').forEach(el => {
     const key = el.dataset.key;
     if (key && STATE.bracket[key] !== undefined) el.value = STATE.bracket[key];
   });
@@ -1384,10 +1479,47 @@ function loadSavedBracketInputs() {
    TERCER LUGAR
 ================================================================ */
 function initThirdPlace() {
-  document.querySelectorAll('#third-match [data-key]').forEach(inp => {
-    if (STATE.bracket[inp.dataset.key] !== undefined) inp.value = STATE.bracket[inp.dataset.key];
-    inp.removeEventListener('input', onThirdInput);
-    inp.addEventListener('input', onThirdInput);
+  const thirdMatch = document.getElementById('third-match');
+  if (!thirdMatch) return;
+
+  const off3T0 = _officialBracket['3rd-t0'];
+  const off3T1 = _officialBracket['3rd-t1'];
+  const thirdReady = off3T0 && off3T1; // both teams must be set
+
+  // Replace team inputs with fixed labels (with flag) or locked placeholders
+  ['3rd-t0', '3rd-t1'].forEach((key, idx) => {
+    const offVal = _officialBracket[key];
+    const inp = thirdMatch.querySelector(`input.bm-team[data-key="${key}"]`);
+    if (!inp) return;
+
+    if (offVal) {
+      STATE.bracket[key] = offVal;
+      const span = document.createElement('span');
+      span.className = 'bm-team bm-team-fixed';
+      span.dataset.key = key;
+      span.innerHTML = `${flagByName(offVal)} ${offVal}`;
+      inp.replaceWith(span);
+    } else {
+      // No admin team → lock the input
+      const span = document.createElement('span');
+      span.className = 'bm-team bm-team-locked';
+      span.dataset.key = key;
+      span.textContent = idx === 0 ? 'Perdedor Semifinal 1' : 'Perdedor Semifinal 2';
+      inp.replaceWith(span);
+    }
+  });
+
+  // Score inputs: enable only if both teams set
+  thirdMatch.querySelectorAll('input.bm-score[data-key]').forEach(inp => {
+    if (!thirdReady) {
+      inp.disabled = true;
+      inp.placeholder = '-';
+      inp.value = '';
+    } else {
+      if (STATE.bracket[inp.dataset.key] !== undefined) inp.value = STATE.bracket[inp.dataset.key];
+      inp.removeEventListener('input', onThirdInput);
+      inp.addEventListener('input', onThirdInput);
+    }
   });
 }
 
@@ -1962,20 +2094,24 @@ async function loadDraft() {
 
   if (!CURRENT_USER) return;
 
-  const { data } = await sb
-    .from('pollas')
-    .select('scores, bracket, bonuses, is_groups_locked')
-    .eq('user_id', CURRENT_USER.id)
-    .single();
+  const [pollaRes, resultsRes] = await Promise.all([
+    sb.from('pollas').select('scores, bracket, bonuses, is_groups_locked').eq('user_id', CURRENT_USER.id).single(),
+    sb.from('official_results').select('bracket').eq('id', 1).single()
+  ]);
 
-  if (data) {
-    STATE.scores = data.scores || {};
-    STATE.bracket = data.bracket || {};
-    STATE.bonuses = data.bonuses || {};
+  if (pollaRes.data) {
+    STATE.scores = pollaRes.data.scores || {};
+    STATE.bracket = pollaRes.data.bracket || {};
+    STATE.bonuses = pollaRes.data.bonuses || {};
     STATE.player = CURRENT_USER.name;
-    IS_GROUPS_LOCKED = data.is_groups_locked || false;
+    IS_GROUPS_LOCKED = pollaRes.data.is_groups_locked || false;
     try { localStorage.setItem(LS_DRAFT, JSON.stringify(STATE)); } catch (_) { }
   }
+
+  const resultsBracket = resultsRes.data?.bracket || {};
+  _officialBracket = resultsBracket;   // store for participant pre-fill
+  const hasOfficialBracketInfo = Object.keys(resultsBracket).length > 0;
+  updateBracketTabsVisibility(hasOfficialBracketInfo);
 }
 
 /* ================================================================
@@ -2369,6 +2505,7 @@ function buildAdminRoundHTML(ronda) {
     const s0 = parseFloat(ADMIN_RESULTS.bracket[ks0]);
     const s1 = parseFloat(ADMIN_RESULTS.bracket[ks1]);
     const winner = (!isNaN(s0) && !isNaN(s1)) ? (s0 > s1 ? 't0' : s1 > s0 ? 't1' : null) : null;
+    const metaHTML = getMatchMetaHTML(ronda.id, i);
     
     const picker0 = `
 <div class="team-picker admin-bracket-picker" data-admin-key="${kt0}">
@@ -2398,6 +2535,7 @@ function buildAdminRoundHTML(ronda) {
     
     return `
 <div class="bracket-match${isFin ? ' is-final' : ''}">
+  ${metaHTML}
   <div class="bm-row${winner === 't0' ? ' winner' : ''}">
     ${picker0}
     <input type="number" class="bm-score" data-admin-key="${ks0}" value="${ADMIN_RESULTS.bracket[ks0] !== undefined ? ADMIN_RESULTS.bracket[ks0] : ''}" min="0" max="99" placeholder="0">
@@ -2546,6 +2684,25 @@ function initAdminSaveBtns() {
 
 /* legacy — ya no se usa pero evita errores si algo lo referencia */
 async function loadOfficialResultsEditor() { await loadAdminResultsEditor(); }
+
+function updateBracketTabsVisibility(hasOfficialBracketInfo) {
+  const playerTab = document.getElementById('tab-btn-bracket');
+  if (playerTab) {
+    playerTab.classList.toggle('hidden', !hasOfficialBracketInfo);
+    if (!hasOfficialBracketInfo && playerTab.classList.contains('active')) {
+      const gruposTab = document.querySelector('.inner-tab[data-inner="grupos"]');
+      if (gruposTab) gruposTab.click();
+    }
+  }
+  const verTab = document.getElementById('tab-btn-bracket-ver');
+  if (verTab) {
+    verTab.classList.toggle('hidden', !hasOfficialBracketInfo);
+    if (!hasOfficialBracketInfo && verTab.classList.contains('active')) {
+      const gruposVerTab = document.querySelector('.inner-tab[data-inner-ver="grupos-ver"]');
+      if (gruposVerTab) gruposVerTab.click();
+    }
+  }
+}
 
 /* ================================================================
    TABS INTERNOS
@@ -2732,3 +2889,14 @@ function initErrorModal() {
 ================================================================ */
 function scoreKey(group, match, side) { return `${group}-${match}-${side}`; }
 function flag(t) { return `<span class="fi fi-${t.code}"></span>`; }
+
+/* Map team display name → country code for flag lookup */
+const _teamCodeMap = (() => {
+  const m = {};
+  Object.values(GROUPS).forEach(g => g.teams.forEach(t => { m[t.n] = t.code; }));
+  return m;
+})();
+function flagByName(name) {
+  const code = _teamCodeMap[name];
+  return code ? `<span class="fi fi-${code}"></span>` : '';
+}
