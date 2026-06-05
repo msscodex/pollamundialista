@@ -1,0 +1,17 @@
+title: "Copa Mundial FIFA 2026 - Bracket Interactivo"
+description: "Quiniela y bracket interactivo del Mundial 2026 USA · Canadá · México"
+baseurl: ""          # Cambia a "/MUNDIAL" si es GitHub Pages project page
+url: ""              # Ej: "https://tu-usuario.github.io"
+lang: es
+
+# Build settings
+markdown: kramdown
+plugins:
+  - jekyll-seo-tag
+
+# Excluir del build
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - "*.pdf"
+  - README.md
