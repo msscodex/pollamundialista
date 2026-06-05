@@ -273,10 +273,6 @@ async function initApp() {
   initTeamPickers();   // reemplaza inputs de equipo con pickers antes de initBonusInputs
   initBonusInputs();
   initAdminPanel();
-
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => { location.hash = btn.dataset.hash; });
-  });
 }
 
 /* ================================================================
@@ -347,6 +343,9 @@ function initLoginUI() {
 ================================================================ */
 function initRouter() {
   window.addEventListener('hashchange', route);
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => { location.hash = btn.dataset.hash; });
+  });
   route(); // render initial public view
 }
 
@@ -1569,6 +1568,64 @@ function initInnerTabsVer() {
     });
   });
 }
+
+/* ================================================================
+   MÚSICA — YouTube IFrame API (segmento 0:10 – 0:42 en loop)
+================================================================ */
+const MUSIC_VIDEO_ID = 'fcnDmrtj6Sk';
+const MUSIC_START    = 10;
+const MUSIC_END      = 42;
+
+let _ytPlayer   = null;
+let _musicOn    = false;
+let _ytReady    = false;
+let _loopTimer  = null;
+
+// Llamado automáticamente por la YouTube IFrame API cuando carga
+window.onYouTubeIframeAPIReady = function () {
+  _ytPlayer = new YT.Player('yt-player', {
+    height: '1', width: '1',
+    videoId: MUSIC_VIDEO_ID,
+    playerVars: {
+      autoplay: 0, controls: 0, disablekb: 1,
+      fs: 0, modestbranding: 1, rel: 0,
+      start: MUSIC_START, end: MUSIC_END,
+    },
+    events: {
+      onReady: () => { _ytReady = true; },
+      onStateChange: (e) => {
+        // Cuando llega al final (ENDED=0) vuelve al segundo 10
+        if (e.data === YT.PlayerState.ENDED && _musicOn) {
+          _ytPlayer.seekTo(MUSIC_START, true);
+          _ytPlayer.playVideo();
+        }
+      },
+    },
+  });
+};
+
+function initMusicBtn() {
+  const btn     = document.getElementById('btn-music');
+  const iconOff = btn.querySelector('.music-off');
+  const iconOn  = btn.querySelector('.music-on');
+
+  btn.addEventListener('click', () => {
+    _musicOn = !_musicOn;
+    iconOff.classList.toggle('hidden',  _musicOn);
+    iconOn.classList.toggle('hidden',  !_musicOn);
+    btn.title = _musicOn ? 'Silenciar música' : 'Activar música';
+
+    if (!_ytReady) return;
+    if (_musicOn) {
+      _ytPlayer.seekTo(MUSIC_START, true);
+      _ytPlayer.playVideo();
+    } else {
+      _ytPlayer.pauseVideo();
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', initMusicBtn);
 
 /* ================================================================
    UTILS

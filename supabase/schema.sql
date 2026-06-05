@@ -11,10 +11,7 @@ create table public.profiles (
   created_at timestamptz not null default now()
 );
 
--- 2. POLLAS (una por usuario)t_part(email, '@', 1), true
-from auth.users
-where email = 'maycolsanchez@150porciento.com'
-on conflict (id) do update set is_admin = true;
+-- 2. POLLAS (una por usuario)
 create table public.pollas (
   id               uuid    primary key default gen_random_uuid(),
   user_id          uuid    references public.profiles(id) on delete cascade not null unique,
@@ -48,7 +45,7 @@ alter table public.official_results enable row level security;
 
 -- ---- PROFILES ----
 create policy "perfiles_select"
-  on public.profiles for select to authenticated using (true);
+  on public.profiles for select to authenticated, anon using (true);
 
 create policy "perfil_update_propio"
   on public.profiles for update to authenticated
@@ -57,7 +54,7 @@ create policy "perfil_update_propio"
 
 -- ---- POLLAS ----
 create policy "pollas_select"
-  on public.pollas for select to authenticated using (true);
+  on public.pollas for select to authenticated, anon using (true);
 
 create policy "polla_insert_propia"
   on public.pollas for insert to authenticated
@@ -82,7 +79,7 @@ create policy "polla_update_propia"
 
 -- ---- OFFICIAL RESULTS ----
 create policy "resultados_select"
-  on public.official_results for select to authenticated using (true);
+  on public.official_results for select to authenticated, anon using (true);
 
 create policy "resultados_insert_admin"
   on public.official_results for insert to authenticated

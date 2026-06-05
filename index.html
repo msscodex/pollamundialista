@@ -50,11 +50,20 @@
         <p class="header-dates">11 Junio – 19 Julio 2026 &nbsp;·&nbsp; 🇺🇸 USA &nbsp;·&nbsp; 🇨🇦 Canadá &nbsp;·&nbsp; 🇲🇽 México</p>
       </div>
       <div class="header-user-bar">
+        <button class="btn-music" id="btn-music" title="Activar música" aria-label="Toggle música">
+          <span class="music-icon music-off">🔇</span>
+          <span class="music-icon music-on hidden">🔊</span>
+        </button>
         <span class="header-user-name hidden" id="header-user-name"></span>
         <button class="btn btn-outline btn-sm hidden" id="btn-logout">Cerrar sesión</button>
         <button class="btn btn-gold btn-sm" id="btn-show-login">Ingresar</button>
       </div>
     </header>
+
+    <!-- YouTube audio player oculto -->
+    <div id="yt-player-wrap" style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;">
+      <div id="yt-player"></div>
+    </div>
 
     <!-- NAV -->
     <nav class="tabs" role="tablist">
@@ -424,5 +433,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./assets/js/app.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
