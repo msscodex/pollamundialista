@@ -1184,6 +1184,32 @@ footer {
 }
 .admin-textarea:focus { outline: none; border-color: var(--gold); }
 
+.admin-steps {
+  list-style: decimal;
+  padding-left: 18px;
+  margin: 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.admin-steps li {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.admin-link {
+  display: inline-flex;
+  text-decoration: none;
+  margin-bottom: 12px;
+}
+
+.admin-note {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
 .admin-msg {
   margin-top: 10px;
   font-size: 12px;

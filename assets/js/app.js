@@ -1140,18 +1140,27 @@ function initAdminPanel() {
     msg.textContent = 'Creando usuario…';
     msg.className   = 'admin-msg';
 
-    const { error } = await sb.functions.invoke('create-user', {
-      body: { name, email, password },
-    });
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON,
+        },
+        body: JSON.stringify({ email, password, data: { name } })
+      });
 
-    if (error) {
-      msg.textContent = 'Error: ' + (error.message || 'No se pudo crear el usuario');
-      msg.className   = 'admin-msg error';
-    } else {
-      msg.textContent = `Usuario "${name}" creado correctamente.`;
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error_description || json.msg || json.message || 'Error desconocido');
+
+      msg.textContent = `Usuario "${name}" creado. Ya puede iniciar sesión.`;
       msg.className   = 'admin-msg success';
       e.target.reset();
+    } catch (err) {
+      msg.textContent = 'Error: ' + err.message;
+      msg.className   = 'admin-msg error';
     }
+
     btn.disabled = false;
   });
 
