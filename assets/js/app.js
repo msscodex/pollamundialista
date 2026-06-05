@@ -4,171 +4,195 @@
 ================================================================ */
 
 /* ---- SUPABASE ---- */
-const SUPABASE_URL  = 'https://txwvhlearumjshvadedd.supabase.co';
+const SUPABASE_URL = 'https://txwvhlearumjshvadedd.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4d3ZobGVhcnVtanNodmFkZWRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTQ0ODUsImV4cCI6MjA5NjIzMDQ4NX0.9BhmsyMrWwoWIgA11xIoobT-BaanOZEoVUlnuVu_ILo';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-let CURRENT_USER     = null; // { id, email, name, is_admin }
+let CURRENT_USER = null; // { id, email, name, is_admin }
 let IS_GROUPS_LOCKED = false;
-let _appReady        = false;
+let _appReady = false;
 
 /* ----------------------------------------------------------------
    DATOS: 12 Grupos (Sorteo diciembre 2024)
 ---------------------------------------------------------------- */
 const GROUPS = {
-  A: { teams: [
-    { code:'mx',     n:'México' },        { code:'za',     n:'Sudáfrica' },
-    { code:'kr',     n:'Corea del Sur' }, { code:'cz',     n:'Rep. Checa' }
-  ]},
-  B: { teams: [
-    { code:'ca',     n:'Canadá' },        { code:'ba',     n:'Bosnia-Herz.' },
-    { code:'qa',     n:'Catar' },         { code:'ch',     n:'Suiza' }
-  ]},
-  C: { teams: [
-    { code:'br',     n:'Brasil' },        { code:'ma',     n:'Marruecos' },
-    { code:'ht',     n:'Haití' },         { code:'gb-sct', n:'Escocia' }
-  ]},
-  D: { teams: [
-    { code:'us',     n:'EE.UU.' },        { code:'py',     n:'Paraguay' },
-    { code:'au',     n:'Australia' },     { code:'tr',     n:'Turquía' }
-  ]},
-  E: { teams: [
-    { code:'de',     n:'Alemania' },      { code:'cw',     n:'Curazao' },
-    { code:'ci',     n:'Costa de Marfil' },{ code:'ec',   n:'Ecuador' }
-  ]},
-  F: { teams: [
-    { code:'nl',     n:'Países Bajos' },  { code:'jp',     n:'Japón' },
-    { code:'se',     n:'Suecia' },        { code:'tn',     n:'Túnez' }
-  ]},
-  G: { teams: [
-    { code:'be',     n:'Bélgica' },       { code:'eg',     n:'Egipto' },
-    { code:'ir',     n:'Irán' },          { code:'nz',     n:'Nueva Zelanda' }
-  ]},
-  H: { teams: [
-    { code:'es',     n:'España' },        { code:'cv',     n:'Cabo Verde' },
-    { code:'sa',     n:'Arabia Saudita' },{ code:'uy',     n:'Uruguay' }
-  ]},
-  I: { teams: [
-    { code:'fr',     n:'Francia' },       { code:'sn',     n:'Senegal' },
-    { code:'iq',     n:'Iraq' },          { code:'no',     n:'Noruega' }
-  ]},
-  J: { teams: [
-    { code:'ar',     n:'Argentina' },     { code:'dz',     n:'Argelia' },
-    { code:'at',     n:'Austria' },       { code:'jo',     n:'Jordania' }
-  ]},
-  K: { teams: [
-    { code:'pt',     n:'Portugal' },      { code:'cd',     n:'RD Congo' },
-    { code:'uz',     n:'Uzbekistán' },    { code:'co',     n:'Colombia' }
-  ]},
-  L: { teams: [
-    { code:'gb-eng', n:'Inglaterra' },    { code:'hr',     n:'Croacia' },
-    { code:'gh',     n:'Ghana' },         { code:'pa',     n:'Panamá' }
-  ]}
+  A: {
+    teams: [
+      { code: 'mx', n: 'México' }, { code: 'za', n: 'Sudáfrica' },
+      { code: 'kr', n: 'Corea del Sur' }, { code: 'cz', n: 'Rep. Checa' }
+    ]
+  },
+  B: {
+    teams: [
+      { code: 'ca', n: 'Canadá' }, { code: 'ba', n: 'Bosnia-Herz.' },
+      { code: 'qa', n: 'Catar' }, { code: 'ch', n: 'Suiza' }
+    ]
+  },
+  C: {
+    teams: [
+      { code: 'br', n: 'Brasil' }, { code: 'ma', n: 'Marruecos' },
+      { code: 'ht', n: 'Haití' }, { code: 'gb-sct', n: 'Escocia' }
+    ]
+  },
+  D: {
+    teams: [
+      { code: 'us', n: 'EE.UU.' }, { code: 'py', n: 'Paraguay' },
+      { code: 'au', n: 'Australia' }, { code: 'tr', n: 'Turquía' }
+    ]
+  },
+  E: {
+    teams: [
+      { code: 'de', n: 'Alemania' }, { code: 'cw', n: 'Curazao' },
+      { code: 'ci', n: 'Costa de Marfil' }, { code: 'ec', n: 'Ecuador' }
+    ]
+  },
+  F: {
+    teams: [
+      { code: 'nl', n: 'Países Bajos' }, { code: 'jp', n: 'Japón' },
+      { code: 'se', n: 'Suecia' }, { code: 'tn', n: 'Túnez' }
+    ]
+  },
+  G: {
+    teams: [
+      { code: 'be', n: 'Bélgica' }, { code: 'eg', n: 'Egipto' },
+      { code: 'ir', n: 'Irán' }, { code: 'nz', n: 'Nueva Zelanda' }
+    ]
+  },
+  H: {
+    teams: [
+      { code: 'es', n: 'España' }, { code: 'cv', n: 'Cabo Verde' },
+      { code: 'sa', n: 'Arabia Saudita' }, { code: 'uy', n: 'Uruguay' }
+    ]
+  },
+  I: {
+    teams: [
+      { code: 'fr', n: 'Francia' }, { code: 'sn', n: 'Senegal' },
+      { code: 'iq', n: 'Iraq' }, { code: 'no', n: 'Noruega' }
+    ]
+  },
+  J: {
+    teams: [
+      { code: 'ar', n: 'Argentina' }, { code: 'dz', n: 'Argelia' },
+      { code: 'at', n: 'Austria' }, { code: 'jo', n: 'Jordania' }
+    ]
+  },
+  K: {
+    teams: [
+      { code: 'pt', n: 'Portugal' }, { code: 'cd', n: 'RD Congo' },
+      { code: 'uz', n: 'Uzbekistán' }, { code: 'co', n: 'Colombia' }
+    ]
+  },
+  L: {
+    teams: [
+      { code: 'gb-eng', n: 'Inglaterra' }, { code: 'hr', n: 'Croacia' },
+      { code: 'gh', n: 'Ghana' }, { code: 'pa', n: 'Panamá' }
+    ]
+  }
 };
 
 const MATCH_INFO = {
   A: [
-    { date:'11 jun', time:'14:00', venue:'Est. Azteca, Cd. de México' },
-    { date:'11 jun', time:'21:00', venue:'Est. Akron, Guadalajara' },
-    { date:'18 jun', time:'20:00', venue:'Est. Akron, Guadalajara' },
-    { date:'18 jun', time:'11:00', venue:'Mercedes-Benz Stadium, Atlanta' },
-    { date:'24 jun', time:'20:00', venue:'Est. Azteca, Cd. de México' },
-    { date:'24 jun', time:'20:00', venue:'Est. BBVA, Monterrey' },
+    { date: '11 jun', time: '14:00', venue: 'Est. Azteca, Cd. de México' },
+    { date: '11 jun', time: '21:00', venue: 'Est. Akron, Guadalajara' },
+    { date: '18 jun', time: '20:00', venue: 'Est. Akron, Guadalajara' },
+    { date: '18 jun', time: '11:00', venue: 'Mercedes-Benz Stadium, Atlanta' },
+    { date: '24 jun', time: '20:00', venue: 'Est. Azteca, Cd. de México' },
+    { date: '24 jun', time: '20:00', venue: 'Est. BBVA, Monterrey' },
   ],
   B: [
-    { date:'12 jun', time:'14:00', venue:'BMO Field, Toronto' },
-    { date:'13 jun', time:'14:00', venue:"Levi's Stadium, San Francisco" },
-    { date:'18 jun', time:'17:00', venue:'BC Place, Vancouver' },
-    { date:'18 jun', time:'14:00', venue:'SoFi Stadium, Los Ángeles' },
-    { date:'24 jun', time:'14:00', venue:'BC Place, Vancouver' },
-    { date:'24 jun', time:'14:00', venue:'Lumen Field, Seattle' },
+    { date: '12 jun', time: '14:00', venue: 'BMO Field, Toronto' },
+    { date: '13 jun', time: '14:00', venue: "Levi's Stadium, San Francisco" },
+    { date: '18 jun', time: '17:00', venue: 'BC Place, Vancouver' },
+    { date: '18 jun', time: '14:00', venue: 'SoFi Stadium, Los Ángeles' },
+    { date: '24 jun', time: '14:00', venue: 'BC Place, Vancouver' },
+    { date: '24 jun', time: '14:00', venue: 'Lumen Field, Seattle' },
   ],
   C: [
-    { date:'13 jun', time:'17:00', venue:'MetLife Stadium, Nueva York' },
-    { date:'13 jun', time:'20:00', venue:'Gillette Stadium, Boston' },
-    { date:'19 jun', time:'20:00', venue:'Lincoln Financial Field, Filadelfia' },
-    { date:'19 jun', time:'17:00', venue:'Gillette Stadium, Boston' },
-    { date:'24 jun', time:'17:00', venue:'Hard Rock Stadium, Miami' },
-    { date:'24 jun', time:'17:00', venue:'Mercedes-Benz Stadium, Atlanta' },
+    { date: '13 jun', time: '17:00', venue: 'MetLife Stadium, Nueva York' },
+    { date: '13 jun', time: '20:00', venue: 'Gillette Stadium, Boston' },
+    { date: '19 jun', time: '20:00', venue: 'Lincoln Financial Field, Filadelfia' },
+    { date: '19 jun', time: '17:00', venue: 'Gillette Stadium, Boston' },
+    { date: '24 jun', time: '17:00', venue: 'Hard Rock Stadium, Miami' },
+    { date: '24 jun', time: '17:00', venue: 'Mercedes-Benz Stadium, Atlanta' },
   ],
   D: [
-    { date:'12 jun', time:'20:00', venue:'SoFi Stadium, Los Ángeles' },
-    { date:'12 jun', time:'23:00', venue:'BC Place, Vancouver' },
-    { date:'19 jun', time:'14:00', venue:'Lumen Field, Seattle' },
-    { date:'18 jun', time:'23:00', venue:"Levi's Stadium, San Francisco" },
-    { date:'25 jun', time:'21:00', venue:'SoFi Stadium, Los Ángeles' },
-    { date:'25 jun', time:'21:00', venue:"Levi's Stadium, San Francisco" },
+    { date: '12 jun', time: '20:00', venue: 'SoFi Stadium, Los Ángeles' },
+    { date: '12 jun', time: '23:00', venue: 'BC Place, Vancouver' },
+    { date: '19 jun', time: '14:00', venue: 'Lumen Field, Seattle' },
+    { date: '18 jun', time: '23:00', venue: "Levi's Stadium, San Francisco" },
+    { date: '25 jun', time: '21:00', venue: 'SoFi Stadium, Los Ángeles' },
+    { date: '25 jun', time: '21:00', venue: "Levi's Stadium, San Francisco" },
   ],
   E: [
-    { date:'14 jun', time:'12:00', venue:'NRG Stadium, Houston' },
-    { date:'14 jun', time:'18:00', venue:'Lincoln Financial Field, Filadelfia' },
-    { date:'20 jun', time:'15:00', venue:'BMO Field, Toronto' },
-    { date:'20 jun', time:'19:00', venue:'Arrowhead Stadium, Kansas City' },
-    { date:'25 jun', time:'15:00', venue:'MetLife Stadium, Nueva York' },
-    { date:'25 jun', time:'15:00', venue:'Lincoln Financial Field, Filadelfia' },
+    { date: '14 jun', time: '12:00', venue: 'NRG Stadium, Houston' },
+    { date: '14 jun', time: '18:00', venue: 'Lincoln Financial Field, Filadelfia' },
+    { date: '20 jun', time: '15:00', venue: 'BMO Field, Toronto' },
+    { date: '20 jun', time: '19:00', venue: 'Arrowhead Stadium, Kansas City' },
+    { date: '25 jun', time: '15:00', venue: 'MetLife Stadium, Nueva York' },
+    { date: '25 jun', time: '15:00', venue: 'Lincoln Financial Field, Filadelfia' },
   ],
   F: [
-    { date:'14 jun', time:'15:00', venue:'AT&T Stadium, Dallas' },
-    { date:'14 jun', time:'21:00', venue:'Est. BBVA, Monterrey' },
-    { date:'20 jun', time:'12:00', venue:'NRG Stadium, Houston' },
-    { date:'19 jun', time:'23:00', venue:'Est. BBVA, Monterrey' },
-    { date:'25 jun', time:'18:00', venue:'Arrowhead Stadium, Kansas City' },
-    { date:'25 jun', time:'18:00', venue:'AT&T Stadium, Dallas' },
+    { date: '14 jun', time: '15:00', venue: 'AT&T Stadium, Dallas' },
+    { date: '14 jun', time: '21:00', venue: 'Est. BBVA, Monterrey' },
+    { date: '20 jun', time: '12:00', venue: 'NRG Stadium, Houston' },
+    { date: '19 jun', time: '23:00', venue: 'Est. BBVA, Monterrey' },
+    { date: '25 jun', time: '18:00', venue: 'Arrowhead Stadium, Kansas City' },
+    { date: '25 jun', time: '18:00', venue: 'AT&T Stadium, Dallas' },
   ],
   G: [
-    { date:'15 jun', time:'14:00', venue:'Lumen Field, Seattle' },
-    { date:'15 jun', time:'20:00', venue:'SoFi Stadium, Los Ángeles' },
-    { date:'21 jun', time:'14:00', venue:'SoFi Stadium, Los Ángeles' },
-    { date:'21 jun', time:'20:00', venue:'BC Place, Vancouver' },
-    { date:'26 jun', time:'22:00', venue:'BC Place, Vancouver' },
-    { date:'26 jun', time:'22:00', venue:'Lumen Field, Seattle' },
+    { date: '15 jun', time: '14:00', venue: 'Lumen Field, Seattle' },
+    { date: '15 jun', time: '20:00', venue: 'SoFi Stadium, Los Ángeles' },
+    { date: '21 jun', time: '14:00', venue: 'SoFi Stadium, Los Ángeles' },
+    { date: '21 jun', time: '20:00', venue: 'BC Place, Vancouver' },
+    { date: '26 jun', time: '22:00', venue: 'BC Place, Vancouver' },
+    { date: '26 jun', time: '22:00', venue: 'Lumen Field, Seattle' },
   ],
   H: [
-    { date:'15 jun', time:'11:00', venue:'Mercedes-Benz Stadium, Atlanta' },
-    { date:'15 jun', time:'17:00', venue:'Hard Rock Stadium, Miami' },
-    { date:'21 jun', time:'11:00', venue:'Mercedes-Benz Stadium, Atlanta' },
-    { date:'21 jun', time:'17:00', venue:'Hard Rock Stadium, Miami' },
-    { date:'26 jun', time:'19:00', venue:'Est. Akron, Guadalajara' },
-    { date:'26 jun', time:'19:00', venue:'NRG Stadium, Houston' },
+    { date: '15 jun', time: '11:00', venue: 'Mercedes-Benz Stadium, Atlanta' },
+    { date: '15 jun', time: '17:00', venue: 'Hard Rock Stadium, Miami' },
+    { date: '21 jun', time: '11:00', venue: 'Mercedes-Benz Stadium, Atlanta' },
+    { date: '21 jun', time: '17:00', venue: 'Hard Rock Stadium, Miami' },
+    { date: '26 jun', time: '19:00', venue: 'Est. Akron, Guadalajara' },
+    { date: '26 jun', time: '19:00', venue: 'NRG Stadium, Houston' },
   ],
   I: [
-    { date:'16 jun', time:'14:00', venue:'MetLife Stadium, Nueva York' },
-    { date:'16 jun', time:'17:00', venue:'Gillette Stadium, Boston' },
-    { date:'22 jun', time:'16:00', venue:'Lincoln Financial Field, Filadelfia' },
-    { date:'22 jun', time:'19:00', venue:'MetLife Stadium, Nueva York' },
-    { date:'26 jun', time:'14:00', venue:'Gillette Stadium, Boston' },
-    { date:'26 jun', time:'14:00', venue:'BMO Field, Toronto' },
+    { date: '16 jun', time: '14:00', venue: 'MetLife Stadium, Nueva York' },
+    { date: '16 jun', time: '17:00', venue: 'Gillette Stadium, Boston' },
+    { date: '22 jun', time: '16:00', venue: 'Lincoln Financial Field, Filadelfia' },
+    { date: '22 jun', time: '19:00', venue: 'MetLife Stadium, Nueva York' },
+    { date: '26 jun', time: '14:00', venue: 'Gillette Stadium, Boston' },
+    { date: '26 jun', time: '14:00', venue: 'BMO Field, Toronto' },
   ],
   J: [
-    { date:'16 jun', time:'20:00', venue:'Arrowhead Stadium, Kansas City' },
-    { date:'15 jun', time:'23:00', venue:"Levi's Stadium, San Francisco" },
-    { date:'22 jun', time:'12:00', venue:'AT&T Stadium, Dallas' },
-    { date:'22 jun', time:'22:00', venue:"Levi's Stadium, San Francisco" },
-    { date:'27 jun', time:'21:00', venue:'AT&T Stadium, Dallas' },
-    { date:'27 jun', time:'21:00', venue:'Arrowhead Stadium, Kansas City' },
+    { date: '16 jun', time: '20:00', venue: 'Arrowhead Stadium, Kansas City' },
+    { date: '15 jun', time: '23:00', venue: "Levi's Stadium, San Francisco" },
+    { date: '22 jun', time: '12:00', venue: 'AT&T Stadium, Dallas' },
+    { date: '22 jun', time: '22:00', venue: "Levi's Stadium, San Francisco" },
+    { date: '27 jun', time: '21:00', venue: 'AT&T Stadium, Dallas' },
+    { date: '27 jun', time: '21:00', venue: 'Arrowhead Stadium, Kansas City' },
   ],
   K: [
-    { date:'17 jun', time:'12:00', venue:'NRG Stadium, Houston' },
-    { date:'17 jun', time:'21:00', venue:'Est. Azteca, Cd. de México' },
-    { date:'23 jun', time:'12:00', venue:'NRG Stadium, Houston' },
-    { date:'23 jun', time:'21:00', venue:'Est. Akron, Guadalajara' },
-    { date:'27 jun', time:'18:30', venue:'Hard Rock Stadium, Miami' },
-    { date:'27 jun', time:'18:30', venue:'Mercedes-Benz Stadium, Atlanta' },
+    { date: '17 jun', time: '12:00', venue: 'NRG Stadium, Houston' },
+    { date: '17 jun', time: '21:00', venue: 'Est. Azteca, Cd. de México' },
+    { date: '23 jun', time: '12:00', venue: 'NRG Stadium, Houston' },
+    { date: '23 jun', time: '21:00', venue: 'Est. Akron, Guadalajara' },
+    { date: '27 jun', time: '18:30', venue: 'Hard Rock Stadium, Miami' },
+    { date: '27 jun', time: '18:30', venue: 'Mercedes-Benz Stadium, Atlanta' },
   ],
   L: [
-    { date:'17 jun', time:'15:00', venue:'AT&T Stadium, Dallas' },
-    { date:'17 jun', time:'18:00', venue:'BMO Field, Toronto' },
-    { date:'23 jun', time:'15:00', venue:'Gillette Stadium, Boston' },
-    { date:'23 jun', time:'18:00', venue:'BMO Field, Toronto' },
-    { date:'27 jun', time:'16:00', venue:'MetLife Stadium, Nueva York' },
-    { date:'27 jun', time:'16:00', venue:'Lincoln Financial Field, Filadelfia' },
+    { date: '17 jun', time: '15:00', venue: 'AT&T Stadium, Dallas' },
+    { date: '17 jun', time: '18:00', venue: 'BMO Field, Toronto' },
+    { date: '23 jun', time: '15:00', venue: 'Gillette Stadium, Boston' },
+    { date: '23 jun', time: '18:00', venue: 'BMO Field, Toronto' },
+    { date: '27 jun', time: '16:00', venue: 'MetLife Stadium, Nueva York' },
+    { date: '27 jun', time: '16:00', venue: 'Lincoln Financial Field, Filadelfia' },
   ],
 };
 
 const JORNADAS = [
-  { label: 'Jornada 1', pares: [[0,1],[2,3]] },
-  { label: 'Jornada 2', pares: [[0,2],[1,3]] },
-  { label: 'Jornada 3', pares: [[0,3],[1,2]] }
+  { label: 'Jornada 1', pares: [[0, 1], [2, 3]] },
+  { label: 'Jornada 2', pares: [[0, 2], [1, 3]] },
+  { label: 'Jornada 3', pares: [[0, 3], [1, 2]] }
 ];
 
 const RONDAS = [
@@ -185,10 +209,10 @@ const RONDAS = [
       '2° Grp K', '1° Grp L', 'Mejor 3°', 'Mejor 3°'
     ]
   },
-  { id: 'r16', label: 'Octavos de Final', partidos: 8,  placeholders: [] },
-  { id: 'qf',  label: 'Cuartos de Final', partidos: 4,  placeholders: [] },
-  { id: 'sf',  label: 'Semifinales',      partidos: 2,  placeholders: [] },
-  { id: 'fin', label: 'FINAL 🏆',          partidos: 1,  placeholders: [] }
+  { id: 'r16', label: 'Octavos de Final', partidos: 8, placeholders: [] },
+  { id: 'qf', label: 'Cuartos de Final', partidos: 4, placeholders: [] },
+  { id: 'sf', label: 'Semifinales', partidos: 2, placeholders: [] },
+  { id: 'fin', label: 'FINAL 🏆', partidos: 1, placeholders: [] }
 ];
 
 /* ----------------------------------------------------------------
@@ -196,12 +220,12 @@ const RONDAS = [
 ---------------------------------------------------------------- */
 const ROUND_PTS = {
   groups: { exact: 3, result: 1 },
-  r32:    { exact: 4, result: 2 },
-  r16:    { exact: 5, result: 3 },
-  qf:     { exact: 6, result: 4 },
-  sf:     { exact: 7, result: 5 },
-  third:  { exact: 8, result: 6 },
-  fin:    { exact: 9, result: 7 }
+  r32: { exact: 4, result: 2 },
+  r16: { exact: 5, result: 3 },
+  qf: { exact: 6, result: 4 },
+  sf: { exact: 7, result: 5 },
+  third: { exact: 8, result: 6 },
+  fin: { exact: 9, result: 7 }
 };
 
 const BONUS_PTS = {
@@ -221,7 +245,7 @@ const BONUS_LABELS = {
   colPrimerAmarillaUzb: 'Col. 1° amarilla vs Uzb.'
 };
 
-const ROUND_KEY = { r32:'r32', r16:'r16', qf:'qf', sf:'sf', fin:'fin', third:'third' };
+const ROUND_KEY = { r32: 'r32', r16: 'r16', qf: 'qf', sf: 'sf', fin: 'fin', third: 'third' };
 
 /* ----------------------------------------------------------------
    ESTADO
@@ -253,8 +277,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       route();
     } else if (event === 'SIGNED_OUT') {
       CURRENT_USER = null;
-      _appReady    = false;
-      STATE        = { player: '', scores: {}, bracket: {}, bonuses: {} };
+      _appReady = false;
+      STATE = { player: '', scores: {}, bracket: {}, bonuses: {} };
       updateHeaderState();
       location.hash = '#home';
     }
@@ -311,18 +335,18 @@ function initLoginUI() {
     e.preventDefault();
     const btn = document.getElementById('login-btn');
     const err = document.getElementById('login-error');
-    btn.disabled    = true;
+    btn.disabled = true;
     btn.textContent = 'Ingresando…';
     err.textContent = '';
 
     const { error } = await sb.auth.signInWithPassword({
-      email:    document.getElementById('login-email').value.trim(),
+      email: document.getElementById('login-email').value.trim(),
       password: document.getElementById('login-password').value,
     });
 
     if (error) {
       err.textContent = 'Email o contraseña incorrectos.';
-      btn.disabled    = false;
+      btn.disabled = false;
       btn.textContent = 'Ingresar';
     }
   });
@@ -420,8 +444,8 @@ async function fetchData() {
     ]);
 
     const players = (pollasRes.data || []).map(p => ({
-      name:    p.profiles?.name || 'Sin nombre',
-      scores:  p.scores  || {},
+      name: p.profiles?.name || 'Sin nombre',
+      scores: p.scores || {},
       bracket: p.bracket || {},
       bonuses: p.bonuses || {},
     }));
@@ -441,8 +465,8 @@ async function fetchData() {
    PARTIDOS DEL DÍA
 ================================================================ */
 const MONTH_MAP = {
-  'ene':1,'feb':2,'mar':3,'abr':4,'may':5,'jun':6,
-  'jul':7,'ago':8,'sep':9,'oct':10,'nov':11,'dic':12
+  'ene': 1, 'feb': 2, 'mar': 3, 'abr': 4, 'may': 5, 'jun': 6,
+  'jul': 7, 'ago': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dic': 12
 };
 
 function parseMatchDate(dateStr) {
@@ -451,8 +475,8 @@ function parseMatchDate(dateStr) {
 }
 
 function renderTodayMatches() {
-  const today      = new Date();
-  const todayDay   = today.getDate();
+  const today = new Date();
+  const todayDay = today.getDate();
   const todayMonth = today.getMonth() + 1;
   const todayMatches = [];
 
@@ -461,20 +485,20 @@ function renderTodayMatches() {
       const { day, month } = parseMatchDate(mi.date);
       if (day === todayDay && month === todayMonth) {
         const jornada = JORNADAS[Math.floor(matchIdx / 2)];
-        const par     = jornada.pares[matchIdx % 2];
-        const teams   = GROUPS[group].teams;
+        const par = jornada.pares[matchIdx % 2];
+        const teams = GROUPS[group].teams;
         todayMatches.push({ group, matchIdx, t0: teams[par[0]], t1: teams[par[1]], time: mi.time, venue: mi.venue });
       }
     });
   });
 
   const section = document.getElementById('today-section');
-  const grid    = document.getElementById('today-grid');
-  const label   = document.getElementById('today-date-label');
+  const grid = document.getElementById('today-grid');
+  const label = document.getElementById('today-date-label');
 
   if (todayMatches.length === 0) { section.classList.add('hidden'); return; }
 
-  label.textContent = today.toLocaleDateString('es', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  label.textContent = today.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   grid.innerHTML = todayMatches.map(m => `
 <div class="today-card">
   <div class="today-group-badge">Grupo ${m.group}</div>
@@ -496,10 +520,10 @@ function renderTodayMatches() {
 ================================================================ */
 function renderRanking(players, results) {
   const podiumWrap = document.getElementById('podium-wrap');
-  const tableWrap  = document.getElementById('ranking-table-wrap');
-  const emptyMsg   = document.getElementById('ranking-empty');
-  const tbody      = document.getElementById('ranking-tbody');
-  const updLabel   = document.getElementById('results-updated-label');
+  const tableWrap = document.getElementById('ranking-table-wrap');
+  const emptyMsg = document.getElementById('ranking-empty');
+  const tbody = document.getElementById('ranking-tbody');
+  const updLabel = document.getElementById('results-updated-label');
 
   if (results.updated) {
     updLabel.textContent = 'Resultados actualizados: ' + new Date(results.updated).toLocaleString('es');
@@ -571,8 +595,8 @@ function calcScore(player, results) {
         if (!(k0 in results.scores) || !(k1 in results.scores)) return;
         if (!(k0 in (player.scores || {})) || !(k1 in (player.scores || {}))) return;
         const r0 = results.scores[k0], r1 = results.scores[k1];
-        const p0 = player.scores[k0],  p1 = player.scores[k1];
-        if (p0 === r0 && p1 === r1)                        exact  += ROUND_PTS.groups.exact;
+        const p0 = player.scores[k0], p1 = player.scores[k1];
+        if (p0 === r0 && p1 === r1) exact += ROUND_PTS.groups.exact;
         else if (Math.sign(p0 - p1) === Math.sign(r0 - r1)) result += ROUND_PTS.groups.result;
       });
     });
@@ -586,8 +610,8 @@ function calcScore(player, results) {
       if (!(ks0 in results.bracket) || !(ks1 in results.bracket)) continue;
       if (!(ks0 in (player.bracket || {})) || !(ks1 in (player.bracket || {}))) continue;
       const r0 = Number(results.bracket[ks0]), r1 = Number(results.bracket[ks1]);
-      const p0 = Number(player.bracket[ks0]),  p1 = Number(player.bracket[ks1]);
-      if (p0 === r0 && p1 === r1)                          exact  += pts.exact;
+      const p0 = Number(player.bracket[ks0]), p1 = Number(player.bracket[ks1]);
+      if (p0 === r0 && p1 === r1) exact += pts.exact;
       else if (Math.sign(p0 - p1) === Math.sign(r0 - r1)) result += pts.result;
     }
   });
@@ -595,9 +619,9 @@ function calcScore(player, results) {
   const th = k => results.bracket?.[k] !== undefined && player.bracket?.[k] !== undefined;
   if (th('3rd-s0') && th('3rd-s1')) {
     const r0 = Number(results.bracket['3rd-s0']), r1 = Number(results.bracket['3rd-s1']);
-    const p0 = Number(player.bracket['3rd-s0']),  p1 = Number(player.bracket['3rd-s1']);
-    if (p0 === r0 && p1 === r1)                          exact  += ROUND_PTS.third.exact;
-    else if (Math.sign(p0-p1) === Math.sign(r0-r1))     result += ROUND_PTS.third.result;
+    const p0 = Number(player.bracket['3rd-s0']), p1 = Number(player.bracket['3rd-s1']);
+    if (p0 === r0 && p1 === r1) exact += ROUND_PTS.third.exact;
+    else if (Math.sign(p0 - p1) === Math.sign(r0 - r1)) result += ROUND_PTS.third.result;
   }
 
   const pb = player.bonuses || {}, rb = results.bonuses || {};
@@ -631,8 +655,8 @@ async function loadPlayerView(nombre) {
     sb.from('official_results').select('*').eq('id', 1).single()
   ]);
 
-  const playerData = pollaRes.data  || { scores: {}, bracket: {}, bonuses: {} };
-  const results    = resultsRes.data || { scores: {}, bracket: {}, bonuses: {} };
+  const playerData = pollaRes.data || { scores: {}, bracket: {}, bonuses: {} };
+  const results = resultsRes.data || { scores: {}, bracket: {}, bonuses: {} };
   const score = calcScore(playerData, results);
 
   document.getElementById('ver-score-badge').textContent = `${score.total} pts`;
@@ -702,22 +726,22 @@ function renderBracketReadonly(bracket, containerId, championId) {
   if (!container) return;
   container.innerHTML = RONDAS.map(ronda => {
     const matches = Array.from({ length: ronda.partidos }, (_, i) => {
-      const ph0    = ronda.placeholders[i * 2]     || `Eq. ${i * 2 + 1}`;
-      const ph1    = ronda.placeholders[i * 2 + 1] || `Eq. ${i * 2 + 2}`;
-      const kt0    = `${ronda.id}-${i}-t0`, kt1 = `${ronda.id}-${i}-t1`;
-      const ks0    = `${ronda.id}-${i}-s0`, ks1 = `${ronda.id}-${i}-s1`;
-      const isFin  = ronda.id === 'fin';
-      const s0     = parseFloat(bracket[ks0]), s1 = parseFloat(bracket[ks1]);
+      const ph0 = ronda.placeholders[i * 2] || `Eq. ${i * 2 + 1}`;
+      const ph1 = ronda.placeholders[i * 2 + 1] || `Eq. ${i * 2 + 2}`;
+      const kt0 = `${ronda.id}-${i}-t0`, kt1 = `${ronda.id}-${i}-t1`;
+      const ks0 = `${ronda.id}-${i}-s0`, ks1 = `${ronda.id}-${i}-s1`;
+      const isFin = ronda.id === 'fin';
+      const s0 = parseFloat(bracket[ks0]), s1 = parseFloat(bracket[ks1]);
       const winner = !isNaN(s0) && !isNaN(s1) ? (s0 > s1 ? 't0' : s1 > s0 ? 't1' : null) : null;
       return `
 <div class="bracket-match${isFin ? ' is-final' : ''}">
-  <div class="bm-row${winner==='t0'?' winner':''}">
-    <input type="text"   class="bm-team"  value="${bracket[kt0]||''}" placeholder="${ph0}" disabled>
-    <input type="number" class="bm-score" value="${bracket[ks0]||''}" disabled placeholder="0">
+  <div class="bm-row${winner === 't0' ? ' winner' : ''}">
+    <input type="text"   class="bm-team"  value="${bracket[kt0] || ''}" placeholder="${ph0}" disabled>
+    <input type="number" class="bm-score" value="${bracket[ks0] || ''}" disabled placeholder="0">
   </div>
-  <div class="bm-row${winner==='t1'?' winner':''}">
-    <input type="text"   class="bm-team"  value="${bracket[kt1]||''}" placeholder="${ph1}" disabled>
-    <input type="number" class="bm-score" value="${bracket[ks1]||''}" disabled placeholder="0">
+  <div class="bm-row${winner === 't1' ? ' winner' : ''}">
+    <input type="text"   class="bm-team"  value="${bracket[kt1] || ''}" placeholder="${ph1}" disabled>
+    <input type="number" class="bm-score" value="${bracket[ks1] || ''}" disabled placeholder="0">
   </div>
 </div>`;
     }).join('');
@@ -738,7 +762,7 @@ function renderBonusesReadonly(playerBonuses, resultBonuses) {
   grid.innerHTML = Object.keys(BONUS_PTS).map(key => {
     const pVal = playerBonuses[key] || '—';
     const rVal = resultBonuses[key] || '';
-    const hit  = rVal && pVal.toLowerCase().trim() === rVal.toLowerCase().trim();
+    const hit = rVal && pVal.toLowerCase().trim() === rVal.toLowerCase().trim();
     return `
 <div class="bonus-readonly-row${hit ? ' bonus-hit' : ''}">
   <span class="bonus-readonly-label">${BONUS_LABELS[key]} <span class="bonus-pts">+${BONUS_PTS[key]}pts</span></span>
@@ -759,7 +783,7 @@ function renderGroups() {
   ).join('');
   grid.querySelectorAll('.m-score').forEach(inp => {
     inp.addEventListener('input', onScoreInput);
-    inp.addEventListener('blur',  onScoreInput);
+    inp.addEventListener('blur', onScoreInput);
   });
 }
 
@@ -835,11 +859,11 @@ function buildJornadas(letter, teams) {
 
 function buildDefaultRows(teams) {
   return teams.map((t, i) => {
-    const posClass = ['p1','p2','p3','p4'][i];
+    const posClass = ['p1', 'p2', 'p3', 'p4'][i];
     const rowClass = i < 2 ? 'st-advances' : i === 2 ? 'st-maybe' : '';
     return `
 <tr class="${rowClass}">
-  <td><span class="pos-badge ${posClass}">${i+1}</span></td>
+  <td><span class="pos-badge ${posClass}">${i + 1}</span></td>
   <td class="st-team-name"><span class="st-flag">${flag(t)}</span>${t.n}</td>
   <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td class="st-gd">0</td><td class="st-pts">0</td>
 </tr>`;
@@ -872,7 +896,7 @@ function recalcAllGroups() { Object.keys(GROUPS).forEach(recalcGroup); }
 
 function recalcGroup(letter) {
   const teams = GROUPS[letter].teams;
-  const st = teams.map((t, idx) => ({ name: t.n, flag: t.code, idx, j:0, g:0, e:0, p:0, gf:0, gc:0, pts:0 }));
+  const st = teams.map((t, idx) => ({ name: t.n, flag: t.code, idx, j: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, pts: 0 }));
 
   JORNADAS.forEach((jornada, jIdx) => {
     jornada.pares.forEach((par, pIdx) => {
@@ -884,9 +908,9 @@ function recalcGroup(letter) {
       st[t0].j++; st[t1].j++;
       st[t0].gf += s0; st[t0].gc += s1;
       st[t1].gf += s1; st[t1].gc += s0;
-      if (s0 > s1)      { st[t0].g++; st[t0].pts += 3; st[t1].p++; }
+      if (s0 > s1) { st[t0].g++; st[t0].pts += 3; st[t1].p++; }
       else if (s0 < s1) { st[t1].g++; st[t1].pts += 3; st[t0].p++; }
-      else              { st[t0].e++; st[t1].e++; st[t0].pts++; st[t1].pts++; }
+      else { st[t0].e++; st[t1].e++; st[t0].pts++; st[t1].pts++; }
     });
   });
 
@@ -894,8 +918,8 @@ function recalcGroup(letter) {
     b.pts - a.pts || (b.gf - b.gc) - (a.gf - a.gc) || b.gf - a.gf || a.name.localeCompare(b.name)
   );
 
-  const posClasses = ['p1','p2','p3','p4'];
-  const rowClasses = ['st-advances','st-advances','st-maybe',''];
+  const posClasses = ['p1', 'p2', 'p3', 'p4'];
+  const rowClasses = ['st-advances', 'st-advances', 'st-maybe', ''];
   const tbody = document.getElementById(`st-body-${letter}`);
   if (!tbody) return;
   tbody.innerHTML = st.map((s, pos) => {
@@ -903,7 +927,7 @@ function recalcGroup(letter) {
     const dgClass = dg > 0 ? 'pos' : dg < 0 ? 'neg' : '';
     return `
 <tr class="${rowClasses[pos]}">
-  <td><span class="pos-badge ${posClasses[pos]}">${pos+1}</span></td>
+  <td><span class="pos-badge ${posClasses[pos]}">${pos + 1}</span></td>
   <td class="st-team-name"><span class="st-flag"><span class="fi fi-${s.flag}"></span></span>${s.name}</td>
   <td>${s.j}</td><td>${s.g}</td><td>${s.e}</td><td>${s.p}</td>
   <td>${s.gf}</td><td>${s.gc}</td>
@@ -927,10 +951,10 @@ function renderBracket() {
 
 function buildRoundHTML(ronda) {
   const matches = Array.from({ length: ronda.partidos }, (_, i) => {
-    const ph0   = ronda.placeholders[i * 2]     || `Eq. ${i * 2 + 1}`;
-    const ph1   = ronda.placeholders[i * 2 + 1] || `Eq. ${i * 2 + 2}`;
-    const kt0   = `${ronda.id}-${i}-t0`, kt1 = `${ronda.id}-${i}-t1`;
-    const ks0   = `${ronda.id}-${i}-s0`, ks1 = `${ronda.id}-${i}-s1`;
+    const ph0 = ronda.placeholders[i * 2] || `Eq. ${i * 2 + 1}`;
+    const ph1 = ronda.placeholders[i * 2 + 1] || `Eq. ${i * 2 + 2}`;
+    const kt0 = `${ronda.id}-${i}-t0`, kt1 = `${ronda.id}-${i}-t1`;
+    const ks0 = `${ronda.id}-${i}-s0`, ks1 = `${ronda.id}-${i}-s1`;
     const isFin = ronda.id === 'fin';
     const winner = detectWinner(ronda.id, i);
     return `
@@ -967,7 +991,7 @@ function highlightWinnerRows() {
         `#bracket-render .bracket-match:has([data-key="${ronda.id}-${i}-t0"])`
       );
       if (!matchEl) continue;
-      const rows   = matchEl.querySelectorAll('.bm-row');
+      const rows = matchEl.querySelectorAll('.bm-row');
       const winner = detectWinner(ronda.id, i);
       rows[0].classList.toggle('winner', winner === 't0');
       rows[1].classList.toggle('winner', winner === 't1');
@@ -1024,26 +1048,26 @@ function onThirdInput(e) {
    TEAM PICKER — bonos con selección de país + bandera
 ================================================================ */
 // Bonos que usan selector de equipo (todos los países)
-const TEAM_PICKER_KEYS   = new Set(['campeon','subcampeon','tercero','cuarto','vallaMin','vallaMax','masPuntosGrupos','menosPuntosGrupos']);
+const TEAM_PICKER_KEYS = new Set(['campeon', 'subcampeon', 'tercero', 'cuarto', 'vallaMin', 'vallaMax', 'masPuntosGrupos', 'menosPuntosGrupos']);
 // Bonos con solo México o Sudáfrica
-const INAUG_PICKER_KEYS  = new Set(['primerGolInaugural']);
+const INAUG_PICKER_KEYS = new Set(['primerGolInaugural']);
 // Bonos que usan selector de jugador colombiano
-const PLAYER_PICKER_KEYS = new Set(['colPrimerGolUzb','colPrimerAmarillaUzb']);
+const PLAYER_PICKER_KEYS = new Set(['colPrimerGolUzb', 'colPrimerAmarillaUzb']);
 
 const INAUGURAL_TEAMS = [
-  { code: 'mx', n: 'México'    },
+  { code: 'mx', n: 'México' },
   { code: 'za', n: 'Sudáfrica' },
 ];
 
 // ⚠️ Actualizar con la nómina oficial convocada al Mundial 2026
 const COLOMBIA_SQUAD = [
-  'Álvaro Montero','Camilo Vargas','Kevin Mier',
-  'Andrés Mora','Carlos Cuesta','Daniel Muñoz','Dávinson Sánchez',
-  'Johan Mojica','Jhon Lucumí','Nicolás Muñoz','Yerry Mina',
-  'James Rodríguez','Jefferson Lerma','Jhon Arias','Kevin Castaño',
-  'Mateus Uribe','Richard Ríos','Wilmar Barrios',
-  'Carlos Bacca','Cucho Hernández','Falcao García','Jhon Córdoba',
-  'John Jader Durán','Luis Díaz','Miguel Borja','Rafael Santos Borré',
+  'Álvaro Montero', 'Camilo Vargas', 'Kevin Mier',
+  'Andrés Mora', 'Carlos Cuesta', 'Daniel Muñoz', 'Dávinson Sánchez',
+  'Johan Mojica', 'Jhon Lucumí', 'Nicolás Muñoz', 'Yerry Mina',
+  'James Rodríguez', 'Jefferson Lerma', 'Jhon Arias', 'Kevin Castaño',
+  'Mateus Uribe', 'Richard Ríos', 'Wilmar Barrios',
+  'Carlos Bacca', 'Cucho Hernández', 'Falcao García', 'Jhon Córdoba',
+  'John Jader Durán', 'Luis Díaz', 'Miguel Borja', 'Rafael Santos Borré',
 ].sort((a, b) => a.localeCompare(b, 'es'));
 
 function _allTeamsSorted() {
@@ -1052,7 +1076,7 @@ function _allTeamsSorted() {
 }
 
 function _setTeamPickerValue(picker, name, teams) {
-  const team   = teams.find(t => t.n === name);
+  const team = teams.find(t => t.n === name);
   if (!team) return;
   const nameEl = picker.querySelector('.tp-name');
   const flagEl = picker.querySelector('.tp-flag');
@@ -1067,7 +1091,7 @@ function _setPlayerPickerValue(picker, name) {
 
 function initTeamPickers() {
   const allTeams = _allTeamsSorted();
-  TEAM_PICKER_KEYS.forEach(key  => _buildTeamPicker(key, allTeams));
+  TEAM_PICKER_KEYS.forEach(key => _buildTeamPicker(key, allTeams));
   INAUG_PICKER_KEYS.forEach(key => _buildTeamPicker(key, INAUGURAL_TEAMS));
   PLAYER_PICKER_KEYS.forEach(key => _buildPlayerPicker(key));
 }
@@ -1116,9 +1140,9 @@ function _buildPlayerPicker(key) {
 }
 
 function _wirePicker(picker, renderFn) {
-  const trigger  = picker.querySelector('.team-picker-trigger');
+  const trigger = picker.querySelector('.team-picker-trigger');
   const dropdown = picker.querySelector('.team-picker-dropdown');
-  const search   = picker.querySelector('.tp-search');
+  const search = picker.querySelector('.tp-search');
 
   trigger.addEventListener('click', e => {
     e.stopPropagation();
@@ -1134,8 +1158,8 @@ function _wirePicker(picker, renderFn) {
       search.focus();
     }
   });
-  search.addEventListener('input',  () => renderFn(search.value));
-  search.addEventListener('click',  e  => e.stopPropagation());
+  search.addEventListener('input', () => renderFn(search.value));
+  search.addEventListener('click', e => e.stopPropagation());
   document.addEventListener('click', () => {
     dropdown.classList.add('hidden');
     picker.classList.remove('open');
@@ -1233,7 +1257,7 @@ function initPollaControls() {
   const nameInp = document.getElementById('q-player-name');
   if (nameInp) {
     nameInp.value = CURRENT_USER?.name || STATE.player || '';
-    STATE.player  = CURRENT_USER?.name || STATE.player || '';
+    STATE.player = CURRENT_USER?.name || STATE.player || '';
   }
 
   document.getElementById('btn-export-polla')?.addEventListener('click', exportJSON);
@@ -1289,7 +1313,7 @@ function showConfirmModal() {
     modal.classList.remove('hidden');
 
     const onConfirm = () => { cleanup(); resolve(true); };
-    const onCancel  = () => { cleanup(); resolve(false); };
+    const onCancel = () => { cleanup(); resolve(false); };
 
     function cleanup() {
       modal.classList.add('hidden');
@@ -1327,20 +1351,20 @@ async function lockPolla() {
   if (!confirmed) return;
 
   const btn = document.getElementById('btn-lock-polla');
-  btn.disabled    = true;
+  btn.disabled = true;
   btn.textContent = 'Enviando…';
 
   const { error } = await sb.from('pollas').upsert({
-    user_id:          CURRENT_USER.id,
-    scores:           STATE.scores,
-    bonuses:          STATE.bonuses,
-    bracket:          STATE.bracket,
+    user_id: CURRENT_USER.id,
+    scores: STATE.scores,
+    bonuses: STATE.bonuses,
+    bracket: STATE.bracket,
     is_groups_locked: true,
-    updated_at:       new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id' });
 
   if (error) {
-    btn.disabled    = false;
+    btn.disabled = false;
     btn.textContent = '🔒 Enviar y cerrar polla';
     errEl.innerHTML = `<strong>Error al guardar:</strong> ${error.message}`;
     errEl.classList.remove('hidden');
@@ -1352,7 +1376,7 @@ async function lockPolla() {
 }
 
 function applyLockedState() {
-  const banner  = document.getElementById('polla-locked-banner');
+  const banner = document.getElementById('polla-locked-banner');
   const actions = document.getElementById('polla-lock-actions');
   const clearBtn = document.getElementById('btn-clear-polla');
 
@@ -1369,7 +1393,7 @@ function applyLockedState() {
     });
     document.querySelectorAll('.team-picker .team-picker-trigger').forEach(t => {
       t.style.opacity = '0.55';
-      t.style.cursor  = 'not-allowed';
+      t.style.cursor = 'not-allowed';
       t.style.pointerEvents = 'none';
     });
   } else {
@@ -1379,7 +1403,7 @@ function applyLockedState() {
 
     document.querySelectorAll('.team-picker .team-picker-trigger').forEach(t => {
       t.style.opacity = '';
-      t.style.cursor  = '';
+      t.style.cursor = '';
       t.style.pointerEvents = '';
     });
   }
@@ -1405,14 +1429,14 @@ function exportJSON() {
   const payload = {
     name,
     exported: new Date().toISOString(),
-    scores:   STATE.scores,
-    bracket:  STATE.bracket,
-    bonuses:  STATE.bonuses
+    scores: STATE.scores,
+    bracket: STATE.bracket,
+    bonuses: STATE.bonuses
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  const slug = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const slug = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
   a.href = url; a.download = `${slug}.json`; a.click();
   URL.revokeObjectURL(url);
 }
@@ -1423,7 +1447,7 @@ function exportJSON() {
 let _saveTimer = null;
 
 function saveDraft() {
-  try { localStorage.setItem(LS_DRAFT, JSON.stringify(STATE)); } catch (_) {}
+  try { localStorage.setItem(LS_DRAFT, JSON.stringify(STATE)); } catch (_) { }
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(syncToSupabase, 1500);
 }
@@ -1431,13 +1455,13 @@ function saveDraft() {
 async function syncToSupabase() {
   if (!CURRENT_USER) return;
   const payload = {
-    user_id:    CURRENT_USER.id,
-    bracket:    STATE.bracket,
+    user_id: CURRENT_USER.id,
+    bracket: STATE.bracket,
     updated_at: new Date().toISOString(),
   };
   // Si grupos+bonos están bloqueados, NO los mandamos — la DB los rechazaría igualmente
   if (!IS_GROUPS_LOCKED) {
-    payload.scores  = STATE.scores;
+    payload.scores = STATE.scores;
     payload.bonuses = STATE.bonuses;
   }
   await sb.from('pollas').upsert(payload, { onConflict: 'user_id' });
@@ -1447,7 +1471,7 @@ async function loadDraft() {
   try {
     const raw = localStorage.getItem(LS_DRAFT);
     if (raw) STATE = { ...STATE, ...JSON.parse(raw) };
-  } catch (_) {}
+  } catch (_) { }
 
   if (!CURRENT_USER) return;
 
@@ -1458,12 +1482,12 @@ async function loadDraft() {
     .single();
 
   if (data) {
-    STATE.scores     = data.scores  || {};
-    STATE.bracket    = data.bracket || {};
-    STATE.bonuses    = data.bonuses || {};
-    STATE.player     = CURRENT_USER.name;
+    STATE.scores = data.scores || {};
+    STATE.bracket = data.bracket || {};
+    STATE.bonuses = data.bonuses || {};
+    STATE.player = CURRENT_USER.name;
     IS_GROUPS_LOCKED = data.is_groups_locked || false;
-    try { localStorage.setItem(LS_DRAFT, JSON.stringify(STATE)); } catch (_) {}
+    try { localStorage.setItem(LS_DRAFT, JSON.stringify(STATE)); } catch (_) { }
   }
 }
 
@@ -1475,15 +1499,15 @@ function initAdminPanel() {
 
   document.getElementById('create-user-form')?.addEventListener('submit', async e => {
     e.preventDefault();
-    const name     = document.getElementById('new-user-name').value.trim();
-    const email    = document.getElementById('new-user-email').value.trim();
+    const name = document.getElementById('new-user-name').value.trim();
+    const email = document.getElementById('new-user-email').value.trim();
     const password = document.getElementById('new-user-password').value;
-    const msg      = document.getElementById('create-user-msg');
-    const btn      = document.getElementById('btn-create-user');
+    const msg = document.getElementById('create-user-msg');
+    const btn = document.getElementById('btn-create-user');
 
-    btn.disabled    = true;
+    btn.disabled = true;
     msg.textContent = 'Creando usuario…';
-    msg.className   = 'admin-msg';
+    msg.className = 'admin-msg';
 
     try {
       const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
@@ -1499,33 +1523,33 @@ function initAdminPanel() {
       if (!res.ok) throw new Error(json.error_description || json.msg || json.message || 'Error desconocido');
 
       msg.textContent = `Usuario "${name}" creado. Ya puede iniciar sesión.`;
-      msg.className   = 'admin-msg success';
+      msg.className = 'admin-msg success';
       e.target.reset();
     } catch (err) {
       msg.textContent = 'Error: ' + err.message;
-      msg.className   = 'admin-msg error';
+      msg.className = 'admin-msg error';
     }
 
     btn.disabled = false;
   });
 
   document.getElementById('btn-save-results')?.addEventListener('click', async () => {
-    const ta  = document.getElementById('official-results-json');
+    const ta = document.getElementById('official-results-json');
     const msg = document.getElementById('save-results-msg');
     try {
       const parsed = JSON.parse(ta.value);
       const { error } = await sb.from('official_results').upsert({
-        id:         1,
-        scores:     parsed.scores  || {},
-        bracket:    parsed.bracket || {},
-        bonuses:    parsed.bonuses || {},
+        id: 1,
+        scores: parsed.scores || {},
+        bracket: parsed.bracket || {},
+        bonuses: parsed.bonuses || {},
         updated_at: new Date().toISOString(),
       });
       msg.textContent = error ? 'Error: ' + error.message : 'Resultados guardados correctamente.';
-      msg.className   = 'admin-msg ' + (error ? 'error' : 'success');
+      msg.className = 'admin-msg ' + (error ? 'error' : 'success');
     } catch (_) {
       msg.textContent = 'JSON inválido. Revisa el formato.';
-      msg.className   = 'admin-msg error';
+      msg.className = 'admin-msg error';
     }
   });
 }
@@ -1573,13 +1597,13 @@ function initInnerTabsVer() {
    MÚSICA — YouTube IFrame API (segmento 0:10 – 0:42 en loop)
 ================================================================ */
 const MUSIC_VIDEO_ID = 'fcnDmrtj6Sk';
-const MUSIC_START    = 10;
-const MUSIC_END      = 42;
+const MUSIC_START = 11;
+const MUSIC_END = 52;
 
-let _ytPlayer   = null;
-let _musicOn    = false;
-let _ytReady    = false;
-let _loopTimer  = null;
+let _ytPlayer = null;
+let _musicOn = false;
+let _ytReady = false;
+let _unmutedOnce = false;
 
 // Llamado automáticamente por la YouTube IFrame API cuando carga
 window.onYouTubeIframeAPIReady = function () {
@@ -1587,14 +1611,19 @@ window.onYouTubeIframeAPIReady = function () {
     height: '1', width: '1',
     videoId: MUSIC_VIDEO_ID,
     playerVars: {
-      autoplay: 0, controls: 0, disablekb: 1,
+      autoplay: 1, mute: 1, controls: 0, disablekb: 1,
       fs: 0, modestbranding: 1, rel: 0,
       start: MUSIC_START, end: MUSIC_END,
     },
     events: {
-      onReady: () => { _ytReady = true; },
+      onReady: (e) => {
+        _ytReady = true;
+        _musicOn = true;
+        e.target.mute();
+        e.target.playVideo();
+      },
       onStateChange: (e) => {
-        // Cuando llega al final (ENDED=0) vuelve al segundo 10
+        // Loop: cuando termina el segmento, vuelve al segundo 10
         if (e.data === YT.PlayerState.ENDED && _musicOn) {
           _ytPlayer.seekTo(MUSIC_START, true);
           _ytPlayer.playVideo();
@@ -1604,22 +1633,44 @@ window.onYouTubeIframeAPIReady = function () {
   });
 };
 
+// Al primer clic en cualquier parte de la página → desmutear
+function _handleFirstInteraction() {
+  if (_unmutedOnce) return;
+  _unmutedOnce = true;
+  document.removeEventListener('click', _handleFirstInteraction);
+  if (_ytReady && _musicOn) {
+    _ytPlayer.unMute();
+    _setMusicIcon(true);
+  }
+}
+
+function _setMusicIcon(on) {
+  const btn = document.getElementById('btn-music');
+  if (!btn) return;
+  btn.querySelector('.music-off').classList.toggle('hidden', on);
+  btn.querySelector('.music-on').classList.toggle('hidden', !on);
+  btn.title = on ? 'Silenciar música' : 'Activar música';
+}
+
 function initMusicBtn() {
-  const btn     = document.getElementById('btn-music');
-  const iconOff = btn.querySelector('.music-off');
-  const iconOn  = btn.querySelector('.music-on');
+  document.addEventListener('click', _handleFirstInteraction);
 
-  btn.addEventListener('click', () => {
-    _musicOn = !_musicOn;
-    iconOff.classList.toggle('hidden',  _musicOn);
-    iconOn.classList.toggle('hidden',  !_musicOn);
-    btn.title = _musicOn ? 'Silenciar música' : 'Activar música';
-
+  const btn = document.getElementById('btn-music');
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation(); // no contar este clic como "primera interacción" dos veces
     if (!_ytReady) return;
+
+    _musicOn = !_musicOn;
+    _setMusicIcon(_musicOn && _unmutedOnce);
+
     if (_musicOn) {
+      _ytPlayer.unMute();
       _ytPlayer.seekTo(MUSIC_START, true);
       _ytPlayer.playVideo();
+      _unmutedOnce = true;
+      document.removeEventListener('click', _handleFirstInteraction);
     } else {
+      _ytPlayer.mute();
       _ytPlayer.pauseVideo();
     }
   });
