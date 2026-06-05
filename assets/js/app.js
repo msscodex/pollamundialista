@@ -270,6 +270,7 @@ async function initApp() {
   initInnerTabsVer();
   initPollaControls();
   initThirdPlace();
+  initTeamPickers();   // reemplaza inputs de equipo con pickers antes de initBonusInputs
   initBonusInputs();
   initAdminPanel();
 
@@ -1021,12 +1022,185 @@ function onThirdInput(e) {
 }
 
 /* ================================================================
+   TEAM PICKER — bonos con selección de país + bandera
+================================================================ */
+// Bonos que usan selector de equipo (todos los países)
+const TEAM_PICKER_KEYS   = new Set(['campeon','subcampeon','tercero','cuarto','vallaMin','vallaMax','masPuntosGrupos','menosPuntosGrupos']);
+// Bonos con solo México o Sudáfrica
+const INAUG_PICKER_KEYS  = new Set(['primerGolInaugural']);
+// Bonos que usan selector de jugador colombiano
+const PLAYER_PICKER_KEYS = new Set(['colPrimerGolUzb','colPrimerAmarillaUzb']);
+
+const INAUGURAL_TEAMS = [
+  { code: 'mx', n: 'México'    },
+  { code: 'za', n: 'Sudáfrica' },
+];
+
+// ⚠️ Actualizar con la nómina oficial convocada al Mundial 2026
+const COLOMBIA_SQUAD = [
+  'Álvaro Montero','Camilo Vargas','Kevin Mier',
+  'Andrés Mora','Carlos Cuesta','Daniel Muñoz','Dávinson Sánchez',
+  'Johan Mojica','Jhon Lucumí','Nicolás Muñoz','Yerry Mina',
+  'James Rodríguez','Jefferson Lerma','Jhon Arias','Kevin Castaño',
+  'Mateus Uribe','Richard Ríos','Wilmar Barrios',
+  'Carlos Bacca','Cucho Hernández','Falcao García','Jhon Córdoba',
+  'John Jader Durán','Luis Díaz','Miguel Borja','Rafael Santos Borré',
+].sort((a, b) => a.localeCompare(b, 'es'));
+
+function _allTeamsSorted() {
+  return Object.values(GROUPS).flatMap(g => g.teams)
+    .sort((a, b) => a.n.localeCompare(b.n, 'es'));
+}
+
+function _setTeamPickerValue(picker, name, teams) {
+  const team   = teams.find(t => t.n === name);
+  if (!team) return;
+  const nameEl = picker.querySelector('.tp-name');
+  const flagEl = picker.querySelector('.tp-flag');
+  if (nameEl) { nameEl.textContent = name; nameEl.classList.remove('tp-placeholder'); }
+  if (flagEl) flagEl.innerHTML = `<span class="fi fi-${team.code}"></span>`;
+}
+
+function _setPlayerPickerValue(picker, name) {
+  const nameEl = picker.querySelector('.tp-name');
+  if (nameEl) { nameEl.textContent = name; nameEl.classList.remove('tp-placeholder'); }
+}
+
+function initTeamPickers() {
+  const allTeams = _allTeamsSorted();
+  TEAM_PICKER_KEYS.forEach(key  => _buildTeamPicker(key, allTeams));
+  INAUG_PICKER_KEYS.forEach(key => _buildTeamPicker(key, INAUGURAL_TEAMS));
+  PLAYER_PICKER_KEYS.forEach(key => _buildPlayerPicker(key));
+}
+
+function _buildTeamPicker(key, teams) {
+  const inp = document.querySelector(`input[data-bonus="${key}"]`);
+  if (!inp) return;
+  const picker = document.createElement('div');
+  picker.className = 'team-picker';
+  picker.dataset.bonus = key;
+  picker.innerHTML = `
+    <div class="team-picker-trigger">
+      <span class="tp-flag"></span>
+      <span class="tp-name tp-placeholder">${inp.placeholder}</span>
+      <span class="tp-arrow">▾</span>
+    </div>
+    <div class="team-picker-dropdown hidden">
+      <input class="tp-search" type="text" placeholder="Buscar equipo…" autocomplete="off">
+      <div class="tp-list"></div>
+    </div>`;
+  inp.replaceWith(picker);
+  const val = STATE.bonuses[key];
+  if (val) _setTeamPickerValue(picker, val, teams);
+  _wireTeamPicker(picker, teams, key);
+}
+
+function _buildPlayerPicker(key) {
+  const inp = document.querySelector(`input[data-bonus="${key}"]`);
+  if (!inp) return;
+  const picker = document.createElement('div');
+  picker.className = 'team-picker';
+  picker.dataset.bonus = key;
+  picker.innerHTML = `
+    <div class="team-picker-trigger">
+      <span class="tp-name tp-placeholder">${inp.placeholder}</span>
+      <span class="tp-arrow">▾</span>
+    </div>
+    <div class="team-picker-dropdown hidden">
+      <input class="tp-search" type="text" placeholder="Buscar jugador…" autocomplete="off">
+      <div class="tp-list"></div>
+    </div>`;
+  inp.replaceWith(picker);
+  const val = STATE.bonuses[key];
+  if (val) _setPlayerPickerValue(picker, val);
+  _wirePlayerPicker(picker, COLOMBIA_SQUAD, key);
+}
+
+function _wirePicker(picker, renderFn) {
+  const trigger  = picker.querySelector('.team-picker-trigger');
+  const dropdown = picker.querySelector('.team-picker-dropdown');
+  const search   = picker.querySelector('.tp-search');
+
+  trigger.addEventListener('click', e => {
+    e.stopPropagation();
+    if (IS_GROUPS_LOCKED) return;
+    const isOpen = !dropdown.classList.contains('hidden');
+    document.querySelectorAll('.team-picker-dropdown').forEach(d => d.classList.add('hidden'));
+    document.querySelectorAll('.team-picker').forEach(p => p.classList.remove('open'));
+    if (!isOpen) {
+      dropdown.classList.remove('hidden');
+      picker.classList.add('open');
+      search.value = '';
+      renderFn('');
+      search.focus();
+    }
+  });
+  search.addEventListener('input',  () => renderFn(search.value));
+  search.addEventListener('click',  e  => e.stopPropagation());
+  document.addEventListener('click', () => {
+    dropdown.classList.add('hidden');
+    picker.classList.remove('open');
+  });
+}
+
+function _wireTeamPicker(picker, teams, bonusKey) {
+  const list = picker.querySelector('.tp-list');
+  const renderList = (filter = '') => {
+    const filtered = filter
+      ? teams.filter(t => t.n.toLowerCase().includes(filter.toLowerCase()))
+      : teams;
+    list.innerHTML = filtered.map(t =>
+      `<div class="tp-option" data-name="${t.n}" data-code="${t.code}">
+         <span class="fi fi-${t.code}"></span> ${t.n}
+       </div>`
+    ).join('');
+    list.querySelectorAll('.tp-option').forEach(opt =>
+      opt.addEventListener('click', () => {
+        if (IS_GROUPS_LOCKED) return;
+        _setTeamPickerValue(picker, opt.dataset.name, teams);
+        picker.querySelector('.team-picker-dropdown').classList.add('hidden');
+        picker.classList.remove('open');
+        STATE.bonuses[bonusKey] = opt.dataset.name;
+        saveDraft();
+      })
+    );
+  };
+  _wirePicker(picker, renderList);
+  renderList();
+}
+
+function _wirePlayerPicker(picker, players, bonusKey) {
+  const list = picker.querySelector('.tp-list');
+  const renderList = (filter = '') => {
+    const filtered = filter
+      ? players.filter(p => p.toLowerCase().includes(filter.toLowerCase()))
+      : players;
+    list.innerHTML = filtered.map(p =>
+      `<div class="tp-option" data-name="${p}">🇨🇴 ${p}</div>`
+    ).join('');
+    list.querySelectorAll('.tp-option').forEach(opt =>
+      opt.addEventListener('click', () => {
+        if (IS_GROUPS_LOCKED) return;
+        _setPlayerPickerValue(picker, opt.dataset.name);
+        picker.querySelector('.team-picker-dropdown').classList.add('hidden');
+        picker.classList.remove('open');
+        STATE.bonuses[bonusKey] = opt.dataset.name;
+        saveDraft();
+      })
+    );
+  };
+  _wirePicker(picker, renderList);
+  renderList();
+}
+
+/* ================================================================
    BONOS
 ================================================================ */
 function initBonusInputs() {
-  document.querySelectorAll('[data-bonus]').forEach(inp => {
+  // Solo inputs de texto (los team-pickers son divs manejados por initTeamPickers)
+  document.querySelectorAll('input[data-bonus]').forEach(inp => {
     inp.addEventListener('input', e => {
-      if (IS_GROUPS_LOCKED) return; // triple capa de seguridad
+      if (IS_GROUPS_LOCKED) return;
       STATE.bonuses[e.target.dataset.bonus] = e.target.value;
       saveDraft();
     });
@@ -1034,8 +1208,22 @@ function initBonusInputs() {
 }
 
 function loadBonusInputs() {
-  document.querySelectorAll('[data-bonus]').forEach(inp => {
+  // Inputs de texto (si aún no han sido reemplazados por pickers)
+  document.querySelectorAll('input[data-bonus]').forEach(inp => {
     inp.value = STATE.bonuses[inp.dataset.bonus] || '';
+  });
+  // Team pickers (equipos: todos los países + solo inaugurales)
+  const allTeams = Object.values(GROUPS).flatMap(g => g.teams).concat(INAUGURAL_TEAMS);
+  document.querySelectorAll('.team-picker[data-bonus]').forEach(picker => {
+    const key = picker.dataset.bonus;
+    const val = STATE.bonuses[key];
+    if (!val) return;
+    if (PLAYER_PICKER_KEYS.has(key)) {
+      _setPlayerPickerValue(picker, val);
+    } else {
+      const teams = INAUG_PICKER_KEYS.has(key) ? INAUGURAL_TEAMS : allTeams;
+      _setTeamPickerValue(picker, val, teams);
+    }
   });
 }
 
@@ -1096,6 +1284,25 @@ function validateForLock() {
   return { groupErrors, bonusErrors };
 }
 
+function showConfirmModal() {
+  return new Promise(resolve => {
+    const modal = document.getElementById('lock-confirm-modal');
+    modal.classList.remove('hidden');
+
+    const onConfirm = () => { cleanup(); resolve(true); };
+    const onCancel  = () => { cleanup(); resolve(false); };
+
+    function cleanup() {
+      modal.classList.add('hidden');
+      document.getElementById('btn-lock-confirm').removeEventListener('click', onConfirm);
+      document.getElementById('btn-lock-cancel').removeEventListener('click', onCancel);
+    }
+
+    document.getElementById('btn-lock-confirm').addEventListener('click', onConfirm);
+    document.getElementById('btn-lock-cancel').addEventListener('click', onCancel);
+  });
+}
+
 async function lockPolla() {
   const { groupErrors, bonusErrors } = validateForLock();
   const errEl = document.getElementById('polla-lock-errors');
@@ -1117,11 +1324,8 @@ async function lockPolla() {
   }
   errEl.classList.add('hidden');
 
-  if (!confirm(
-    '¿Seguro que quieres enviar tu polla?\n\n' +
-    'Grupos y bonos quedarán bloqueados para siempre.\n' +
-    'Las eliminatorias siguen abiertas.'
-  )) return;
+  const confirmed = await showConfirmModal();
+  if (!confirmed) return;
 
   const btn = document.getElementById('btn-lock-polla');
   btn.disabled    = true;
@@ -1139,7 +1343,8 @@ async function lockPolla() {
   if (error) {
     btn.disabled    = false;
     btn.textContent = '🔒 Enviar y cerrar polla';
-    alert('Error al guardar: ' + error.message);
+    errEl.innerHTML = `<strong>Error al guardar:</strong> ${error.message}`;
+    errEl.classList.remove('hidden');
     return;
   }
 
@@ -1160,13 +1365,24 @@ function applyLockedState() {
     document.querySelectorAll('#inner-grupos .m-score').forEach(inp => {
       inp.disabled = true;
     });
-    document.querySelectorAll('#inner-bonos [data-bonus]').forEach(inp => {
+    document.querySelectorAll('input[data-bonus]').forEach(inp => {
       inp.disabled = true;
+    });
+    document.querySelectorAll('.team-picker .team-picker-trigger').forEach(t => {
+      t.style.opacity = '0.55';
+      t.style.cursor  = 'not-allowed';
+      t.style.pointerEvents = 'none';
     });
   } else {
     banner?.classList.add('hidden');
     actions?.classList.remove('hidden');
     clearBtn?.classList.remove('hidden');
+
+    document.querySelectorAll('.team-picker .team-picker-trigger').forEach(t => {
+      t.style.opacity = '';
+      t.style.cursor  = '';
+      t.style.pointerEvents = '';
+    });
   }
 }
 
