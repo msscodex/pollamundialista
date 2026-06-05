@@ -61,8 +61,8 @@
       </div>
       <div class="header-user-bar">
         <button class="btn-music" id="btn-music" title="Activar música" aria-label="Toggle música">
-          <span class="music-icon music-off">🔇</span>
-          <span class="music-icon music-on hidden">🔊</span>
+          <span class="music-icon music-off"><i class="fa-solid fa-volume-xmark"></i></span>
+          <span class="music-icon music-on hidden"><i class="fa-solid fa-volume-high"></i></span>
         </button>
         <span class="header-user-name hidden" id="header-user-name"></span>
         <button class="btn btn-outline btn-sm hidden" id="btn-logout">Cerrar sesión</button>
@@ -609,8 +609,8 @@
 
           <!-- ELIMINATORIAS ADMIN -->
           <div class="inner-section hidden" id="inner-bracket-admin">
-            <div class="bracket-wrapper">
-              <div class="bracket" id="admin-bracket-render"></div>
+            <div class="bracket-wrapper-admin">
+              <div class="admin-bracket-container" id="admin-bracket-render"></div>
               <div class="champion-col">
                 <div class="champion-box">
                   <span class="trophy-icon"><i class="fa-solid fa-trophy"></i></span>
@@ -625,12 +625,32 @@
               <p class="third-sub">19 Julio 2026 · Miami Gardens, Florida</p>
               <div class="bracket-match" id="admin-third-match">
                 <div class="bm-row">
-                  <input type="text" class="bm-team" data-admin-key="3rd-t0" placeholder="Semifinal 1 perdedor" autocomplete="off">
+                  <div class="team-picker admin-bracket-picker" data-admin-key="3rd-t0">
+                    <div class="team-picker-trigger">
+                      <span class="tp-flag"></span>
+                      <span class="tp-name tp-placeholder">Semifinal 1 perdedor</span>
+                      <span class="tp-arrow">▾</span>
+                    </div>
+                    <div class="team-picker-dropdown hidden">
+                      <input class="tp-search" type="text" placeholder="Buscar equipo…" autocomplete="off">
+                      <div class="tp-list"></div>
+                    </div>
+                  </div>
                   <input type="number" class="bm-score" data-admin-key="3rd-s0" min="0" max="99" placeholder="0">
                 </div>
                 <div class="bm-divider"></div>
                 <div class="bm-row">
-                  <input type="text" class="bm-team" data-admin-key="3rd-t1" placeholder="Semifinal 2 perdedor" autocomplete="off">
+                  <div class="team-picker admin-bracket-picker" data-admin-key="3rd-t1">
+                    <div class="team-picker-trigger">
+                      <span class="tp-flag"></span>
+                      <span class="tp-name tp-placeholder">Semifinal 2 perdedor</span>
+                      <span class="tp-arrow">▾</span>
+                    </div>
+                    <div class="team-picker-dropdown hidden">
+                      <input class="tp-search" type="text" placeholder="Buscar equipo…" autocomplete="off">
+                      <div class="tp-list"></div>
+                    </div>
+                  </div>
                   <input type="number" class="bm-score" data-admin-key="3rd-s1" min="0" max="99" placeholder="0">
                 </div>
               </div>

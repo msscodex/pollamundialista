@@ -2275,19 +2275,87 @@ function recalcAdminGroup(letter) {
 }
 
 /* ---------- ELIMINATORIAS ---------- */
+function _wireAdminBracketPicker(picker, teams, key) {
+  const trigger = picker.querySelector('.team-picker-trigger');
+  const dropdown = picker.querySelector('.team-picker-dropdown');
+  const search = picker.querySelector('.tp-search');
+  const list = picker.querySelector('.tp-list');
+
+  const renderList = (filter = '') => {
+    const filtered = filter
+      ? teams.filter(t => t.n.toLowerCase().includes(filter.toLowerCase()))
+      : teams;
+    list.innerHTML = filtered.map(t =>
+      `<div class="tp-option" data-name="${t.n}" data-code="${t.code}">
+         <span class="fi fi-${t.code}"></span> ${t.n}
+       </div>`
+    ).join('');
+    list.querySelectorAll('.tp-option').forEach(opt =>
+      opt.addEventListener('click', () => {
+        _setTeamPickerValue(picker, opt.dataset.name, teams);
+        dropdown.classList.add('hidden');
+        picker.classList.remove('open');
+        
+        // Guardar el valor en el estado temporal
+        ADMIN_RESULTS.bracket[key] = opt.dataset.name;
+        highlightAdminWinnerRows();
+        updateAdminChampion();
+      })
+    );
+  };
+
+  trigger.addEventListener('click', e => {
+    e.stopPropagation();
+    const isOpen = !dropdown.classList.contains('hidden');
+    document.querySelectorAll('.team-picker-dropdown').forEach(d => d.classList.add('hidden'));
+    document.querySelectorAll('.team-picker').forEach(p => p.classList.remove('open'));
+    if (!isOpen) {
+      dropdown.classList.remove('hidden');
+      picker.classList.add('open');
+      search.value = '';
+      renderList('');
+      search.focus();
+    }
+  });
+
+  search.addEventListener('input', () => renderList(search.value));
+  search.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', () => {
+    dropdown.classList.add('hidden');
+    picker.classList.remove('open');
+  });
+}
+
 function renderAdminBracket() {
   const container = document.getElementById('admin-bracket-render');
   if (!container) return;
   container.innerHTML = RONDAS.map(ronda => buildAdminRoundHTML(ronda)).join('');
-  container.querySelectorAll('.bm-team, .bm-score').forEach(inp => {
+  
+  const allTeams = _allTeamsSorted();
+
+  // Wire all admin bracket pickers (including rounds and third place)
+  document.querySelectorAll('.admin-bracket-picker').forEach(picker => {
+    const key = picker.dataset.adminKey;
+    const val = ADMIN_RESULTS.bracket[key] || '';
+    if (val) _setTeamPickerValue(picker, val, allTeams);
+    _wireAdminBracketPicker(picker, allTeams, key);
+  });
+
+  // Wire score inputs inside container
+  container.querySelectorAll('.bm-score').forEach(inp => {
     inp.addEventListener('input', onAdminBracketInput);
   });
-  document.getElementById('admin-third-match')
-    ?.querySelectorAll('[data-admin-key]').forEach(inp => {
+
+  // Wire score inputs for third place
+  const thirdMatch = document.getElementById('admin-third-match');
+  if (thirdMatch) {
+    thirdMatch.querySelectorAll('input[type="number"][data-admin-key]').forEach(inp => {
       const key = inp.dataset.adminKey;
-      inp.value = ADMIN_RESULTS.bracket[key] || '';
+      inp.value = ADMIN_RESULTS.bracket[key] !== undefined ? ADMIN_RESULTS.bracket[key] : '';
       inp.addEventListener('input', onAdminBracketInput);
     });
+  }
+  
   updateAdminChampion();
 }
 
@@ -2301,14 +2369,41 @@ function buildAdminRoundHTML(ronda) {
     const s0 = parseFloat(ADMIN_RESULTS.bracket[ks0]);
     const s1 = parseFloat(ADMIN_RESULTS.bracket[ks1]);
     const winner = (!isNaN(s0) && !isNaN(s1)) ? (s0 > s1 ? 't0' : s1 > s0 ? 't1' : null) : null;
+    
+    const picker0 = `
+<div class="team-picker admin-bracket-picker" data-admin-key="${kt0}">
+  <div class="team-picker-trigger">
+    <span class="tp-flag"></span>
+    <span class="tp-name tp-placeholder">${ph0}</span>
+    <span class="tp-arrow">▾</span>
+  </div>
+  <div class="team-picker-dropdown hidden">
+    <input class="tp-search" type="text" placeholder="Buscar equipo…" autocomplete="off">
+    <div class="tp-list"></div>
+  </div>
+</div>`;
+
+    const picker1 = `
+<div class="team-picker admin-bracket-picker" data-admin-key="${kt1}">
+  <div class="team-picker-trigger">
+    <span class="tp-flag"></span>
+    <span class="tp-name tp-placeholder">${ph1}</span>
+    <span class="tp-arrow">▾</span>
+  </div>
+  <div class="team-picker-dropdown hidden">
+    <input class="tp-search" type="text" placeholder="Buscar equipo…" autocomplete="off">
+    <div class="tp-list"></div>
+  </div>
+</div>`;
+    
     return `
 <div class="bracket-match${isFin ? ' is-final' : ''}">
   <div class="bm-row${winner === 't0' ? ' winner' : ''}">
-    <input type="text"   class="bm-team"  data-admin-key="${kt0}" value="${ADMIN_RESULTS.bracket[kt0] || ''}" placeholder="${ph0}" autocomplete="off">
+    ${picker0}
     <input type="number" class="bm-score" data-admin-key="${ks0}" value="${ADMIN_RESULTS.bracket[ks0] !== undefined ? ADMIN_RESULTS.bracket[ks0] : ''}" min="0" max="99" placeholder="0">
   </div>
   <div class="bm-row${winner === 't1' ? ' winner' : ''}">
-    <input type="text"   class="bm-team"  data-admin-key="${kt1}" value="${ADMIN_RESULTS.bracket[kt1] || ''}" placeholder="${ph1}" autocomplete="off">
+    ${picker1}
     <input type="number" class="bm-score" data-admin-key="${ks1}" value="${ADMIN_RESULTS.bracket[ks1] !== undefined ? ADMIN_RESULTS.bracket[ks1] : ''}" min="0" max="99" placeholder="0">
   </div>
 </div>`;

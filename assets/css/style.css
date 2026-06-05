@@ -1297,6 +1297,7 @@ footer {
   transition: transform 0.15s, background 0.15s;
   display: flex;
   align-items: center;
+  color: var(--gold);
 }
 .btn-music:hover { background: rgba(255,255,255,.1); transform: scale(1.15); }
 .btn-music:active { transform: scale(0.95); }
@@ -2210,4 +2211,158 @@ h3 .fa-solid, h3 .fa-regular,
   font-size: 8px;
   vertical-align: middle;
   animation: live-pulse 1.4s ease-in-out infinite;
+}
+
+/* ================================================================
+   ADMIN BRACKET RESPONSIVE VERTICAL STACK & SELECT
+================================================================ */
+.bracket-wrapper-admin {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 16px 0;
+}
+
+.admin-bracket-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+}
+
+.admin-bracket-container .bracket-round {
+  display: flex;
+  flex-direction: column;
+  min-width: 100%;
+  padding: 16px;
+  background: var(--card-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.admin-bracket-container .bracket-round-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--gold);
+  border-bottom: 2px solid var(--gold);
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.admin-bracket-container .bracket-matches-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  justify-content: start;
+}
+
+/* Ensure admin picker fields match bracket aesthetic and prevent clipping */
+.admin-bracket-container .bracket-match {
+  overflow: visible !important;
+}
+
+.bm-row .team-picker {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+.bm-row .team-picker-trigger {
+  min-height: 28px;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  gap: 6px;
+  display: flex;
+  align-items: center;
+  user-select: none;
+  cursor: pointer;
+}
+.bm-row .team-picker-trigger:hover,
+.bm-row .team-picker.open .team-picker-trigger {
+  background: rgba(255, 255, 255, 0.04);
+}
+.bm-row .tp-flag {
+  display: flex;
+  align-items: center;
+  width: 18px;
+  flex-shrink: 0;
+}
+.bm-row .tp-flag .fi {
+  width: 18px;
+  height: 13px;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.35);
+}
+.bm-row .tp-name {
+  flex: 1;
+  font-size: 11px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+.bm-row .tp-name.tp-placeholder {
+  color: var(--muted);
+  font-size: 10px;
+}
+.bm-row .tp-arrow {
+  color: var(--muted);
+  font-size: 8px;
+  margin-left: 2px;
+  flex-shrink: 0;
+}
+.bm-row .team-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  width: 220px;
+  z-index: 200;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.bm-row .tp-search {
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--card-alt);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-size: 11px;
+  outline: none;
+}
+.bm-row .tp-list {
+  max-height: 160px;
+  overflow-y: auto;
+}
+.bm-row .tp-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: background var(--transition);
+  color: var(--text);
+  text-align: left;
+}
+.bm-row .tp-option:hover {
+  background: var(--card-alt);
+}
+.bm-row .tp-option .fi {
+  font-size: 13px;
+}
+
+.bracket-wrapper-admin .champion-col {
+  max-width: 320px;
+  margin: 24px auto 0;
+  width: 100%;
 }
