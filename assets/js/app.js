@@ -2061,13 +2061,13 @@ function initHamburger() {
     nav.classList.add('nav-open');
     if (overlay) overlay.classList.add('active');
     btn.setAttribute('aria-expanded', 'true');
-    btn.textContent = '✕';
+    btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
   }
   function closeNav() {
     nav.classList.remove('nav-open');
     if (overlay) overlay.classList.remove('active');
     btn.setAttribute('aria-expanded', 'false');
-    btn.textContent = '☰';
+    btn.innerHTML = '<i class="fa-solid fa-bars"></i>';
   }
 
   btn.addEventListener('click', e => {
