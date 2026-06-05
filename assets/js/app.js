@@ -245,6 +245,14 @@ const BONUS_LABELS = {
   colPrimerAmarillaUzb: 'Col. 1° amarilla vs Uzb.'
 };
 
+const BONUS_GROUPS = [
+  { label: '🏅 Posiciones finales',  keys: ['campeon', 'subcampeon', 'tercero', 'cuarto'] },
+  { label: '⭐ Premios individuales', keys: ['goleador', 'mejorJugador', 'mejorArquero'] },
+  { label: '📊 Primera ronda',       keys: ['vallaMin', 'vallaMax', 'masPuntosGrupos', 'menosPuntosGrupos'] },
+  { label: '🇨🇴 Colombia Especiales', keys: ['primerGolInaugural', 'colPrimerGolUzb', 'colPrimerAmarillaUzb'] }
+];
+const MANUAL_BONUS_KEYS = new Set(['goleador', 'mejorJugador', 'mejorArquero']);
+
 const ROUND_KEY = { r32: 'r32', r16: 'r16', qf: 'qf', sf: 'sf', fin: 'fin', third: 'third' };
 
 /* ----------------------------------------------------------------
@@ -252,6 +260,9 @@ const ROUND_KEY = { r32: 'r32', r16: 'r16', qf: 'qf', sf: 'sf', fin: 'fin', thir
 ---------------------------------------------------------------- */
 let STATE = { player: '', scores: {}, bracket: {}, bonuses: {} };
 const LS_DRAFT = 'mundial2026_draft';
+
+let _verPlayerData = null;
+let _verResults = null;
 
 /* ================================================================
    INIT
@@ -451,7 +462,7 @@ async function loadAndRenderHome() {
 async function fetchData() {
   try {
     const [pollasRes, resultsRes] = await Promise.all([
-      sb.from('pollas').select('scores, bracket, bonuses, profiles(name, is_admin)'),
+      sb.from('pollas').select('scores, bracket, bonuses, manual_bonus_pts, profiles(name, is_admin)'),
       sb.from('official_results').select('*').eq('id', 1).single()
     ]);
 
@@ -462,6 +473,7 @@ async function fetchData() {
         scores: p.scores || {},
         bracket: p.bracket || {},
         bonuses: p.bonuses || {},
+        manual_bonus_pts: p.manual_bonus_pts || {},
       }));
 
     const r = resultsRes.data;
@@ -638,10 +650,11 @@ function calcScore(player, results) {
     else if (Math.sign(p0 - p1) === Math.sign(r0 - r1)) result += ROUND_PTS.third.result;
   }
 
-  const pb = player.bonuses || {}, rb = results.bonuses || {};
+  const pb = player.bonuses || {}, rb = results.bonuses || {}, mb = player.manual_bonus_pts || {};
   Object.keys(BONUS_PTS).forEach(key => {
-    if (rb[key] && pb[key] && rb[key].trim().toLowerCase() === pb[key].trim().toLowerCase())
-      bonusTotal += BONUS_PTS[key];
+    const textMatch = rb[key] && pb[key] && rb[key].trim().toLowerCase() === pb[key].trim().toLowerCase();
+    const manualOverride = mb[key] === true;
+    if (textMatch || manualOverride) bonusTotal += BONUS_PTS[key];
   });
 
   return { total: exact + result + bonusTotal, exact, result, bonuses: bonusTotal };
@@ -665,26 +678,35 @@ async function loadPlayerView(nombre) {
   }
 
   const [pollaRes, resultsRes] = await Promise.all([
-    sb.from('pollas').select('scores, bracket, bonuses').eq('user_id', profile.id).single(),
+    sb.from('pollas').select('scores, bracket, bonuses, manual_bonus_pts').eq('user_id', profile.id).single(),
     sb.from('official_results').select('*').eq('id', 1).single()
   ]);
 
-  const playerData = pollaRes.data || { scores: {}, bracket: {}, bonuses: {} };
-  const results = resultsRes.data || { scores: {}, bracket: {}, bonuses: {} };
-  const score = calcScore(playerData, results);
+  _verPlayerData = {
+    ...(pollaRes.data || { scores: {}, bracket: {}, bonuses: {}, manual_bonus_pts: {} }),
+    userId: profile.id,
+  };
+  _verResults = resultsRes.data || { scores: {}, bracket: {}, bonuses: {} };
 
+  const score = calcScore(_verPlayerData, _verResults);
   document.getElementById('ver-score-badge').textContent = `${score.total} pts`;
-  renderGroupsReadonly(playerData.scores || {}, 'groups-grid-ver');
-  renderBracketReadonly(playerData.bracket || {}, 'bracket-render-ver', 'champion-display-ver');
+
+  renderGroupsReadonly(_verPlayerData.scores || {}, 'groups-grid-ver');
+  renderBracketReadonly(_verPlayerData.bracket || {}, 'bracket-render-ver', 'champion-display-ver');
 
   const thirdVer = document.getElementById('third-match-ver');
   if (thirdVer) {
     thirdVer.querySelectorAll('[data-key]').forEach(inp => {
-      inp.value = playerData.bracket?.[inp.dataset.key] || '';
+      inp.value = _verPlayerData.bracket?.[inp.dataset.key] || '';
     });
   }
 
-  renderBonusesReadonly(playerData.bonuses || {}, results.bonuses || {});
+  renderBonusesReadonly(
+    _verPlayerData.bonuses || {},
+    _verResults.bonuses || {},
+    _verPlayerData.manual_bonus_pts || {},
+    profile.id
+  );
 }
 
 function renderGroupsReadonly(scores, containerId) {
@@ -770,20 +792,69 @@ function renderBracketReadonly(bracket, containerId, championId) {
   if (champEl) champEl.textContent = bracket['champion'] || ' ';
 }
 
-function renderBonusesReadonly(playerBonuses, resultBonuses) {
+function renderBonusesReadonly(playerBonuses, resultBonuses, manualBonusPts, participantUserId) {
   const grid = document.getElementById('bonuses-grid-ver');
   if (!grid) return;
-  grid.innerHTML = Object.keys(BONUS_PTS).map(key => {
-    const pVal = playerBonuses[key] || '—';
-    const rVal = resultBonuses[key] || '';
-    const hit = rVal && pVal.toLowerCase().trim() === rVal.toLowerCase().trim();
-    return `
+  const isAdmin = !!CURRENT_USER?.is_admin;
+  const mb = manualBonusPts || {};
+
+  grid.innerHTML = BONUS_GROUPS.map(group => {
+    const rows = group.keys.map(key => {
+      const pVal = playerBonuses[key] || '—';
+      const rVal = resultBonuses[key] || '';
+      const textHit = rVal && pVal !== '—' && rVal.trim().toLowerCase() === pVal.trim().toLowerCase();
+      const manualOverride = mb[key] === true;
+      const hit = textHit || manualOverride;
+      const canToggle = isAdmin && MANUAL_BONUS_KEYS.has(key) && !textHit;
+
+      return `
 <div class="bonus-readonly-row${hit ? ' bonus-hit' : ''}">
   <span class="bonus-readonly-label">${BONUS_LABELS[key]} <span class="bonus-pts">+${BONUS_PTS[key]}pts</span></span>
   <span class="bonus-readonly-val">${pVal}</span>
-  ${hit ? '<span class="bonus-check">✓</span>' : ''}
+  ${textHit ? '<span class="bonus-check">✓</span>' : ''}
+  ${canToggle ? `<button class="bonus-toggle-btn${manualOverride ? ' active' : ''}" data-key="${key}" data-active="${manualOverride}" data-user-id="${participantUserId}">${manualOverride ? '✓ Otorgado' : 'Otorgar'}</button>` : ''}
 </div>`;
+    }).join('');
+
+    return `<div class="bonus-group"><h3 class="bonus-group-title">${group.label}</h3>${rows}</div>`;
   }).join('');
+
+  if (!isAdmin) return;
+
+  grid.querySelectorAll('.bonus-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const key = btn.dataset.key;
+      const userId = btn.dataset.userId;
+      const newActive = btn.dataset.active !== 'true';
+
+      btn.disabled = true;
+      btn.textContent = '…';
+
+      await toggleManualBonus(userId, key, newActive);
+
+      if (_verPlayerData) {
+        _verPlayerData.manual_bonus_pts = { ...(_verPlayerData.manual_bonus_pts || {}), [key]: newActive };
+      }
+
+      btn.dataset.active = String(newActive);
+      btn.classList.toggle('active', newActive);
+      btn.textContent = newActive ? '✓ Otorgado' : 'Otorgar';
+      btn.disabled = false;
+      btn.closest('.bonus-readonly-row')?.classList.toggle('bonus-hit', newActive);
+
+      if (_verPlayerData && _verResults) {
+        const newScore = calcScore(_verPlayerData, _verResults);
+        const badge = document.getElementById('ver-score-badge');
+        if (badge) badge.textContent = `${newScore.total} pts`;
+      }
+    });
+  });
+}
+
+async function toggleManualBonus(userId, key, value) {
+  const { data } = await sb.from('pollas').select('manual_bonus_pts').eq('user_id', userId).single();
+  const updated = { ...(data?.manual_bonus_pts || {}), [key]: value };
+  await sb.from('pollas').update({ manual_bonus_pts: updated }).eq('user_id', userId);
 }
 
 /* ================================================================

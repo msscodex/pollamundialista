@@ -1024,6 +1024,31 @@ footer {
 .bonus-readonly-val   { font-weight: 600; color: var(--text); }
 .bonus-check { color: var(--green); font-weight: 700; font-size: 16px; margin-left: 4px; }
 
+.bonus-toggle-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: #aaa;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.bonus-toggle-btn:hover:not(:disabled) {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.bonus-toggle-btn.active {
+  background: rgba(201,168,76,0.15);
+  border-color: var(--gold);
+  color: var(--gold);
+  font-weight: 600;
+}
+.bonus-toggle-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* ================================================================
    LOGIN
 ================================================================ */
