@@ -331,7 +331,9 @@ function updateHeaderState() {
   const pollaTab = document.querySelector('.tab-btn[data-hash="#polla"]');
   if (pollaTab) {
     pollaTab.classList.toggle('hidden', !isLogged);
-    pollaTab.textContent = CURRENT_USER?.is_admin ? '👥 Participantes' : '⚽ Mi Polla';
+    pollaTab.innerHTML = CURRENT_USER?.is_admin
+      ? '<i class="fa-solid fa-users"></i> Participantes'
+      : '<i class="fa-solid fa-futbol"></i> Mi Polla';
   }
   const adminTab = document.querySelector('.tab-btn[data-hash="#admin"]');
   if (adminTab) adminTab.classList.toggle('hidden', !isLogged || !CURRENT_USER?.is_admin);
@@ -456,7 +458,10 @@ async function loadAndRenderHome() {
   const { players, results } = await fetchData();
   homeEl.classList.remove('loading');
   renderTodayMatches();
+  renderUpcomingMatches();
   renderRanking(players, results);
+  renderBonosGanados(players, results);
+  renderMatchPoints(players, results);
 }
 
 async function fetchData() {
@@ -500,9 +505,20 @@ function parseMatchDate(dateStr) {
   return { day: parseInt(day), month: MONTH_MAP[mon] || 0 };
 }
 
+function isMatchLive(dateStr, timeStr) {
+  try {
+    const { day, month } = parseMatchDate(dateStr);
+    const [h, m] = timeStr.split(':').map(Number);
+    const nowCOT = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+    const start  = new Date(2026, month - 1, day, h, m, 0);
+    const end    = new Date(start.getTime() + 110 * 60 * 1000);
+    return nowCOT >= start && nowCOT <= end;
+  } catch (_) { return false; }
+}
+
 function renderTodayMatches() {
   const today = new Date();
-  const todayDay = today.getDate();
+  const todayDay   = today.getDate();
   const todayMonth = today.getMonth() + 1;
   const todayMatches = [];
 
@@ -511,31 +527,48 @@ function renderTodayMatches() {
       const { day, month } = parseMatchDate(mi.date);
       if (day === todayDay && month === todayMonth) {
         const jornada = JORNADAS[Math.floor(matchIdx / 2)];
-        const par = jornada.pares[matchIdx % 2];
-        const teams = GROUPS[group].teams;
-        todayMatches.push({ group, matchIdx, t0: teams[par[0]], t1: teams[par[1]], time: mi.time, venue: mi.venue });
+        const par     = jornada.pares[matchIdx % 2];
+        const teams   = GROUPS[group].teams;
+        todayMatches.push({
+          group, matchIdx,
+          t0: teams[par[0]], t1: teams[par[1]],
+          time: mi.time, venue: mi.venue,
+          live: isMatchLive(mi.date, mi.time)
+        });
       }
     });
   });
 
   const section = document.getElementById('today-section');
-  const grid = document.getElementById('today-grid');
-  const label = document.getElementById('today-date-label');
+  const grid    = document.getElementById('today-grid');
+  const label   = document.getElementById('today-date-label');
 
-  if (todayMatches.length === 0) { section.classList.add('hidden'); return; }
+  if (todayMatches.length === 0) {
+    label.textContent = today.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    grid.innerHTML = '<p class="section-placeholder">No hay partidos programados para hoy.</p>';
+    section.classList.remove('hidden');
+    return;
+  }
 
   label.textContent = today.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  const anyLive = todayMatches.some(m => m.live);
+  document.getElementById('today-section').querySelector('h2').textContent =
+    anyLive ? '<i class="fa-solid fa-circle" style="color:#ff3b3b"></i> Partidos en Vivo' : '<i class="fa-solid fa-futbol"></i> Partidos de Hoy';
+
   grid.innerHTML = todayMatches.map(m => `
-<div class="today-card">
-  <div class="today-group-badge">Grupo ${m.group}</div>
+<div class="today-card${m.live ? ' today-live' : ''}">
+  <div class="today-card-top">
+    <span class="today-group-badge">Grupo ${m.group}</span>
+    ${m.live ? '<span class="live-badge"><i class="fa-solid fa-circle"></i> EN VIVO</span>' : `<span class="today-time"><i class="fa-regular fa-clock"></i> ${m.time} COT</span>`}
+  </div>
   <div class="today-teams">
     <div class="today-team">${flag(m.t0)}<span>${m.t0.n}</span></div>
-    <div class="today-vs">VS</div>
+    <div class="today-vs">${m.live ? '●' : 'VS'}</div>
     <div class="today-team">${flag(m.t1)}<span>${m.t1.n}</span></div>
   </div>
   <div class="today-info">
-    <span>⏰ ${m.time} COT</span>
-    <span>🏟 ${m.venue}</span>
+    <span><i class="fa-solid fa-location-dot"></i> ${m.venue}</span>
   </div>
 </div>`).join('');
   section.classList.remove('hidden');
@@ -578,7 +611,11 @@ function renderRanking(players, results) {
     .sort((a, b) => b.score.total - a.score.total);
 
   podiumWrap.classList.remove('hidden');
-  const MEDALS = ['🥇', '🥈', '🥉'];
+  const MEDALS = [
+    '<i class="fa-solid fa-medal" style="color:#FFD700"></i>',
+    '<i class="fa-solid fa-medal" style="color:#C0C0C0"></i>',
+    '<i class="fa-solid fa-medal" style="color:#CD7F32"></i>'
+  ];
   const podiumPositions = [1, 0, 2];
   podiumWrap.innerHTML = podiumPositions
     .filter(i => scored[i])
@@ -600,10 +637,197 @@ function renderRanking(players, results) {
   <td class="rank-pos">${idx + 1}</td>
   <td class="rank-name"><a href="#ver/${encodeURIComponent(p.name)}">${p.name}</a></td>
   <td class="rank-pts">${p.score.total}</td>
-  <td>${p.score.exact}</td>
-  <td>${p.score.result}</td>
-  <td>${p.score.bonuses}</td>
 </tr>`).join('');
+}
+
+/* ================================================================
+   PRÓXIMOS PARTIDOS
+================================================================ */
+function renderUpcomingMatches() {
+  const grid = document.getElementById('upcoming-grid');
+  if (!grid) return;
+
+  const now      = new Date();
+  const todayDay = now.getDate();
+  const todayMon = now.getMonth() + 1;
+
+  const all = [];
+
+  Object.entries(MATCH_INFO).forEach(([group, matches]) => {
+    matches.forEach((mi, matchIdx) => {
+      const { day, month } = parseMatchDate(mi.date);
+      const isToday = day === todayDay && month === todayMon;
+      const isPast  = month < todayMon || (month === todayMon && day < todayDay);
+      if (isPast || isToday) return;
+
+      const jIdx    = Math.floor(matchIdx / 2);
+      const pIdx    = matchIdx % 2;
+      const jornada = JORNADAS[jIdx];
+      const par     = jornada.pares[pIdx];
+      const teams   = GROUPS[group].teams;
+
+      all.push({ group, t0: teams[par[0]], t1: teams[par[1]], date: mi.date, time: mi.time, venue: mi.venue, month, day });
+    });
+  });
+
+  all.sort((a, b) => a.month - b.month || a.day - b.day);
+
+  // Tomar solo los 2 primeros días del calendario que tengan partidos
+  const dates = [...new Set(all.map(m => `${m.month}-${m.day}`))].slice(0, 2);
+  const upcoming = all.filter(m => dates.includes(`${m.month}-${m.day}`));
+
+  if (upcoming.length === 0) {
+    grid.innerHTML = '<p class="section-placeholder">No hay próximos partidos programados.</p>';
+    return;
+  }
+
+  let lastDate = null;
+  grid.innerHTML = upcoming.map(m => {
+    let dateHeader = '';
+    const dateKey = `${m.day}-${m.month}`;
+    if (dateKey !== lastDate) {
+      lastDate = dateKey;
+      const d = new Date(2026, m.month - 1, m.day);
+      const label = d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
+      dateHeader = `<div class="upcoming-date-header">${label}</div>`;
+    }
+    return `${dateHeader}
+<div class="upcoming-card">
+  <span class="upcoming-group">Grupo ${m.group}</span>
+  <div class="upcoming-teams">
+    <div class="upcoming-team">${flag(m.t0)}<span>${m.t0.n}</span></div>
+    <div class="upcoming-vs">VS</div>
+    <div class="upcoming-team">${flag(m.t1)}<span>${m.t1.n}</span></div>
+  </div>
+  <div class="upcoming-meta">
+    <span><i class="fa-regular fa-clock"></i> ${m.time} COT</span>
+    <span><i class="fa-solid fa-location-dot"></i> ${m.venue}</span>
+  </div>
+</div>`;
+  }).join('');
+}
+
+/* ================================================================
+   BONOS OTORGADOS
+================================================================ */
+function renderBonosGanados(players, results) {
+  const section = document.getElementById('bonos-ganados-section');
+  const grid    = document.getElementById('bonos-ganados-grid');
+  if (!section || !grid) return;
+
+  const scored = players.map(p => ({ ...p, score: calcScore(p, results) }));
+  const bonosConRespuesta = Object.keys(BONUS_PTS).filter(k => results.bonuses && results.bonuses[k] != null);
+
+  if (bonosConRespuesta.length === 0) {
+    grid.innerHTML = '<p class="section-placeholder">Los bonos se revelarán cuando el torneo avance y haya respuestas oficiales.</p>';
+    section.classList.remove('hidden');
+    return;
+  }
+
+  grid.innerHTML = bonosConRespuesta.map(key => {
+    const label   = BONUS_LABELS[key] || key;
+    const oficial = results.bonuses[key];
+    const aciertos = scored.filter(p => {
+      const pVal = (p.bonuses || {})[key];
+      if (pVal == null) return false;
+      return String(pVal).toLowerCase() === String(oficial).toLowerCase();
+    });
+
+    return `
+<div class="bgc-card">
+  <div class="bgc-label">${label}</div>
+  <div class="bgc-answer">✅ ${oficial}</div>
+  <div class="bgc-players">
+    ${aciertos.length === 0
+      ? '<span class="bgc-none">Nadie acertó</span>'
+      : aciertos.map(p => `<span class="bgc-winner"><i class="fa-solid fa-medal"></i> ${p.name}</span>`).join('')
+    }
+  </div>
+</div>`;
+  }).join('');
+
+  section.classList.remove('hidden');
+}
+
+/* ================================================================
+   PUNTOS POR PARTIDO
+================================================================ */
+function renderMatchPoints(players, results) {
+  const section = document.getElementById('match-points-section');
+  const grid    = document.getElementById('match-points-grid');
+  if (!section || !grid) return;
+
+  const scored = players.map(p => ({ ...p, score: calcScore(p, results) }));
+
+  const now      = new Date();
+  const todayDay = now.getDate();
+  const todayMon = now.getMonth() + 1;
+
+  const completedMatches = [];
+
+  JORNADAS.forEach((jornada, jIdx) => {
+    jornada.pares.forEach((_, pIdx) => {
+      const matchIdx = jIdx * 2 + pIdx;
+      Object.keys(GROUPS).forEach(group => {
+        const k0 = scoreKey(group, matchIdx, 0);
+        const k1 = scoreKey(group, matchIdx, 1);
+        if (!(k0 in results.scores) || !(k1 in results.scores)) return;
+        const mi = (MATCH_INFO[group] || [])[matchIdx];
+        if (!mi) return;
+        const { day, month } = parseMatchDate(mi.date);
+        if (day !== todayDay || month !== todayMon) return;
+        const r0 = results.scores[k0];
+        const r1 = results.scores[k1];
+        const teams = GROUPS[group].teams;
+        const par   = jornada.pares[pIdx];
+
+        const earners = [];
+        scored.forEach(p => {
+          if (!(k0 in (p.scores || {})) || !(k1 in (p.scores || {}))) return;
+          const p0 = p.scores[k0], p1 = p.scores[k1];
+          let pts = 0;
+          if (p0 === r0 && p1 === r1) pts = ROUND_PTS.groups.exact;
+          else if (Math.sign(p0 - p1) === Math.sign(r0 - r1)) pts = ROUND_PTS.groups.result;
+          if (pts > 0) earners.push({ name: p.name, pts });
+        });
+
+        completedMatches.push({
+          group, matchIdx,
+          t0: teams[par[0]], t1: teams[par[1]],
+          r0, r1, earners,
+          date: mi ? mi.date : '',
+          time: mi ? mi.time : ''
+        });
+      });
+    });
+  });
+
+  if (completedMatches.length === 0) {
+    grid.innerHTML = '<p class="section-placeholder">Hoy no hay partidos con resultado oficial aún.</p>';
+    section.classList.remove('hidden');
+    return;
+  }
+
+  grid.innerHTML = completedMatches.map(m => `
+<div class="mpc-card">
+  <div class="mpc-header">
+    <span class="mpc-group">Grupo ${m.group}</span>
+    <span class="mpc-date">${m.date} ${m.time}</span>
+  </div>
+  <div class="mpc-score-row">
+    <div class="mpc-team">${flag(m.t0)} ${m.t0.n}</div>
+    <div class="mpc-result">${m.r0} - ${m.r1}</div>
+    <div class="mpc-team">${m.t1.n} ${flag(m.t1)}</div>
+  </div>
+  <div class="mpc-earners">
+    ${m.earners.length === 0
+      ? '<span class="mpc-none">Sin acertadores</span>'
+      : m.earners.map(e => `<span class="mpc-earner">${e.name} <strong>+${e.pts}</strong></span>`).join('')
+    }
+  </div>
+</div>`).join('');
+
+  section.classList.remove('hidden');
 }
 
 /* ================================================================
@@ -729,9 +953,9 @@ function buildGroupCardReadonly(letter, teams, scores) {
       return `
 <div class="match-block">
   <div class="match-meta">
-    <span class="mm-date">📅 ${mi.date || ''}</span>
-    <span class="mm-time">⏰ ${mi.time || ''} <small>COT</small></span>
-    <span class="mm-venue">🏟 ${mi.venue || ''}</span>
+    <span class="mm-date"><i class="fa-solid fa-calendar-days"></i> ${mi.date || ''}</span>
+    <span class="mm-time"><i class="fa-regular fa-clock"></i> ${mi.time || ''} <small>COT</small></span>
+    <span class="mm-venue"><i class="fa-solid fa-location-dot"></i> ${mi.venue || ''}</span>
   </div>
   <div class="match-row">
     <span class="m-team home"><span class="m-name">${t0.n}</span><span class="m-flag">${flag(t0)}</span></span>
@@ -913,9 +1137,9 @@ function buildJornadas(letter, teams) {
       return `
 <div class="match-block">
   <div class="match-meta">
-    <span class="mm-date">📅 ${mi.date || ''}</span>
-    <span class="mm-time">⏰ ${mi.time || ''} <small>COT</small></span>
-    <span class="mm-venue">🏟 ${mi.venue || ''}</span>
+    <span class="mm-date"><i class="fa-solid fa-calendar-days"></i> ${mi.date || ''}</span>
+    <span class="mm-time"><i class="fa-regular fa-clock"></i> ${mi.time || ''} <small>COT</small></span>
+    <span class="mm-venue"><i class="fa-solid fa-location-dot"></i> ${mi.venue || ''}</span>
   </div>
   <div class="match-row">
     <span class="m-team home">

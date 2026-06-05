@@ -1795,3 +1795,310 @@ footer {
   font-size: 14px;
   padding: 20px 0;
 }
+
+/* ================================================================
+   PARTIDOS HOY — EN VIVO + top row
+================================================================ */
+.today-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.today-time {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.live-badge {
+  font-size: 10px;
+  font-weight: 800;
+  color: #ff3b3b;
+  background: rgba(255, 59, 59, 0.12);
+  border: 1px solid rgba(255, 59, 59, 0.3);
+  border-radius: 20px;
+  padding: 2px 8px;
+  letter-spacing: 0.5px;
+  animation: live-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+.today-live {
+  border-top-color: #ff3b3b;
+  box-shadow: 0 0 0 1px rgba(255, 59, 59, 0.25), var(--shadow);
+}
+
+.today-live .today-vs {
+  color: #ff3b3b;
+  font-size: 18px;
+}
+
+/* ================================================================
+   PRÓXIMOS PARTIDOS
+================================================================ */
+.upcoming-grid {
+  margin-top: 16px;
+}
+
+.upcoming-date-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  padding: 14px 0 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.upcoming-date-header:first-child {
+  padding-top: 0;
+}
+
+.upcoming-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+}
+
+.upcoming-group {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+  width: 52px;
+}
+
+.upcoming-teams {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.upcoming-team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.upcoming-team:last-child {
+  justify-content: flex-end;
+}
+
+.upcoming-team .fi {
+  width: 22px;
+  height: 16px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.upcoming-vs {
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.upcoming-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 10px;
+  color: var(--muted);
+  flex-shrink: 0;
+  text-align: right;
+}
+
+/* ================================================================
+   BONOS OTORGADOS
+================================================================ */
+.bonus-ganado-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.bgc-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  border-left: 3px solid var(--gold);
+}
+
+.bgc-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.bgc-answer {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
+.bgc-players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bgc-winner {
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(201,168,76,.12);
+  border: 1px solid rgba(201,168,76,.25);
+  color: var(--text);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+.bgc-none {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ================================================================
+   PUNTOS POR PARTIDO
+================================================================ */
+.match-pts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.mpc-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+
+.mpc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.mpc-group {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gold);
+}
+
+.mpc-date {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.mpc-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.mpc-team {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mpc-team:last-child {
+  justify-content: flex-end;
+  flex-direction: row-reverse;
+}
+
+.mpc-result {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: 2px;
+  flex-shrink: 0;
+}
+
+.mpc-earners {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.mpc-earner {
+  font-size: 12px;
+  background: rgba(255,255,255,.06);
+  border-radius: 20px;
+  padding: 3px 10px;
+  color: var(--text);
+}
+
+.mpc-earner strong {
+  color: var(--gold);
+}
+
+.mpc-none {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.section-placeholder {
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+  padding: 18px 0 4px;
+  margin: 0;
+}
+
+/* Font Awesome alignment */
+h2 .fa-solid, h2 .fa-regular,
+h3 .fa-solid, h3 .fa-regular,
+.tab-btn .fa-solid, .tab-btn .fa-regular,
+.inner-tab .fa-solid, .inner-tab .fa-regular,
+.btn .fa-solid, .btn .fa-regular,
+.side-nav-title .fa-solid {
+  width: 1.1em;
+  text-align: center;
+}
+
+.live-badge .fa-solid {
+  font-size: 8px;
+  vertical-align: middle;
+  animation: live-pulse 1.4s ease-in-out infinite;
+}
