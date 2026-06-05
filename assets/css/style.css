@@ -1855,6 +1855,15 @@ footer {
 .tp-option:hover { background: var(--card-alt); }
 .tp-option .fi { font-size: 16px; }
 
+/* Clear selection option in admin bracket picker */
+.tp-option-clear {
+  color: #f87171;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.tp-option-clear:hover { background: rgba(248, 113, 113, .1) !important; }
+
 /* ================================================================
    PARTICIPANTES — Vista admin
 ================================================================ */

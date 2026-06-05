@@ -1730,16 +1730,37 @@ function _wirePicker_admin(picker, renderFn) {
 
 function _wireAdminTeamPicker(picker, teams, bonusKey) {
   const list = picker.querySelector('.tp-list');
+  const origPlaceholder = picker.querySelector('.tp-name')?.textContent || 'Seleccionar';
+
+  const clearPicker = () => {
+    const nameEl = picker.querySelector('.tp-name');
+    const flagEl = picker.querySelector('.tp-flag');
+    if (nameEl) { nameEl.textContent = origPlaceholder; nameEl.classList.add('tp-placeholder'); }
+    if (flagEl) flagEl.innerHTML = '';
+    delete ADMIN_RESULTS.bonuses[bonusKey];
+    picker.querySelector('.team-picker-dropdown').classList.add('hidden');
+    picker.classList.remove('open');
+  };
+
   const renderList = (filter = '') => {
     const filtered = filter
       ? teams.filter(t => t.n.toLowerCase().includes(filter.toLowerCase()))
       : teams;
-    list.innerHTML = filtered.map(t =>
+
+    const clearHTML = ADMIN_RESULTS.bonuses[bonusKey]
+      ? `<div class="tp-option tp-option-clear">✕ Limpiar selección</div>`
+      : '';
+
+    list.innerHTML = clearHTML + filtered.map(t =>
       `<div class="tp-option" data-name="${t.n}" data-code="${t.code}">
          <span class="fi fi-${t.code}"></span> ${t.n}
        </div>`
     ).join('');
-    list.querySelectorAll('.tp-option').forEach(opt =>
+
+    const clearBtn = list.querySelector('.tp-option-clear');
+    if (clearBtn) clearBtn.addEventListener('click', clearPicker);
+
+    list.querySelectorAll('.tp-option:not(.tp-option-clear)').forEach(opt =>
       opt.addEventListener('click', () => {
         _setTeamPickerValue(picker, opt.dataset.name, teams);
         picker.querySelector('.team-picker-dropdown').classList.add('hidden');
@@ -1776,14 +1797,33 @@ function _buildAdminTeamPicker(key, teams) {
 
 function _wireAdminPlayerPicker(picker, players, bonusKey) {
   const list = picker.querySelector('.tp-list');
+  const origPlaceholder = picker.querySelector('.tp-name')?.textContent || 'Seleccionar';
+
+  const clearPicker = () => {
+    const nameEl = picker.querySelector('.tp-name');
+    if (nameEl) { nameEl.textContent = origPlaceholder; nameEl.classList.add('tp-placeholder'); }
+    delete ADMIN_RESULTS.bonuses[bonusKey];
+    picker.querySelector('.team-picker-dropdown').classList.add('hidden');
+    picker.classList.remove('open');
+  };
+
   const renderList = (filter = '') => {
     const filtered = filter
       ? players.filter(p => p.toLowerCase().includes(filter.toLowerCase()))
       : players;
-    list.innerHTML = filtered.map(p =>
+
+    const clearHTML = ADMIN_RESULTS.bonuses[bonusKey]
+      ? `<div class="tp-option tp-option-clear">✕ Limpiar selección</div>`
+      : '';
+
+    list.innerHTML = clearHTML + filtered.map(p =>
       `<div class="tp-option" data-name="${p}">🇨🇴 ${p}</div>`
     ).join('');
-    list.querySelectorAll('.tp-option').forEach(opt =>
+
+    const clearBtn = list.querySelector('.tp-option-clear');
+    if (clearBtn) clearBtn.addEventListener('click', clearPicker);
+
+    list.querySelectorAll('.tp-option:not(.tp-option-clear)').forEach(opt =>
       opt.addEventListener('click', () => {
         _setPlayerPickerValue(picker, opt.dataset.name);
         picker.querySelector('.team-picker-dropdown').classList.add('hidden');
@@ -2416,17 +2456,42 @@ function _wireAdminBracketPicker(picker, teams, key) {
   const dropdown = picker.querySelector('.team-picker-dropdown');
   const search = picker.querySelector('.tp-search');
   const list = picker.querySelector('.tp-list');
+  // Save original placeholder text for reset
+  const origPlaceholder = picker.querySelector('.tp-name')?.textContent || 'Seleccionar equipo';
+
+  const clearPicker = () => {
+    const nameEl = picker.querySelector('.tp-name');
+    const flagEl = picker.querySelector('.tp-flag');
+    if (nameEl) { nameEl.textContent = origPlaceholder; nameEl.classList.add('tp-placeholder'); }
+    if (flagEl) flagEl.innerHTML = '';
+    delete ADMIN_RESULTS.bracket[key];
+    dropdown.classList.add('hidden');
+    picker.classList.remove('open');
+    highlightAdminWinnerRows();
+    updateAdminChampion();
+  };
 
   const renderList = (filter = '') => {
     const filtered = filter
       ? teams.filter(t => t.n.toLowerCase().includes(filter.toLowerCase()))
       : teams;
-    list.innerHTML = filtered.map(t =>
+
+    // Add clear option at the top if a value is currently selected
+    const clearHTML = ADMIN_RESULTS.bracket[key]
+      ? `<div class="tp-option tp-option-clear">✕ Limpiar selección</div>`
+      : '';
+
+    list.innerHTML = clearHTML + filtered.map(t =>
       `<div class="tp-option" data-name="${t.n}" data-code="${t.code}">
          <span class="fi fi-${t.code}"></span> ${t.n}
        </div>`
     ).join('');
-    list.querySelectorAll('.tp-option').forEach(opt =>
+
+    // Wire clear button
+    const clearBtn = list.querySelector('.tp-option-clear');
+    if (clearBtn) clearBtn.addEventListener('click', clearPicker);
+
+    list.querySelectorAll('.tp-option:not(.tp-option-clear)').forEach(opt =>
       opt.addEventListener('click', () => {
         _setTeamPickerValue(picker, opt.dataset.name, teams);
         dropdown.classList.add('hidden');
