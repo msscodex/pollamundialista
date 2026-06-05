@@ -435,7 +435,7 @@ function route() {
   } else if (hash === '#admin' && CURRENT_USER?.is_admin) {
     showView('view-admin');
     setActiveTab('#admin');
-    loadOfficialResultsEditor();
+    loadAdminResultsEditor();
   } else if (hash.startsWith('#ver/')) {
     const nombre = decodeURIComponent(hash.slice(5));
     showView('view-ver');
@@ -728,7 +728,18 @@ function renderBonosGanados(players, results) {
   if (!section || !grid) return;
 
   const scored = players.map(p => ({ ...p, score: calcScore(p, results) }));
-  const bonosConRespuesta = Object.keys(BONUS_PTS).filter(k => results.bonuses && results.bonuses[k] != null);
+
+  // Bonos con respuesta oficial en texto
+  const bonosTexto = new Set(
+    Object.keys(BONUS_PTS).filter(k => results.bonuses?.[k] != null && results.bonuses[k] !== '')
+  );
+  // Bonos otorgados manualmente a al menos un jugador
+  const bonosManuales = new Set(
+    Object.keys(BONUS_PTS).filter(k =>
+      players.some(p => (p.manual_bonus_pts || {})[k] === true)
+    )
+  );
+  const bonosConRespuesta = [...new Set([...bonosTexto, ...bonosManuales])];
 
   if (bonosConRespuesta.length === 0) {
     grid.innerHTML = '<p class="section-placeholder">Los bonos se revelarán cuando el torneo avance y haya respuestas oficiales.</p>';
@@ -738,17 +749,23 @@ function renderBonosGanados(players, results) {
 
   grid.innerHTML = bonosConRespuesta.map(key => {
     const label   = BONUS_LABELS[key] || key;
-    const oficial = results.bonuses[key];
+    const oficial = results.bonuses?.[key] || null;
+    const esManual = !oficial && bonosManuales.has(key);
+
     const aciertos = scored.filter(p => {
-      const pVal = (p.bonuses || {})[key];
-      if (pVal == null) return false;
-      return String(pVal).toLowerCase() === String(oficial).toLowerCase();
+      if (oficial) {
+        const pVal = (p.bonuses || {})[key];
+        if (pVal == null) return false;
+        return String(pVal).toLowerCase() === String(oficial).toLowerCase();
+      }
+      // bono manual: solo quienes tienen manual_bonus_pts[key] === true
+      return (p.manual_bonus_pts || {})[key] === true;
     });
 
     return `
 <div class="bgc-card">
   <div class="bgc-label">${label}</div>
-  <div class="bgc-answer">✅ ${oficial}</div>
+  <div class="bgc-answer">${esManual ? '<i class="fa-solid fa-hand-holding-heart"></i> Otorgado manualmente' : `<i class="fa-solid fa-circle-check"></i> ${oficial}`}</div>
   <div class="bgc-players">
     ${aciertos.length === 0
       ? '<span class="bgc-none">Nadie acertó</span>'
@@ -1064,33 +1081,44 @@ function renderBonusesReadonly(playerBonuses, resultBonuses, manualBonusPts, par
       const newActive = btn.dataset.active !== 'true';
 
       btn.disabled = true;
-      btn.textContent = '…';
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
-      await toggleManualBonus(userId, key, newActive);
+      try {
+        await toggleManualBonus(userId, key, newActive);
 
-      if (_verPlayerData) {
-        _verPlayerData.manual_bonus_pts = { ...(_verPlayerData.manual_bonus_pts || {}), [key]: newActive };
+        if (_verPlayerData) {
+          _verPlayerData.manual_bonus_pts = { ...(_verPlayerData.manual_bonus_pts || {}), [key]: newActive };
+        }
+
+        btn.dataset.active = String(newActive);
+        btn.classList.toggle('active', newActive);
+        btn.textContent = newActive ? '✓ Otorgado' : 'Otorgar';
+        btn.closest('.bonus-readonly-row')?.classList.toggle('bonus-hit', newActive);
+
+        if (_verPlayerData && _verResults) {
+          const newScore = calcScore(_verPlayerData, _verResults);
+          const badge = document.getElementById('ver-score-badge');
+          if (badge) badge.textContent = `${newScore.total} pts`;
+        }
+      } catch (err) {
+        showErrorModal(err.message, 'Error al otorgar bono');
+        btn.textContent = newActive ? 'Otorgar' : '✓ Otorgado';
       }
 
-      btn.dataset.active = String(newActive);
-      btn.classList.toggle('active', newActive);
-      btn.textContent = newActive ? '✓ Otorgado' : 'Otorgar';
       btn.disabled = false;
-      btn.closest('.bonus-readonly-row')?.classList.toggle('bonus-hit', newActive);
-
-      if (_verPlayerData && _verResults) {
-        const newScore = calcScore(_verPlayerData, _verResults);
-        const badge = document.getElementById('ver-score-badge');
-        if (badge) badge.textContent = `${newScore.total} pts`;
-      }
     });
   });
 }
 
 async function toggleManualBonus(userId, key, value) {
-  const { data } = await sb.from('pollas').select('manual_bonus_pts').eq('user_id', userId).single();
+  const { data, error: selErr } = await sb.from('pollas').select('manual_bonus_pts').eq('user_id', userId).single();
+  if (selErr) throw new Error('No se pudo leer la polla: ' + selErr.message);
   const updated = { ...(data?.manual_bonus_pts || {}), [key]: value };
-  await sb.from('pollas').update({ manual_bonus_pts: updated }).eq('user_id', userId);
+  const { error: updErr, count } = await sb.from('pollas')
+    .update({ manual_bonus_pts: updated }, { count: 'exact' })
+    .eq('user_id', userId);
+  if (updErr) throw new Error('No se pudo guardar: ' + updErr.message);
+  if (count === 0) throw new Error('RLS bloqueó el update. Ve a Supabase → Authentication → Policies → pollas y agrega la política de admin (ver consola).');
 }
 
 /* ================================================================
@@ -1537,6 +1565,130 @@ function _wirePlayerPicker(picker, players, bonusKey) {
   renderList();
 }
 
+/* --------- Admin bonus pickers — write to ADMIN_RESULTS, no IS_GROUPS_LOCKED --------- */
+
+function _wirePicker_admin(picker, renderFn) {
+  const trigger  = picker.querySelector('.team-picker-trigger');
+  const dropdown = picker.querySelector('.team-picker-dropdown');
+  const search   = picker.querySelector('.tp-search');
+
+  trigger.addEventListener('click', e => {
+    e.stopPropagation();
+    const isOpen = !dropdown.classList.contains('hidden');
+    document.querySelectorAll('.team-picker-dropdown').forEach(d => d.classList.add('hidden'));
+    document.querySelectorAll('.team-picker').forEach(p => p.classList.remove('open'));
+    if (!isOpen) {
+      dropdown.classList.remove('hidden');
+      picker.classList.add('open');
+      search.value = '';
+      renderFn('');
+      search.focus();
+    }
+  });
+  search.addEventListener('input', () => renderFn(search.value));
+  search.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', () => {
+    dropdown.classList.add('hidden');
+    picker.classList.remove('open');
+  });
+}
+
+function _wireAdminTeamPicker(picker, teams, bonusKey) {
+  const list = picker.querySelector('.tp-list');
+  const renderList = (filter = '') => {
+    const filtered = filter
+      ? teams.filter(t => t.n.toLowerCase().includes(filter.toLowerCase()))
+      : teams;
+    list.innerHTML = filtered.map(t =>
+      `<div class="tp-option" data-name="${t.n}" data-code="${t.code}">
+         <span class="fi fi-${t.code}"></span> ${t.n}
+       </div>`
+    ).join('');
+    list.querySelectorAll('.tp-option').forEach(opt =>
+      opt.addEventListener('click', () => {
+        _setTeamPickerValue(picker, opt.dataset.name, teams);
+        picker.querySelector('.team-picker-dropdown').classList.add('hidden');
+        picker.classList.remove('open');
+        ADMIN_RESULTS.bonuses[bonusKey] = opt.dataset.name;
+      })
+    );
+  };
+  _wirePicker_admin(picker, renderList);
+  renderList();
+}
+
+function _buildAdminTeamPicker(key, teams) {
+  const inp = document.querySelector(`#admin-bonuses-grid input[data-bonus="${key}"]`);
+  if (!inp) return;
+  const picker = document.createElement('div');
+  picker.className = 'team-picker';
+  picker.dataset.bonus = key;
+  picker.innerHTML = `
+    <div class="team-picker-trigger">
+      <span class="tp-flag"></span>
+      <span class="tp-name tp-placeholder">${inp.placeholder}</span>
+      <span class="tp-arrow">▾</span>
+    </div>
+    <div class="team-picker-dropdown hidden">
+      <input class="tp-search" type="text" placeholder="Buscar equipo…" autocomplete="off">
+      <div class="tp-list"></div>
+    </div>`;
+  inp.replaceWith(picker);
+  const val = ADMIN_RESULTS.bonuses[key];
+  if (val) _setTeamPickerValue(picker, val, teams);
+  _wireAdminTeamPicker(picker, teams, key);
+}
+
+function _wireAdminPlayerPicker(picker, players, bonusKey) {
+  const list = picker.querySelector('.tp-list');
+  const renderList = (filter = '') => {
+    const filtered = filter
+      ? players.filter(p => p.toLowerCase().includes(filter.toLowerCase()))
+      : players;
+    list.innerHTML = filtered.map(p =>
+      `<div class="tp-option" data-name="${p}">🇨🇴 ${p}</div>`
+    ).join('');
+    list.querySelectorAll('.tp-option').forEach(opt =>
+      opt.addEventListener('click', () => {
+        _setPlayerPickerValue(picker, opt.dataset.name);
+        picker.querySelector('.team-picker-dropdown').classList.add('hidden');
+        picker.classList.remove('open');
+        ADMIN_RESULTS.bonuses[bonusKey] = opt.dataset.name;
+      })
+    );
+  };
+  _wirePicker_admin(picker, renderList);
+  renderList();
+}
+
+function _buildAdminPlayerPicker(key) {
+  const inp = document.querySelector(`#admin-bonuses-grid input[data-bonus="${key}"]`);
+  if (!inp) return;
+  const picker = document.createElement('div');
+  picker.className = 'team-picker';
+  picker.dataset.bonus = key;
+  picker.innerHTML = `
+    <div class="team-picker-trigger">
+      <span class="tp-name tp-placeholder">${inp.placeholder}</span>
+      <span class="tp-arrow">▾</span>
+    </div>
+    <div class="team-picker-dropdown hidden">
+      <input class="tp-search" type="text" placeholder="Buscar jugador…" autocomplete="off">
+      <div class="tp-list"></div>
+    </div>`;
+  inp.replaceWith(picker);
+  const val = ADMIN_RESULTS.bonuses[key];
+  if (val) _setPlayerPickerValue(picker, val);
+  _wireAdminPlayerPicker(picker, COLOMBIA_SQUAD, key);
+}
+
+function initAdminBonusPickers() {
+  const allTeams = _allTeamsSorted();
+  TEAM_PICKER_KEYS.forEach(key => _buildAdminTeamPicker(key, allTeams));
+  INAUG_PICKER_KEYS.forEach(key => _buildAdminTeamPicker(key, INAUGURAL_TEAMS));
+  PLAYER_PICKER_KEYS.forEach(key => _buildAdminPlayerPicker(key));
+}
+
 /* ================================================================
    BONOS
 ================================================================ */
@@ -1929,17 +2081,347 @@ function initAdminPanel() {
   });
 }
 
-async function loadOfficialResultsEditor() {
-  const ta = document.getElementById('official-results-json');
-  if (!ta) return;
+/* ================================================================
+   ADMIN — EDITOR VISUAL DE RESULTADOS OFICIALES
+================================================================ */
+const ADMIN_RESULTS = { scores: {}, bracket: {}, bonuses: {} };
+
+async function loadAdminResultsEditor() {
+  const grid = document.getElementById('admin-groups-grid');
+  if (!grid) return;
+
   const { data } = await sb.from('official_results').select('*').eq('id', 1).single();
   if (data) {
-    ta.value = JSON.stringify(
-      { scores: data.scores || {}, bracket: data.bracket || {}, bonuses: data.bonuses || {} },
-      null, 2
-    );
+    ADMIN_RESULTS.scores  = data.scores  || {};
+    ADMIN_RESULTS.bracket = data.bracket || {};
+    ADMIN_RESULTS.bonuses = data.bonuses || {};
+  }
+
+  renderAdminGroups();
+  renderAdminBracket();
+  renderAdminBonuses();
+  initAdminResultsTabs();
+  initAdminSaveBtns();
+}
+
+/* ---------- GRUPOS ---------- */
+function renderAdminGroups() {
+  const grid = document.getElementById('admin-groups-grid');
+  if (!grid) return;
+  grid.innerHTML = Object.entries(GROUPS)
+    .map(([letter, g]) => buildAdminGroupCard(letter, g.teams))
+    .join('');
+  grid.querySelectorAll('.m-score[data-admin-group]').forEach(inp => {
+    inp.addEventListener('input', onAdminScoreInput);
+  });
+  Object.keys(GROUPS).forEach(recalcAdminGroup);
+}
+
+function buildAdminGroupCard(letter, teams) {
+  return `
+<div class="group-card group-card-admin" data-group="${letter}">
+  <div class="group-head">
+    <div class="group-letter-badge">${letter}</div>
+    <div class="group-head-info">
+      <div class="group-head-title">Grupo ${letter}</div>
+      <div class="group-flags">${teams.map(t => `<span class="gf-flag" title="${t.n}">${flag(t)}</span>`).join('')}</div>
+    </div>
+  </div>
+  <div class="group-body">
+    <div class="group-matches">${buildAdminJornadas(letter, teams)}</div>
+    <div class="standings-wrap">
+      <table class="standings-table" id="st-admin-${letter}">
+        <thead>
+          <tr>
+            <th>#</th><th>Equipo</th>
+            <th title="Jugados">J</th><th title="Ganados">G</th><th title="Empatados">E</th><th title="Perdidos">P</th>
+            <th title="Goles a favor">GF</th><th title="Goles en contra">GC</th><th title="Diferencia">DG</th>
+            <th title="Puntos">Pts</th>
+          </tr>
+        </thead>
+        <tbody id="st-admin-body-${letter}">${buildDefaultRows(teams)}</tbody>
+      </table>
+    </div>
+  </div>
+</div>`;
+}
+
+function buildAdminJornadas(letter, teams) {
+  return JORNADAS.map((jornada, jIdx) => {
+    const rows = jornada.pares.map((par, pIdx) => {
+      const matchIdx = jIdx * 2 + pIdx;
+      const k0 = scoreKey(letter, matchIdx, 0);
+      const k1 = scoreKey(letter, matchIdx, 1);
+      const v0 = ADMIN_RESULTS.scores[k0] ?? '';
+      const v1 = ADMIN_RESULTS.scores[k1] ?? '';
+      const t0 = teams[par[0]], t1 = teams[par[1]];
+      const mi = (MATCH_INFO[letter] || [])[matchIdx] || {};
+      return `
+<div class="match-block">
+  <div class="match-meta">
+    <span class="mm-date"><i class="fa-solid fa-calendar-days"></i> ${mi.date || ''}</span>
+    <span class="mm-time"><i class="fa-regular fa-clock"></i> ${mi.time || ''} <small>COT</small></span>
+    <span class="mm-venue"><i class="fa-solid fa-location-dot"></i> ${mi.venue || ''}</span>
+  </div>
+  <div class="match-row">
+    <span class="m-team home">
+      <span class="m-name">${t0.n}</span>
+      <span class="m-flag">${flag(t0)}</span>
+    </span>
+    <input type="number" class="m-score${v0 !== '' ? ' filled' : ''}"
+      min="0" max="99"
+      data-admin-group="${letter}" data-admin-match="${matchIdx}" data-admin-side="0"
+      value="${v0}" placeholder="–">
+    <span class="m-vs">-</span>
+    <input type="number" class="m-score${v1 !== '' ? ' filled' : ''}"
+      min="0" max="99"
+      data-admin-group="${letter}" data-admin-match="${matchIdx}" data-admin-side="1"
+      value="${v1}" placeholder="–">
+    <span class="m-team away">
+      <span class="m-flag">${flag(t1)}</span>
+      <span class="m-name">${t1.n}</span>
+    </span>
+  </div>
+</div>`;
+    }).join('');
+    return `<div class="matchday-header">${jornada.label}</div>${rows}`;
+  }).join('');
+}
+
+function onAdminScoreInput(e) {
+  const { adminGroup: group, adminMatch: match, adminSide: side } = e.target.dataset;
+  const val = e.target.value;
+  const key = scoreKey(group, match, side);
+  if (val !== '' && !isNaN(parseInt(val))) {
+    ADMIN_RESULTS.scores[key] = parseInt(val);
+    e.target.classList.add('filled');
+  } else {
+    delete ADMIN_RESULTS.scores[key];
+    e.target.classList.remove('filled');
+  }
+  recalcAdminGroup(group);
+}
+
+function recalcAdminGroup(letter) {
+  const teams = GROUPS[letter].teams;
+  const st = teams.map((t, idx) => ({ name: t.n, flag: t.code, idx, j: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, pts: 0 }));
+
+  JORNADAS.forEach((jornada, jIdx) => {
+    jornada.pares.forEach((par, pIdx) => {
+      const matchIdx = jIdx * 2 + pIdx;
+      const k0 = scoreKey(letter, matchIdx, 0), k1 = scoreKey(letter, matchIdx, 1);
+      if (!(k0 in ADMIN_RESULTS.scores) || !(k1 in ADMIN_RESULTS.scores)) return;
+      const s0 = ADMIN_RESULTS.scores[k0], s1 = ADMIN_RESULTS.scores[k1];
+      const t0 = par[0], t1 = par[1];
+      st[t0].j++; st[t1].j++;
+      st[t0].gf += s0; st[t0].gc += s1;
+      st[t1].gf += s1; st[t1].gc += s0;
+      if (s0 > s1) { st[t0].g++; st[t0].pts += 3; st[t1].p++; }
+      else if (s0 < s1) { st[t1].g++; st[t1].pts += 3; st[t0].p++; }
+      else { st[t0].e++; st[t1].e++; st[t0].pts++; st[t1].pts++; }
+    });
+  });
+
+  st.sort((a, b) =>
+    b.pts - a.pts || (b.gf - b.gc) - (a.gf - a.gc) || b.gf - a.gf || a.name.localeCompare(b.name)
+  );
+
+  const posClasses = ['p1', 'p2', 'p3', 'p4'];
+  const rowClasses = ['st-advances', 'st-advances', 'st-maybe', ''];
+  const tbody = document.getElementById(`st-admin-body-${letter}`);
+  if (!tbody) return;
+  tbody.innerHTML = st.map((s, pos) => {
+    const dg = s.gf - s.gc;
+    const dgClass = dg > 0 ? 'pos' : dg < 0 ? 'neg' : '';
+    return `
+<tr class="${rowClasses[pos]}">
+  <td><span class="pos-badge ${posClasses[pos]}">${pos + 1}</span></td>
+  <td class="st-team-name"><span class="st-flag"><span class="fi fi-${s.flag}"></span></span>${s.name}</td>
+  <td>${s.j}</td><td>${s.g}</td><td>${s.e}</td><td>${s.p}</td>
+  <td>${s.gf}</td><td>${s.gc}</td>
+  <td class="st-gd ${dgClass}">${dg > 0 ? '+' : ''}${dg}</td>
+  <td class="st-pts">${s.pts}</td>
+</tr>`;
+  }).join('');
+}
+
+/* ---------- ELIMINATORIAS ---------- */
+function renderAdminBracket() {
+  const container = document.getElementById('admin-bracket-render');
+  if (!container) return;
+  container.innerHTML = RONDAS.map(ronda => buildAdminRoundHTML(ronda)).join('');
+  container.querySelectorAll('.bm-team, .bm-score').forEach(inp => {
+    inp.addEventListener('input', onAdminBracketInput);
+  });
+  document.getElementById('admin-third-match')
+    ?.querySelectorAll('[data-admin-key]').forEach(inp => {
+      const key = inp.dataset.adminKey;
+      inp.value = ADMIN_RESULTS.bracket[key] || '';
+      inp.addEventListener('input', onAdminBracketInput);
+    });
+  updateAdminChampion();
+}
+
+function buildAdminRoundHTML(ronda) {
+  const matches = Array.from({ length: ronda.partidos }, (_, i) => {
+    const ph0 = ronda.placeholders[i * 2]     || `Equipo ${i * 2 + 1}`;
+    const ph1 = ronda.placeholders[i * 2 + 1] || `Equipo ${i * 2 + 2}`;
+    const kt0 = `${ronda.id}-${i}-t0`, kt1 = `${ronda.id}-${i}-t1`;
+    const ks0 = `${ronda.id}-${i}-s0`, ks1 = `${ronda.id}-${i}-s1`;
+    const isFin = ronda.id === 'fin';
+    const s0 = parseFloat(ADMIN_RESULTS.bracket[ks0]);
+    const s1 = parseFloat(ADMIN_RESULTS.bracket[ks1]);
+    const winner = (!isNaN(s0) && !isNaN(s1)) ? (s0 > s1 ? 't0' : s1 > s0 ? 't1' : null) : null;
+    return `
+<div class="bracket-match${isFin ? ' is-final' : ''}">
+  <div class="bm-row${winner === 't0' ? ' winner' : ''}">
+    <input type="text"   class="bm-team"  data-admin-key="${kt0}" value="${ADMIN_RESULTS.bracket[kt0] || ''}" placeholder="${ph0}" autocomplete="off">
+    <input type="number" class="bm-score" data-admin-key="${ks0}" value="${ADMIN_RESULTS.bracket[ks0] !== undefined ? ADMIN_RESULTS.bracket[ks0] : ''}" min="0" max="99" placeholder="0">
+  </div>
+  <div class="bm-row${winner === 't1' ? ' winner' : ''}">
+    <input type="text"   class="bm-team"  data-admin-key="${kt1}" value="${ADMIN_RESULTS.bracket[kt1] || ''}" placeholder="${ph1}" autocomplete="off">
+    <input type="number" class="bm-score" data-admin-key="${ks1}" value="${ADMIN_RESULTS.bracket[ks1] !== undefined ? ADMIN_RESULTS.bracket[ks1] : ''}" min="0" max="99" placeholder="0">
+  </div>
+</div>`;
+  }).join('');
+
+  return `
+<div class="bracket-round">
+  <div class="bracket-round-title">${ronda.label}</div>
+  <div class="bracket-matches-col">${matches}</div>
+</div>`;
+}
+
+function onAdminBracketInput(e) {
+  const key = e.target.dataset.adminKey;
+  if (!key) return;
+  const val = e.target.value;
+  if (val !== '') {
+    ADMIN_RESULTS.bracket[key] = isNaN(Number(val)) ? val : Number(val);
+  } else {
+    delete ADMIN_RESULTS.bracket[key];
+  }
+  highlightAdminWinnerRows();
+  updateAdminChampion();
+}
+
+function highlightAdminWinnerRows() {
+  RONDAS.forEach(ronda => {
+    for (let i = 0; i < ronda.partidos; i++) {
+      const matchEl = document.querySelector(
+        `#admin-bracket-render .bracket-match:has([data-admin-key="${ronda.id}-${i}-t0"])`
+      );
+      if (!matchEl) continue;
+      const rows = matchEl.querySelectorAll('.bm-row');
+      const s0 = parseFloat(ADMIN_RESULTS.bracket[`${ronda.id}-${i}-s0`]);
+      const s1 = parseFloat(ADMIN_RESULTS.bracket[`${ronda.id}-${i}-s1`]);
+      const winner = (!isNaN(s0) && !isNaN(s1)) ? (s0 > s1 ? 't0' : s1 > s0 ? 't1' : null) : null;
+      rows[0]?.classList.toggle('winner', winner === 't0');
+      rows[1]?.classList.toggle('winner', winner === 't1');
+    }
+  });
+}
+
+function updateAdminChampion() {
+  const nameEl = document.getElementById('admin-champion-display');
+  const flagEl = document.getElementById('admin-champion-flag');
+  if (!nameEl) return;
+  const t0 = ADMIN_RESULTS.bracket['fin-0-t0'] || '';
+  const t1 = ADMIN_RESULTS.bracket['fin-0-t1'] || '';
+  const s0 = parseFloat(ADMIN_RESULTS.bracket['fin-0-s0']);
+  const s1 = parseFloat(ADMIN_RESULTS.bracket['fin-0-s1']);
+  if (!isNaN(s0) && !isNaN(s1) && (t0 || t1)) {
+    const champ = s0 > s1 ? t0 : s1 > s0 ? t1 : '';
+    nameEl.textContent = champ || '—';
+    if (flagEl) {
+      const team = Object.values(GROUPS).flatMap(g => g.teams).find(t => t.n === champ);
+      flagEl.innerHTML = team ? flag(team) : '';
+    }
+  } else {
+    nameEl.innerHTML = '&nbsp;';
+    if (flagEl) flagEl.innerHTML = '';
   }
 }
+
+/* ---------- BONOS ---------- */
+function renderAdminBonuses() {
+  const grid = document.getElementById('admin-bonuses-grid');
+  if (!grid) return;
+  grid.innerHTML = BONUS_GROUPS.map(group => {
+    const rows = group.keys.map(key => {
+      const val = ADMIN_RESULTS.bonuses[key] || '';
+      if (MANUAL_BONUS_KEYS.has(key)) {
+        return `
+<div class="bonus-field">
+  <label>${BONUS_LABELS[key]} <span class="bonus-pts">+${BONUS_PTS[key]}pts</span></label>
+  <input type="text" class="admin-bonus-input" data-bonus-key="${key}"
+    value="${val}" placeholder="Respuesta oficial…" autocomplete="off">
+</div>`;
+      }
+      const ph = PLAYER_PICKER_KEYS.has(key) ? 'Seleccionar jugador…' : 'Seleccionar equipo…';
+      return `
+<div class="bonus-field">
+  <label>${BONUS_LABELS[key]} <span class="bonus-pts">+${BONUS_PTS[key]}pts</span></label>
+  <input type="text" data-bonus="${key}" value="${val}" placeholder="${ph}" autocomplete="off">
+</div>`;
+    }).join('');
+    return `<div class="bonus-group"><h3 class="bonus-group-title">${group.label}</h3>${rows}</div>`;
+  }).join('');
+
+  grid.querySelectorAll('.admin-bonus-input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const key = e.target.dataset.bonusKey;
+      const val = e.target.value.trim();
+      if (val) ADMIN_RESULTS.bonuses[key] = val;
+      else delete ADMIN_RESULTS.bonuses[key];
+    });
+  });
+
+  initAdminBonusPickers();
+}
+
+/* ---------- GUARDAR ---------- */
+async function saveAdminSection(msgId) {
+  const msgEl = document.getElementById(msgId);
+  msgEl.textContent = 'Guardando…';
+  const { error } = await sb.from('official_results').upsert({
+    id: 1,
+    scores:     ADMIN_RESULTS.scores,
+    bracket:    ADMIN_RESULTS.bracket,
+    bonuses:    ADMIN_RESULTS.bonuses,
+    updated_at: new Date().toISOString(),
+  });
+  msgEl.textContent = error ? 'Error: ' + error.message : '<i class="fa-solid fa-circle-check"></i> Guardado';
+  if (!error) msgEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Guardado';
+}
+
+/* ---------- TABS & INIT ---------- */
+function initAdminResultsTabs() {
+  const tabsNav = document.getElementById('admin-results-tabs');
+  if (!tabsNav) return;
+  tabsNav.querySelectorAll('.inner-tab[data-admin-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabsNav.querySelectorAll('.inner-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      ['grupos-admin', 'bracket-admin', 'bonos-admin'].forEach(id => {
+        document.getElementById(`inner-${id}`)?.classList.add('hidden');
+      });
+      document.getElementById(`inner-${btn.dataset.adminTab}`)?.classList.remove('hidden');
+    });
+  });
+}
+
+function initAdminSaveBtns() {
+  document.getElementById('btn-save-grupos')
+    ?.addEventListener('click', () => saveAdminSection('save-grupos-msg'));
+  document.getElementById('btn-save-bracket')
+    ?.addEventListener('click', () => saveAdminSection('save-bracket-msg'));
+  document.getElementById('btn-save-bonos')
+    ?.addEventListener('click', () => saveAdminSection('save-bonos-msg'));
+}
+
+/* legacy — ya no se usa pero evita errores si algo lo referencia */
+async function loadOfficialResultsEditor() { await loadAdminResultsEditor(); }
 
 /* ================================================================
    TABS INTERNOS
@@ -2099,10 +2581,27 @@ function initHamburger() {
 document.addEventListener('DOMContentLoaded', () => {
   updateLayoutOffsets();
   initHamburger();
+  initErrorModal();
   window.addEventListener('resize', updateLayoutOffsets);
 });
 
 document.addEventListener('DOMContentLoaded', initMusicBtn);
+
+function showErrorModal(msg, title = 'Error') {
+  const modal = document.getElementById('error-modal');
+  document.getElementById('error-modal-title').textContent = title;
+  document.getElementById('error-modal-msg').textContent = msg;
+  modal.classList.remove('hidden');
+}
+
+function initErrorModal() {
+  document.getElementById('btn-error-modal-close')?.addEventListener('click', () => {
+    document.getElementById('error-modal').classList.add('hidden');
+  });
+  document.getElementById('error-modal')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+  });
+}
 
 /* ================================================================
    UTILS

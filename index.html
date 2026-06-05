@@ -589,13 +589,67 @@
           </form>
         </div>
 
-        <div class="admin-card">
+        <div class="admin-card admin-card-full">
           <h3 class="admin-card-title"><i class="fa-solid fa-chart-simple"></i> Resultados Oficiales</h3>
-          <p class="admin-desc">Edita el JSON y guarda para actualizar el ranking.</p>
-          <textarea id="official-results-json" class="admin-textarea" rows="20"
-            placeholder='{"scores":{}, "bracket":{}, "bonuses":{}}'></textarea>
-          <button class="btn btn-gold" id="btn-save-results">Guardar resultados</button>
-          <p id="save-results-msg" class="admin-msg"></p>
+
+          <nav class="inner-tabs admin-results-tabs" id="admin-results-tabs">
+            <button class="inner-tab active" data-admin-tab="grupos-admin"><i class="fa-solid fa-futbol"></i> Grupos</button>
+            <button class="inner-tab" data-admin-tab="bracket-admin"><i class="fa-solid fa-trophy"></i> Eliminatorias</button>
+            <button class="inner-tab" data-admin-tab="bonos-admin"><i class="fa-solid fa-star"></i> Bonos</button>
+          </nav>
+
+          <!-- GRUPOS ADMIN -->
+          <div class="inner-section" id="inner-grupos-admin">
+            <div class="groups-grid" id="admin-groups-grid"></div>
+            <div class="admin-save-bar">
+              <p id="save-grupos-msg" class="admin-msg"></p>
+              <button class="btn btn-gold" id="btn-save-grupos"><i class="fa-solid fa-floppy-disk"></i> Guardar Grupos</button>
+            </div>
+          </div>
+
+          <!-- ELIMINATORIAS ADMIN -->
+          <div class="inner-section hidden" id="inner-bracket-admin">
+            <div class="bracket-wrapper">
+              <div class="bracket" id="admin-bracket-render"></div>
+              <div class="champion-col">
+                <div class="champion-box">
+                  <span class="trophy-icon"><i class="fa-solid fa-trophy"></i></span>
+                  <p class="champion-label">CAMPEÓN MUNDIAL</p>
+                  <div class="champion-name" id="admin-champion-display">&nbsp;</div>
+                  <div class="champion-flag" id="admin-champion-flag"></div>
+                </div>
+              </div>
+            </div>
+            <div class="third-place-section">
+              <h3 class="third-title"><i class="fa-solid fa-medal"></i> Tercer y Cuarto Lugar</h3>
+              <p class="third-sub">19 Julio 2026 · Miami Gardens, Florida</p>
+              <div class="bracket-match" id="admin-third-match">
+                <div class="bm-row">
+                  <input type="text" class="bm-team" data-admin-key="3rd-t0" placeholder="Semifinal 1 perdedor" autocomplete="off">
+                  <input type="number" class="bm-score" data-admin-key="3rd-s0" min="0" max="99" placeholder="0">
+                </div>
+                <div class="bm-divider"></div>
+                <div class="bm-row">
+                  <input type="text" class="bm-team" data-admin-key="3rd-t1" placeholder="Semifinal 2 perdedor" autocomplete="off">
+                  <input type="number" class="bm-score" data-admin-key="3rd-s1" min="0" max="99" placeholder="0">
+                </div>
+              </div>
+            </div>
+            <div class="admin-save-bar">
+              <p id="save-bracket-msg" class="admin-msg"></p>
+              <button class="btn btn-gold" id="btn-save-bracket"><i class="fa-solid fa-floppy-disk"></i> Guardar Eliminatorias</button>
+            </div>
+          </div>
+
+          <!-- BONOS ADMIN -->
+          <div class="inner-section hidden" id="inner-bonos-admin">
+            <div class="bonuses-grid" id="admin-bonuses-grid"></div>
+            <div class="admin-save-bar">
+              <p id="save-bonos-msg" class="admin-msg"></p>
+              <button class="btn btn-gold" id="btn-save-bonos"><i class="fa-solid fa-floppy-disk"></i> Guardar Bonos</button>
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -616,6 +670,18 @@
     </section>
 
     <!-- MODAL: confirmar envío de polla -->
+    <!-- MODAL DE ERROR GENÉRICO -->
+    <div id="error-modal" class="modal-overlay hidden">
+      <div class="modal-box">
+        <div class="modal-error-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+        <h3 id="error-modal-title">Error</h3>
+        <p id="error-modal-msg"></p>
+        <div class="modal-actions">
+          <button class="btn btn-gold" id="btn-error-modal-close">Entendido</button>
+        </div>
+      </div>
+    </div>
+
     <div id="lock-confirm-modal" class="modal-overlay hidden">
       <div class="modal-box">
         <h3>¿Enviar tu polla?</h3>
