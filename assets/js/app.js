@@ -279,6 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       CURRENT_USER = null;
       _appReady = false;
       STATE = { player: '', scores: {}, bracket: {}, bonuses: {} };
+      try { localStorage.removeItem(LS_DRAFT); } catch (_) {}
       updateHeaderState();
       location.hash = '#home';
     }
@@ -1447,7 +1448,10 @@ function exportJSON() {
 let _saveTimer = null;
 
 function saveDraft() {
-  try { localStorage.setItem(LS_DRAFT, JSON.stringify(STATE)); } catch (_) { }
+  try {
+    const toSave = { ...STATE, userId: CURRENT_USER?.id || null };
+    localStorage.setItem(LS_DRAFT, JSON.stringify(toSave));
+  } catch (_) { }
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(syncToSupabase, 1500);
 }
@@ -1470,7 +1474,15 @@ async function syncToSupabase() {
 async function loadDraft() {
   try {
     const raw = localStorage.getItem(LS_DRAFT);
-    if (raw) STATE = { ...STATE, ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Solo usar localStorage si pertenece al usuario actual
+      if (!parsed.userId || !CURRENT_USER || parsed.userId === CURRENT_USER.id) {
+        STATE = { ...STATE, ...parsed };
+      } else {
+        localStorage.removeItem(LS_DRAFT);
+      }
+    }
   } catch (_) { }
 
   if (!CURRENT_USER) return;
