@@ -1220,6 +1220,31 @@ footer {
   text-transform: uppercase;
   letter-spacing: .5px;
 }
+.input-eye-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-eye-wrap input {
+  flex: 1;
+  padding-right: 42px;
+}
+
+.btn-eye {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 15px;
+  padding: 4px;
+  line-height: 1;
+  transition: color var(--transition);
+}
+
+.btn-eye:hover { color: var(--gold); }
+
 .login-field input {
   background: var(--card-alt);
   border: 1px solid var(--border);
@@ -1228,6 +1253,8 @@ footer {
   padding: 10px 14px;
   font-size: 14px;
   font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
   transition: border-color var(--transition);
 }
 .login-field input:focus { outline: none; border-color: var(--gold); }

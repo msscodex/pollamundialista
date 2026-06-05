@@ -349,6 +349,18 @@ async function loadCurrentUser(userId) {
 }
 
 function initLoginUI() {
+  const pwInput  = document.getElementById('login-password');
+  const eyeBtn   = document.getElementById('btn-toggle-password');
+  const eyeIcon  = document.getElementById('eye-icon');
+  if (pwInput && eyeBtn) {
+    eyeBtn.addEventListener('click', () => {
+      const show = pwInput.type === 'password';
+      pwInput.type = show ? 'text' : 'password';
+      eyeIcon.className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+      eyeBtn.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    });
+  }
+
   document.getElementById('login-form')?.addEventListener('submit', async e => {
     e.preventDefault();
     const btn = document.getElementById('login-btn');

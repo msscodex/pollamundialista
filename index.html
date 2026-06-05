@@ -33,7 +33,12 @@
         </div>
         <div class="login-field">
           <label for="login-password">Contraseña</label>
-          <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required>
+          <div class="input-eye-wrap">
+            <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required>
+            <button type="button" class="btn-eye" id="btn-toggle-password" aria-label="Mostrar contraseña">
+              <i class="fa-regular fa-eye" id="eye-icon"></i>
+            </button>
+          </div>
         </div>
         <p id="login-error" class="login-error"></p>
         <button type="submit" class="btn btn-gold btn-full" id="login-btn">Ingresar</button>
