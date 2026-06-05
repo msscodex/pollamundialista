@@ -954,9 +954,9 @@ footer {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   margin: 24px auto 32px;
-  max-width: 560px;
+  max-width: 700px;
 }
 
 .podium-step {
@@ -965,20 +965,24 @@ footer {
   flex-direction: column;
   align-items: center;
   border-radius: var(--radius) var(--radius) 0 0;
-  padding: 16px 10px 0;
+  padding: 14px 8px 0;
   background: var(--card);
   border: 1px solid var(--border);
   border-bottom: none;
   text-align: center;
+  min-width: 0;
 }
 
 .podium-step.pos-1 { min-height: 160px; border-color: var(--gold); }
 .podium-step.pos-2 { min-height: 120px; border-color: #B0B8C1; }
 .podium-step.pos-3 { min-height: 90px;  border-color: #CD7F32; }
+.podium-step.pos-4 { min-height: 68px;  border-color: #555; }
+.podium-step.pos-5 { min-height: 56px;  border-color: #444; }
 
-.podium-medal { font-size: 28px; margin-bottom: 6px; }
-.podium-name  { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; word-break: break-word; }
-.podium-pts   { font-size: 18px; font-weight: 900; color: var(--gold); }
+.podium-medal { font-size: 26px; margin-bottom: 6px; }
+.podium-pos   { font-size: 18px; font-weight: 800; color: #888; margin-bottom: 6px; }
+.podium-name  { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 4px; word-break: break-word; }
+.podium-pts   { font-size: 16px; font-weight: 900; color: var(--gold); }
 
 /* ================================================================
    RANKING TABLE

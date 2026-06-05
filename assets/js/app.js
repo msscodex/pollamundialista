@@ -628,18 +628,21 @@ function renderRanking(players, results) {
     '<i class="fa-solid fa-medal" style="color:#C0C0C0"></i>',
     '<i class="fa-solid fa-medal" style="color:#CD7F32"></i>'
   ];
-  const podiumPositions = [1, 0, 2];
+  // Orden visual: 4°, 2°, 1°, 3°, 5°
+  const podiumPositions = [3, 1, 0, 2, 4];
   podiumWrap.innerHTML = podiumPositions
     .filter(i => scored[i])
     .map(i => {
       const p = scored[i];
       const pos = i + 1;
+      const icon = i < 3
+        ? `<div class="podium-medal">${MEDALS[i]}</div>`
+        : `<div class="podium-pos">${pos}°</div>`;
       return `
 <div class="podium-step pos-${pos}">
-  <div class="podium-medal">${MEDALS[i]}</div>
+  ${icon}
   <div class="podium-name">${p.name}</div>
   <div class="podium-pts">${p.score.total} pts</div>
-  <div class="podium-bar"></div>
 </div>`;
     }).join('');
 
