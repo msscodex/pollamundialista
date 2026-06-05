@@ -1572,3 +1572,82 @@ footer {
 }
 .tp-option:hover { background: var(--card-alt); }
 .tp-option .fi { font-size: 16px; }
+
+/* ================================================================
+   PARTICIPANTES — Vista admin
+================================================================ */
+.participantes-search-bar {
+  margin: 0 0 20px;
+}
+.participantes-search-bar input {
+  width: 100%;
+  max-width: 420px;
+  padding: 11px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--transition);
+  box-sizing: border-box;
+}
+.participantes-search-bar input:focus { border-color: var(--gold); }
+
+.participantes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.participante-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color var(--transition), background var(--transition);
+  cursor: pointer;
+}
+.participante-card:hover {
+  border-color: var(--gold);
+  background: var(--card-alt);
+}
+
+.pc-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.pc-status {
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+.pc-locked {
+  background: rgba(201,168,76, 0.15);
+  color: var(--gold);
+}
+.pc-open {
+  background: rgba(255,255,255,0.07);
+  color: #aaa;
+}
+
+.pc-arrow {
+  font-size: 18px;
+  color: var(--gold);
+  opacity: 0.7;
+}
+
+.loading-msg {
+  color: #aaa;
+  font-size: 14px;
+  padding: 20px 0;
+}

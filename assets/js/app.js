@@ -317,7 +317,11 @@ function updateHeaderState() {
   document.getElementById('header-user-name').classList.toggle('hidden', !isLogged);
   document.getElementById('btn-logout').classList.toggle('hidden', !isLogged);
   document.getElementById('btn-show-login').classList.toggle('hidden', isLogged);
-  document.querySelector('.tab-btn[data-hash="#polla"]').classList.toggle('hidden', !isLogged);
+  const pollaTab = document.querySelector('.tab-btn[data-hash="#polla"]');
+  if (pollaTab) {
+    pollaTab.classList.toggle('hidden', !isLogged);
+    pollaTab.textContent = CURRENT_USER?.is_admin ? '👥 Participantes' : '⚽ Mi Polla';
+  }
   const adminTab = document.querySelector('.tab-btn[data-hash="#admin"]');
   if (adminTab) adminTab.classList.toggle('hidden', !isLogged || !CURRENT_USER?.is_admin);
   if (isLogged) {
@@ -345,10 +349,11 @@ function initLoginUI() {
       password: document.getElementById('login-password').value,
     });
 
+    btn.disabled = false;
+    btn.textContent = 'Ingresar';
+
     if (error) {
       err.textContent = 'Email o contraseña incorrectos.';
-      btn.disabled = false;
-      btn.textContent = 'Ingresar';
     }
   });
 
@@ -384,15 +389,21 @@ function route() {
     loadAndRenderHome();
   } else if (hash === '#polla') {
     if (!CURRENT_USER) { showLogin(); location.hash = '#home'; return; }
-    showView('view-polla');
-    setActiveTab('#polla');
-    renderGroups();
-    renderBracket();
-    recalcAllGroups();
-    loadSavedBracketInputs();
-    loadBonusInputs();
-    initThirdPlace();
-    applyLockedState();
+    if (CURRENT_USER.is_admin) {
+      showView('view-participantes');
+      setActiveTab('#polla');
+      loadParticipantsView();
+    } else {
+      showView('view-polla');
+      setActiveTab('#polla');
+      renderGroups();
+      renderBracket();
+      recalcAllGroups();
+      loadSavedBracketInputs();
+      loadBonusInputs();
+      initThirdPlace();
+      applyLockedState();
+    }
   } else if (hash === '#reglamento') {
     showView('view-reglamento');
     setActiveTab('#reglamento');
@@ -440,16 +451,18 @@ async function loadAndRenderHome() {
 async function fetchData() {
   try {
     const [pollasRes, resultsRes] = await Promise.all([
-      sb.from('pollas').select('scores, bracket, bonuses, profiles(name)'),
+      sb.from('pollas').select('scores, bracket, bonuses, profiles(name, is_admin)'),
       sb.from('official_results').select('*').eq('id', 1).single()
     ]);
 
-    const players = (pollasRes.data || []).map(p => ({
-      name: p.profiles?.name || 'Sin nombre',
-      scores: p.scores || {},
-      bracket: p.bracket || {},
-      bonuses: p.bonuses || {},
-    }));
+    const players = (pollasRes.data || [])
+      .filter(p => !p.profiles?.is_admin)
+      .map(p => ({
+        name: p.profiles?.name || 'Sin nombre',
+        scores: p.scores || {},
+        bracket: p.bracket || {},
+        bonuses: p.bonuses || {},
+      }));
 
     const r = resultsRes.data;
     const results = r
@@ -1501,6 +1514,49 @@ async function loadDraft() {
     IS_GROUPS_LOCKED = data.is_groups_locked || false;
     try { localStorage.setItem(LS_DRAFT, JSON.stringify(STATE)); } catch (_) { }
   }
+}
+
+/* ================================================================
+   PARTICIPANTES (vista admin)
+================================================================ */
+async function loadParticipantsView() {
+  const listEl = document.getElementById('participantes-list');
+  const searchEl = document.getElementById('participantes-search');
+  if (!listEl || !searchEl) return;
+
+  listEl.innerHTML = '<p class="loading-msg">Cargando participantes…</p>';
+  searchEl.value = '';
+  searchEl.oninput = null;
+
+  const { data } = await sb
+    .from('pollas')
+    .select('is_groups_locked, profiles(name, is_admin)');
+
+  const participants = (data || [])
+    .filter(p => !p.profiles?.is_admin)
+    .map(p => ({ name: p.profiles?.name || 'Sin nombre', locked: p.is_groups_locked || false }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+
+  function render(filter) {
+    const filtered = filter
+      ? participants.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()))
+      : participants;
+
+    if (filtered.length === 0) {
+      listEl.innerHTML = '<p class="empty-msg">No se encontraron participantes.</p>';
+      return;
+    }
+
+    listEl.innerHTML = filtered.map(p => `
+<a class="participante-card" href="#ver/${encodeURIComponent(p.name)}">
+  <span class="pc-name">${p.name}</span>
+  <span class="pc-status ${p.locked ? 'pc-locked' : 'pc-open'}">${p.locked ? '🔒 Enviada' : '✏️ En progreso'}</span>
+  <span class="pc-arrow">→</span>
+</a>`).join('');
+  }
+
+  render('');
+  searchEl.oninput = () => render(searchEl.value.trim());
 }
 
 /* ================================================================
