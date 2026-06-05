@@ -43,44 +43,47 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 button { cursor: pointer; font-family: inherit; }
 
 /* ================================================================
-   HEADER
+   HEADER — barra compacta
 ================================================================ */
 header {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   z-index: 100;
-  background: linear-gradient(145deg, var(--blue) 0%, var(--blue-dark) 100%);
-  border-bottom: 3px solid var(--gold);
-  padding: 24px 20px 20px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+  border-bottom: 2px solid var(--gold);
 }
-.header-inner { max-width: 1400px; margin: 0 auto; text-align: center; }
-.header-badge {
-  display: inline-block;
-  background: var(--gold);
-  color: #1A1A1A;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 3px;
-  padding: 3px 10px;
-  border-radius: 3px;
-  margin-bottom: 8px;
-  text-transform: uppercase;
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
-header h1 {
-  font-size: clamp(22px, 5vw, 42px);
-  font-weight: 900;
+.header-logo-mini {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.header-logo-img {
+  height: 44px;
+  width: auto;
+  display: block;
+}
+.header-title {
+  font-size: 14px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
+  white-space: nowrap;
   color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .gold { color: var(--gold); }
-.header-dates {
-  color: var(--muted);
-  font-size: 13px;
-  margin-top: 4px;
-}
 /* ================================================================
    LOGO ANIMADO — Mundial 2026 (FIFA 2026 style)
 ================================================================ */
@@ -90,7 +93,7 @@ header h1 {
 }
 
 .lm-logo-svg {
-  width: 148px;
+  width: 130px;
   height: auto;
   display: block;
   overflow: visible;
@@ -133,34 +136,85 @@ header h1 {
 .btn-outline { background: rgba(255,255,255,.08); color: var(--text); border: 1px solid var(--border); }
 
 /* ================================================================
-   TABS
+   SIDE NAV — panel lateral deslizante
 ================================================================ */
-.tabs {
-  display: flex;
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  overflow-x: auto;
+.side-nav {
   position: fixed;
-  top: 0; /* sobrescrito por JS al valor real del header */
-  left: 0;
-  right: 0;
-  z-index: 99;
+  top: 0;
+  right: -300px;
+  width: 270px;
+  height: 100%;
+  background: var(--card);
+  border-left: 1px solid var(--border);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  transition: right .28s cubic-bezier(.4,0,.2,1);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
-.tab-btn {
-  flex: 1;
-  min-width: 160px;
-  padding: 13px 20px;
+.side-nav.nav-open { right: 0; }
+
+.side-nav-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--blue-dark);
+  border-bottom: 2px solid var(--gold);
+  flex-shrink: 0;
+}
+.side-nav-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gold);
+}
+.side-nav-close {
   background: none;
   border: none;
-  border-bottom: 3px solid transparent;
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  line-height: 1;
+  transition: background var(--transition);
+}
+.side-nav-close:hover { background: rgba(255,255,255,.12); }
+
+/* Overlay oscuro detrás del panel */
+.nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 199;
+  backdrop-filter: blur(2px);
+}
+.nav-overlay.active { display: block; }
+
+/* Botones del menú lateral */
+.tab-btn {
+  flex: none;
+  width: 100%;
+  text-align: left;
+  padding: 15px 20px;
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid var(--border);
   color: var(--muted);
   font-size: 14px;
   font-weight: 700;
   transition: all var(--transition);
   white-space: nowrap;
+  cursor: pointer;
 }
-.tab-btn:hover { color: var(--text); background: rgba(255,255,255,.04); }
-.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-btn:last-child { border-bottom: none; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,.04); border-left-color: rgba(201,168,76,.4); }
+.tab-btn.active { color: var(--gold); border-left-color: var(--gold); background: rgba(201,168,76,.07); }
 .tab-btn.hidden { display: none; }
 
 /* ================================================================
@@ -563,7 +617,7 @@ footer {
 
   body { background: #fff; color: #111; font-size: 10px; }
 
-  header, .tabs, footer {
+  header, .side-nav, footer {
     position: static !important;
   }
   #app-shell { padding-top: 0 !important; padding-bottom: 0 !important; }
@@ -579,7 +633,7 @@ footer {
   .header-actions,
   .player-bar svg,
   .auto-save-hint,
-  .tabs,
+  .side-nav, .nav-overlay,
   footer,
   .btn { display: none !important; }
 
@@ -1192,11 +1246,8 @@ footer {
 .header-user-bar {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 8px 20px 12px;
-  max-width: 1400px;
-  margin: 0 auto;
+  gap: 8px;
+  flex-shrink: 0;
 }
 .header-user-name {
   font-size: 13px;
@@ -1220,10 +1271,10 @@ footer {
 .btn-sm { padding: 5px 12px; font-size: 12px; }
 
 /* ================================================================
-   HAMBURGUESA — Nav mobile
+   HAMBURGUESA — siempre visible, abre side nav
 ================================================================ */
 .btn-hamburger {
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   background: none;
@@ -1237,37 +1288,6 @@ footer {
   transition: background var(--transition);
 }
 .btn-hamburger:hover { background: rgba(255,255,255,.1); }
-
-@media (max-width: 640px) {
-  .btn-hamburger { display: flex; }
-
-  .tabs {
-    flex-direction: column;
-    overflow-x: hidden;
-    display: none;
-  }
-  .tabs.nav-open {
-    display: flex;
-    box-shadow: 0 8px 24px rgba(0,0,0,.5);
-  }
-
-  .tab-btn {
-    flex: none;
-    min-width: unset;
-    width: 100%;
-    text-align: left;
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border);
-    border-bottom-width: 1px;
-    border-left: 3px solid transparent;
-  }
-  .tab-btn:last-child { border-bottom: none; }
-  .tab-btn.active {
-    border-left-color: var(--gold);
-    border-bottom-color: var(--border);
-    background: rgba(201,168,76,.07);
-  }
-}
 
 /* ================================================================
    APP SHELL

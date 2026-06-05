@@ -1820,51 +1820,44 @@ function initMusicBtn() {
 ================================================================ */
 function updateLayoutOffsets() {
   const header = document.querySelector('header');
-  const tabs = document.querySelector('.tabs');
   const footer = document.querySelector('footer');
   const shell = document.getElementById('app-shell');
-  if (!header || !tabs || !footer || !shell) return;
-
-  const headerH = header.offsetHeight;
-  const footerH = footer.offsetHeight;
-  tabs.style.top = headerH + 'px';
-
-  const isMobile = window.innerWidth <= 640;
-  const tabsH = isMobile ? 0 : tabs.offsetHeight;
-  shell.style.paddingTop = (headerH + tabsH) + 'px';
-  shell.style.paddingBottom = footerH + 'px';
+  if (!header || !footer || !shell) return;
+  shell.style.paddingTop  = header.offsetHeight + 'px';
+  shell.style.paddingBottom = footer.offsetHeight + 'px';
 }
 
 function initHamburger() {
-  const btn = document.getElementById('btn-hamburger');
-  const nav = document.getElementById('main-nav');
+  const btn     = document.getElementById('btn-hamburger');
+  const nav     = document.getElementById('main-nav');
+  const overlay = document.getElementById('nav-overlay');
   if (!btn || !nav) return;
+
+  function openNav() {
+    nav.classList.add('nav-open');
+    if (overlay) overlay.classList.add('active');
+    btn.setAttribute('aria-expanded', 'true');
+    btn.textContent = '✕';
+  }
+  function closeNav() {
+    nav.classList.remove('nav-open');
+    if (overlay) overlay.classList.remove('active');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.textContent = '☰';
+  }
 
   btn.addEventListener('click', e => {
     e.stopPropagation();
-    const open = nav.classList.toggle('nav-open');
-    btn.setAttribute('aria-expanded', String(open));
-    btn.textContent = open ? '✕' : '☰';
-    updateLayoutOffsets();
+    nav.classList.contains('nav-open') ? closeNav() : openNav();
   });
 
-  document.addEventListener('click', e => {
-    if (nav.classList.contains('nav-open') && !nav.contains(e.target) && e.target !== btn) {
-      nav.classList.remove('nav-open');
-      btn.setAttribute('aria-expanded', 'false');
-      btn.textContent = '☰';
-      updateLayoutOffsets();
-    }
+  // Delegación en el nav: captura clic en botón ✕ y en cualquier tab
+  nav.addEventListener('click', e => {
+    if (e.target.closest('#btn-nav-close')) { closeNav(); return; }
+    if (e.target.closest('.tab-btn'))       { closeNav(); }
   });
 
-  nav.querySelectorAll('.tab-btn').forEach(tab => {
-    tab.addEventListener('click', () => {
-      nav.classList.remove('nav-open');
-      btn.setAttribute('aria-expanded', 'false');
-      btn.textContent = '☰';
-      updateLayoutOffsets();
-    });
-  });
+  if (overlay) overlay.addEventListener('click', closeNav);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
