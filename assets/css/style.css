@@ -75,29 +75,6 @@ header h1 {
   font-size: 13px;
   margin-top: 4px;
 }
-.header-hosts {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-}
-.host-pill {
-  background: rgba(255,255,255,.1);
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 20px;
-  padding: 4px 14px;
-  font-size: 12px;
-  font-weight: 500;
-}
-.header-actions {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
-}
-
 /* ---- BUTTONS ---- */
 .btn {
   display: inline-flex;
@@ -116,45 +93,6 @@ header h1 {
 .btn-gold    { background: var(--gold); color: #1A1A1A; }
 .btn-red     { background: var(--red);  color: #fff; }
 .btn-outline { background: rgba(255,255,255,.08); color: var(--text); border: 1px solid var(--border); }
-
-/* ================================================================
-   PLAYER BAR
-================================================================ */
-.player-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 24px;
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
-}
-.player-bar svg { color: var(--gold); flex-shrink: 0; }
-.player-bar label {
-  font-weight: 700;
-  color: var(--gold);
-  white-space: nowrap;
-  font-size: 13px;
-}
-.player-bar input {
-  flex: 1;
-  min-width: 180px;
-  max-width: 360px;
-  background: var(--card-alt);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  padding: 7px 12px;
-  font-size: 14px;
-  font-family: inherit;
-  transition: border-color var(--transition);
-}
-.player-bar input:focus { outline: none; border-color: var(--gold); }
-.auto-save-hint {
-  font-size: 11px;
-  color: var(--muted);
-  margin-left: auto;
-}
 
 /* ================================================================
    TABS
@@ -1085,6 +1023,180 @@ footer {
 .bonus-check { color: var(--green); font-weight: 700; font-size: 16px; margin-left: 4px; }
 
 /* ================================================================
+   LOGIN
+================================================================ */
+#view-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dark);
+  padding: 20px;
+}
+#view-login.hidden { display: none; }
+
+.login-box {
+  width: 100%;
+  max-width: 400px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 36px 32px;
+  box-shadow: var(--shadow);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.login-header h1 {
+  font-size: clamp(20px, 5vw, 28px);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 8px 0 4px;
+}
+
+.login-form { display: flex; flex-direction: column; gap: 16px; }
+
+.login-field { display: flex; flex-direction: column; gap: 6px; }
+.login-field label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.login-field input {
+  background: var(--card-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color var(--transition);
+}
+.login-field input:focus { outline: none; border-color: var(--gold); }
+
+.login-error {
+  color: #FF6B6B;
+  font-size: 12px;
+  min-height: 16px;
+  text-align: center;
+}
+
+.btn-full { width: 100%; justify-content: center; padding: 12px; font-size: 14px; }
+
+/* ================================================================
+   HEADER USER BAR
+================================================================ */
+.header-user-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 8px 20px 12px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.header-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+
+/* ================================================================
+   APP SHELL
+================================================================ */
+#app-shell.hidden { display: none; }
+
+/* ================================================================
+   ADMIN PANEL
+================================================================ */
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 24px;
+  margin-top: 8px;
+}
+
+.admin-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.admin-card-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.admin-field label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.admin-field input {
+  background: var(--card-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 9px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color var(--transition);
+}
+.admin-field input:focus { outline: none; border-color: var(--gold); }
+
+.admin-desc { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+
+.admin-textarea {
+  width: 100%;
+  background: var(--card-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  resize: vertical;
+  margin-bottom: 12px;
+  transition: border-color var(--transition);
+}
+.admin-textarea:focus { outline: none; border-color: var(--gold); }
+
+.admin-msg {
+  margin-top: 10px;
+  font-size: 12px;
+  min-height: 18px;
+}
+.admin-msg.success { color: var(--green); }
+.admin-msg.error   { color: #FF6B6B; }
+
+@media (max-width: 680px) {
+  .admin-grid { grid-template-columns: 1fr; }
+  .login-box  { padding: 28px 20px; }
+}
+
+/* ================================================================
    EMPTY / LOADING
 ================================================================ */
 .empty-msg {
@@ -1094,6 +1206,12 @@ footer {
   font-size: 14px;
 }
 .empty-msg.hidden { display: none; }
+
+.loading {
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity var(--transition);
+}
 
 /* ================================================================
    REGLAMENTO

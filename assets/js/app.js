@@ -1,7 +1,15 @@
 /* ================================================================
    POLLA MUNDIALISTA FIFA 2026
-   app.js — Polla multi-participante, ranking y partidos del día
+   app.js — Multi-participante con autenticación Supabase
 ================================================================ */
+
+/* ---- SUPABASE ---- */
+const SUPABASE_URL  = 'https://txwvhlearumjshvadedd.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4d3ZobGVhcnVtanNodmFkZWRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTQ0ODUsImV4cCI6MjA5NjIzMDQ4NX0.9BhmsyMrWwoWIgA11xIoobT-BaanOZEoVUlnuVu_ILo';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let CURRENT_USER = null; // { id, email, name, is_admin }
+let _appReady    = false;
 
 /* ----------------------------------------------------------------
    DATOS: 12 Grupos (Sorteo diciembre 2024)
@@ -183,7 +191,7 @@ const RONDAS = [
 ];
 
 /* ----------------------------------------------------------------
-   PUNTUACIÓN (reglamento oficial)
+   PUNTUACIÓN
 ---------------------------------------------------------------- */
 const ROUND_PTS = {
   groups: { exact: 3, result: 1 },
@@ -212,27 +220,115 @@ const BONUS_LABELS = {
   colPrimerAmarillaUzb: 'Col. 1° amarilla vs Uzb.'
 };
 
-// Mapeo rondaId → clave de ROUND_PTS
 const ROUND_KEY = { r32:'r32', r16:'r16', qf:'qf', sf:'sf', fin:'fin', third:'third' };
 
 /* ----------------------------------------------------------------
-   ESTADO en memoria para la polla activa
+   ESTADO
 ---------------------------------------------------------------- */
 let STATE = { player: '', scores: {}, bracket: {}, bonuses: {} };
 const LS_DRAFT = 'mundial2026_draft';
 
 /* ================================================================
-   INIT
+   INIT — autenticación primero
 ================================================================ */
-document.addEventListener('DOMContentLoaded', () => {
-  loadDraft();
+document.addEventListener('DOMContentLoaded', async () => {
+  initLoginUI();
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    await loadCurrentUser(session.user.id);
+    showApp();
+    await initApp();
+  } else {
+    showLogin();
+  }
+
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      await loadCurrentUser(session.user.id);
+      showApp();
+      await initApp();
+    } else if (event === 'SIGNED_OUT') {
+      CURRENT_USER = null;
+      _appReady    = false;
+      STATE        = { player: '', scores: {}, bracket: {}, bonuses: {} };
+      showLogin();
+      location.hash = '';
+    }
+  });
+});
+
+async function initApp() {
+  if (_appReady) { await loadDraft(); return; }
+  _appReady = true;
+
+  await loadDraft();
   initRouter();
   initInnerTabs();
   initInnerTabsVer();
   initPollaControls();
   initThirdPlace();
   initBonusInputs();
-});
+  initAdminPanel();
+  updateHeaderUser();
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => { location.hash = btn.dataset.hash; });
+  });
+
+  const adminTab = document.querySelector('.tab-btn[data-hash="#admin"]');
+  if (adminTab) adminTab.classList.toggle('hidden', !CURRENT_USER?.is_admin);
+}
+
+/* ================================================================
+   AUTH
+================================================================ */
+function showLogin() {
+  document.getElementById('app-shell').classList.add('hidden');
+  document.getElementById('view-login').classList.remove('hidden');
+  document.getElementById('login-email')?.focus();
+}
+
+function showApp() {
+  document.getElementById('view-login').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+}
+
+async function loadCurrentUser(userId) {
+  const { data } = await sb.from('profiles').select('*').eq('id', userId).single();
+  CURRENT_USER = data;
+}
+
+function updateHeaderUser() {
+  const el = document.getElementById('header-user-name');
+  if (el && CURRENT_USER) el.textContent = CURRENT_USER.name;
+}
+
+function initLoginUI() {
+  document.getElementById('login-form')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    const err = document.getElementById('login-error');
+    btn.disabled    = true;
+    btn.textContent = 'Ingresando…';
+    err.textContent = '';
+
+    const { error } = await sb.auth.signInWithPassword({
+      email:    document.getElementById('login-email').value.trim(),
+      password: document.getElementById('login-password').value,
+    });
+
+    if (error) {
+      err.textContent = 'Email o contraseña incorrectos.';
+      btn.disabled    = false;
+      btn.textContent = 'Ingresar';
+    }
+  });
+
+  document.getElementById('btn-logout')?.addEventListener('click', async () => {
+    await sb.auth.signOut();
+  });
+}
 
 /* ================================================================
    ROUTING — hash-based
@@ -262,11 +358,17 @@ function route() {
   } else if (hash === '#reglamento') {
     showView('view-reglamento');
     setActiveTab('#reglamento');
+  } else if (hash === '#admin' && CURRENT_USER?.is_admin) {
+    showView('view-admin');
+    setActiveTab('#admin');
+    loadOfficialResultsEditor();
   } else if (hash.startsWith('#ver/')) {
     const nombre = decodeURIComponent(hash.slice(5));
     showView('view-ver');
     setActiveTab(null);
     loadPlayerView(nombre);
+  } else {
+    location.hash = '#home';
   }
 }
 
@@ -286,70 +388,35 @@ function setActiveTab(hash) {
 }
 
 /* ================================================================
-   TABS DE NAVEGACIÓN PRINCIPAL
-================================================================ */
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      location.hash = btn.dataset.hash;
-    });
-  });
-});
-
-/* ================================================================
-   TABS INTERNOS (grupos / bracket / bonos)
-================================================================ */
-function initInnerTabs() {
-  document.querySelectorAll('.inner-tab[data-inner]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.inner-tab[data-inner]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('#view-polla .inner-section').forEach(s => s.classList.add('hidden'));
-      const target = document.getElementById('inner-' + btn.dataset.inner);
-      if (target) target.classList.remove('hidden');
-    });
-  });
-}
-
-function initInnerTabsVer() {
-  document.querySelectorAll('.inner-tab[data-inner-ver]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.inner-tab[data-inner-ver]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('#view-ver .inner-section').forEach(s => s.classList.add('hidden'));
-      const target = document.getElementById('inner-' + btn.dataset.innerVer);
-      if (target) target.classList.remove('hidden');
-    });
-  });
-}
-
-/* ================================================================
-   HOME — carga datos y renderiza
+   HOME
 ================================================================ */
 async function loadAndRenderHome() {
   const homeEl = document.getElementById('view-home');
   homeEl.classList.add('loading');
-
   const { players, results } = await fetchData();
-
   homeEl.classList.remove('loading');
-
   renderTodayMatches();
   renderRanking(players, results);
 }
 
 async function fetchData() {
   try {
-    const manifest = await fetch('./players/manifest.json').then(r => r.json()).catch(() => []);
-    const players = await Promise.all(
-      manifest.map(name =>
-        fetch(`./players/${name}.json`).then(r => r.json()).catch(() => null)
-      )
-    ).then(arr => arr.filter(Boolean));
+    const [pollasRes, resultsRes] = await Promise.all([
+      sb.from('pollas').select('scores, bracket, bonuses, profiles(name)'),
+      sb.from('official_results').select('*').eq('id', 1).single()
+    ]);
 
-    const results = await fetch('./results/official.json')
-      .then(r => r.json())
-      .catch(() => ({ scores: {}, bracket: {}, bonuses: {} }));
+    const players = (pollasRes.data || []).map(p => ({
+      name:    p.profiles?.name || 'Sin nombre',
+      scores:  p.scores  || {},
+      bracket: p.bracket || {},
+      bonuses: p.bonuses || {},
+    }));
+
+    const r = resultsRes.data;
+    const results = r
+      ? { scores: r.scores || {}, bracket: r.bracket || {}, bonuses: r.bonuses || {}, updated: r.updated_at }
+      : { scores: {}, bracket: {}, bonuses: {} };
 
     return { players, results };
   } catch (_) {
@@ -371,10 +438,9 @@ function parseMatchDate(dateStr) {
 }
 
 function renderTodayMatches() {
-  const today = new Date();
+  const today      = new Date();
   const todayDay   = today.getDate();
   const todayMonth = today.getMonth() + 1;
-
   const todayMatches = [];
 
   Object.entries(MATCH_INFO).forEach(([group, matches]) => {
@@ -382,13 +448,9 @@ function renderTodayMatches() {
       const { day, month } = parseMatchDate(mi.date);
       if (day === todayDay && month === todayMonth) {
         const jornada = JORNADAS[Math.floor(matchIdx / 2)];
-        const par = jornada.pares[matchIdx % 2];
-        const teams = GROUPS[group].teams;
-        todayMatches.push({
-          group, matchIdx,
-          t0: teams[par[0]], t1: teams[par[1]],
-          time: mi.time, venue: mi.venue
-        });
+        const par     = jornada.pares[matchIdx % 2];
+        const teams   = GROUPS[group].teams;
+        todayMatches.push({ group, matchIdx, t0: teams[par[0]], t1: teams[par[1]], time: mi.time, venue: mi.venue });
       }
     });
   });
@@ -397,34 +459,22 @@ function renderTodayMatches() {
   const grid    = document.getElementById('today-grid');
   const label   = document.getElementById('today-date-label');
 
-  if (todayMatches.length === 0) {
-    section.classList.add('hidden');
-    return;
-  }
+  if (todayMatches.length === 0) { section.classList.add('hidden'); return; }
 
-  const opts = { weekday:'long', day:'numeric', month:'long', year:'numeric' };
-  label.textContent = today.toLocaleDateString('es', opts);
-
+  label.textContent = today.toLocaleDateString('es', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
   grid.innerHTML = todayMatches.map(m => `
 <div class="today-card">
   <div class="today-group-badge">Grupo ${m.group}</div>
   <div class="today-teams">
-    <div class="today-team">
-      ${flag(m.t0)}
-      <span>${m.t0.n}</span>
-    </div>
+    <div class="today-team">${flag(m.t0)}<span>${m.t0.n}</span></div>
     <div class="today-vs">VS</div>
-    <div class="today-team">
-      ${flag(m.t1)}
-      <span>${m.t1.n}</span>
-    </div>
+    <div class="today-team">${flag(m.t1)}<span>${m.t1.n}</span></div>
   </div>
   <div class="today-info">
     <span>⏰ ${m.time} COT</span>
     <span>🏟 ${m.venue}</span>
   </div>
 </div>`).join('');
-
   section.classList.remove('hidden');
 }
 
@@ -432,11 +482,11 @@ function renderTodayMatches() {
    RANKING
 ================================================================ */
 function renderRanking(players, results) {
-  const podiumWrap  = document.getElementById('podium-wrap');
-  const tableWrap   = document.getElementById('ranking-table-wrap');
-  const emptyMsg    = document.getElementById('ranking-empty');
-  const tbody       = document.getElementById('ranking-tbody');
-  const updLabel    = document.getElementById('results-updated-label');
+  const podiumWrap = document.getElementById('podium-wrap');
+  const tableWrap  = document.getElementById('ranking-table-wrap');
+  const emptyMsg   = document.getElementById('ranking-empty');
+  const tbody      = document.getElementById('ranking-tbody');
+  const updLabel   = document.getElementById('results-updated-label');
 
   if (results.updated) {
     updLabel.textContent = 'Resultados actualizados: ' + new Date(results.updated).toLocaleString('es');
@@ -455,10 +505,9 @@ function renderRanking(players, results) {
     .map(p => ({ ...p, score: calcScore(p, results) }))
     .sort((a, b) => b.score.total - a.score.total);
 
-  // Podio
   podiumWrap.classList.remove('hidden');
   const MEDALS = ['🥇', '🥈', '🥉'];
-  const podiumPositions = [1, 0, 2]; // orden visual: 2°, 1°, 3°
+  const podiumPositions = [1, 0, 2];
   podiumWrap.innerHTML = podiumPositions
     .filter(i => scored[i])
     .map(i => {
@@ -473,14 +522,11 @@ function renderRanking(players, results) {
 </div>`;
     }).join('');
 
-  // Tabla completa
   tableWrap.classList.remove('hidden');
   tbody.innerHTML = scored.map((p, idx) => `
 <tr class="${idx === 0 ? 'rank-first' : ''}">
   <td class="rank-pos">${idx + 1}</td>
-  <td class="rank-name">
-    <a href="#ver/${encodeURIComponent(p.name)}">${p.name}</a>
-  </td>
+  <td class="rank-name"><a href="#ver/${encodeURIComponent(p.name)}">${p.name}</a></td>
   <td class="rank-pts">${p.score.total}</td>
   <td>${p.score.exact}</td>
   <td>${p.score.result}</td>
@@ -494,7 +540,6 @@ function renderRanking(players, results) {
 function calcScore(player, results) {
   let exact = 0, result = 0, bonusTotal = 0;
 
-  // Grupos
   JORNADAS.forEach((jornada, jIdx) => {
     jornada.pares.forEach((_, pIdx) => {
       const matchIdx = jIdx * 2 + pIdx;
@@ -503,63 +548,47 @@ function calcScore(player, results) {
         const k1 = scoreKey(group, matchIdx, 1);
         if (!(k0 in results.scores) || !(k1 in results.scores)) return;
         if (!(k0 in (player.scores || {})) || !(k1 in (player.scores || {}))) return;
-
         const r0 = results.scores[k0], r1 = results.scores[k1];
         const p0 = player.scores[k0],  p1 = player.scores[k1];
-
-        if (p0 === r0 && p1 === r1) {
-          exact += ROUND_PTS.groups.exact;
-        } else if (Math.sign(p0 - p1) === Math.sign(r0 - r1)) {
-          result += ROUND_PTS.groups.result;
-        }
+        if (p0 === r0 && p1 === r1)                        exact  += ROUND_PTS.groups.exact;
+        else if (Math.sign(p0 - p1) === Math.sign(r0 - r1)) result += ROUND_PTS.groups.result;
       });
     });
   });
 
-  // Bracket eliminatorio
   RONDAS.forEach(ronda => {
     const pts = ROUND_PTS[ROUND_KEY[ronda.id]];
     if (!pts) return;
     for (let i = 0; i < ronda.partidos; i++) {
-      const ks0 = `${ronda.id}-${i}-s0`;
-      const ks1 = `${ronda.id}-${i}-s1`;
+      const ks0 = `${ronda.id}-${i}-s0`, ks1 = `${ronda.id}-${i}-s1`;
       if (!(ks0 in results.bracket) || !(ks1 in results.bracket)) continue;
       if (!(ks0 in (player.bracket || {})) || !(ks1 in (player.bracket || {}))) continue;
-
       const r0 = Number(results.bracket[ks0]), r1 = Number(results.bracket[ks1]);
       const p0 = Number(player.bracket[ks0]),  p1 = Number(player.bracket[ks1]);
-
-      if (p0 === r0 && p1 === r1) {
-        exact += pts.exact;
-      } else if (Math.sign(p0 - p1) === Math.sign(r0 - r1)) {
-        result += pts.result;
-      }
+      if (p0 === r0 && p1 === r1)                          exact  += pts.exact;
+      else if (Math.sign(p0 - p1) === Math.sign(r0 - r1)) result += pts.result;
     }
   });
 
-  // Tercer lugar
-  const th = (k) => results.bracket?.[k] !== undefined && player.bracket?.[k] !== undefined;
+  const th = k => results.bracket?.[k] !== undefined && player.bracket?.[k] !== undefined;
   if (th('3rd-s0') && th('3rd-s1')) {
     const r0 = Number(results.bracket['3rd-s0']), r1 = Number(results.bracket['3rd-s1']);
     const p0 = Number(player.bracket['3rd-s0']),  p1 = Number(player.bracket['3rd-s1']);
-    if (p0 === r0 && p1 === r1)                         exact  += ROUND_PTS.third.exact;
-    else if (Math.sign(p0-p1) === Math.sign(r0-r1))    result += ROUND_PTS.third.result;
+    if (p0 === r0 && p1 === r1)                          exact  += ROUND_PTS.third.exact;
+    else if (Math.sign(p0-p1) === Math.sign(r0-r1))     result += ROUND_PTS.third.result;
   }
 
-  // Bonos
-  const pb = player.bonuses || {};
-  const rb = results.bonuses || {};
+  const pb = player.bonuses || {}, rb = results.bonuses || {};
   Object.keys(BONUS_PTS).forEach(key => {
-    if (rb[key] && pb[key] && rb[key].trim().toLowerCase() === pb[key].trim().toLowerCase()) {
+    if (rb[key] && pb[key] && rb[key].trim().toLowerCase() === pb[key].trim().toLowerCase())
       bonusTotal += BONUS_PTS[key];
-    }
   });
 
   return { total: exact + result + bonusTotal, exact, result, bonuses: bonusTotal };
 }
 
 /* ================================================================
-   VER PARTICIPANTE (solo lectura)
+   VER PARTICIPANTE
 ================================================================ */
 async function loadPlayerView(nombre) {
   document.getElementById('ver-player-title').textContent = nombre;
@@ -567,35 +596,34 @@ async function loadPlayerView(nombre) {
     location.hash = '#home';
   }, { once: true });
 
-  let playerData = null;
-  try {
-    playerData = await fetch(`./players/${encodeURIComponent(nombre)}.json`).then(r => r.json());
-  } catch (_) {
+  const { data: profile } = await sb
+    .from('profiles').select('id').ilike('name', nombre).single();
+
+  if (!profile) {
     document.getElementById('ver-player-title').textContent = nombre + ' — no encontrado';
     return;
   }
 
-  const results = await fetch('./results/official.json').then(r => r.json()).catch(() => ({ scores:{}, bracket:{}, bonuses:{} }));
+  const [pollaRes, resultsRes] = await Promise.all([
+    sb.from('pollas').select('scores, bracket, bonuses').eq('user_id', profile.id).single(),
+    sb.from('official_results').select('*').eq('id', 1).single()
+  ]);
+
+  const playerData = pollaRes.data  || { scores: {}, bracket: {}, bonuses: {} };
+  const results    = resultsRes.data || { scores: {}, bracket: {}, bonuses: {} };
   const score = calcScore(playerData, results);
 
   document.getElementById('ver-score-badge').textContent = `${score.total} pts`;
-
-  // Renderizar grupos readonly
   renderGroupsReadonly(playerData.scores || {}, 'groups-grid-ver');
-
-  // Renderizar bracket readonly
   renderBracketReadonly(playerData.bracket || {}, 'bracket-render-ver', 'champion-display-ver');
 
-  // Tercer lugar readonly
   const thirdVer = document.getElementById('third-match-ver');
   if (thirdVer) {
-    const inputs = thirdVer.querySelectorAll('[data-key]');
-    inputs.forEach(inp => {
+    thirdVer.querySelectorAll('[data-key]').forEach(inp => {
       inp.value = playerData.bracket?.[inp.dataset.key] || '';
     });
   }
 
-  // Bonos readonly
   renderBonusesReadonly(playerData.bonuses || {}, results.bonuses || {});
 }
 
@@ -613,8 +641,7 @@ function buildGroupCardReadonly(letter, teams, scores) {
       const matchIdx = jIdx * 2 + pIdx;
       const k0 = scoreKey(letter, matchIdx, 0);
       const k1 = scoreKey(letter, matchIdx, 1);
-      const v0 = scores[k0] ?? '';
-      const v1 = scores[k1] ?? '';
+      const v0 = scores[k0] ?? '', v1 = scores[k1] ?? '';
       const t0 = teams[par[0]], t1 = teams[par[1]];
       const mi = (MATCH_INFO[letter] || [])[matchIdx] || {};
       return `
@@ -644,9 +671,7 @@ function buildGroupCardReadonly(letter, teams, scores) {
       <div class="group-flags">${teams.map(t => `<span class="gf-flag" title="${t.n}">${flag(t)}</span>`).join('')}</div>
     </div>
   </div>
-  <div class="group-body">
-    <div class="group-matches">${matches}</div>
-  </div>
+  <div class="group-body"><div class="group-matches">${matches}</div></div>
 </div>`;
 }
 
@@ -655,21 +680,21 @@ function renderBracketReadonly(bracket, containerId, championId) {
   if (!container) return;
   container.innerHTML = RONDAS.map(ronda => {
     const matches = Array.from({ length: ronda.partidos }, (_, i) => {
-      const ph0 = ronda.placeholders[i * 2]     || `Eq. ${i * 2 + 1}`;
-      const ph1 = ronda.placeholders[i * 2 + 1] || `Eq. ${i * 2 + 2}`;
-      const kt0 = `${ronda.id}-${i}-t0`, kt1 = `${ronda.id}-${i}-t1`;
-      const ks0 = `${ronda.id}-${i}-s0`, ks1 = `${ronda.id}-${i}-s1`;
-      const isFin = ronda.id === 'fin';
-      const s0 = parseFloat(bracket[ks0]), s1 = parseFloat(bracket[ks1]);
+      const ph0    = ronda.placeholders[i * 2]     || `Eq. ${i * 2 + 1}`;
+      const ph1    = ronda.placeholders[i * 2 + 1] || `Eq. ${i * 2 + 2}`;
+      const kt0    = `${ronda.id}-${i}-t0`, kt1 = `${ronda.id}-${i}-t1`;
+      const ks0    = `${ronda.id}-${i}-s0`, ks1 = `${ronda.id}-${i}-s1`;
+      const isFin  = ronda.id === 'fin';
+      const s0     = parseFloat(bracket[ks0]), s1 = parseFloat(bracket[ks1]);
       const winner = !isNaN(s0) && !isNaN(s1) ? (s0 > s1 ? 't0' : s1 > s0 ? 't1' : null) : null;
       return `
 <div class="bracket-match${isFin ? ' is-final' : ''}">
   <div class="bm-row${winner==='t0'?' winner':''}">
-    <input type="text" class="bm-team" value="${bracket[kt0]||''}" placeholder="${ph0}" disabled>
+    <input type="text"   class="bm-team"  value="${bracket[kt0]||''}" placeholder="${ph0}" disabled>
     <input type="number" class="bm-score" value="${bracket[ks0]||''}" disabled placeholder="0">
   </div>
   <div class="bm-row${winner==='t1'?' winner':''}">
-    <input type="text" class="bm-team" value="${bracket[kt1]||''}" placeholder="${ph1}" disabled>
+    <input type="text"   class="bm-team"  value="${bracket[kt1]||''}" placeholder="${ph1}" disabled>
     <input type="number" class="bm-score" value="${bracket[ks1]||''}" disabled placeholder="0">
   </div>
 </div>`;
@@ -710,7 +735,6 @@ function renderGroups() {
   grid.innerHTML = Object.entries(GROUPS).map(([letter, g]) =>
     buildGroupCard(letter, g.teams)
   ).join('');
-
   grid.querySelectorAll('.m-score').forEach(inp => {
     inp.addEventListener('input', onScoreInput);
     inp.addEventListener('blur',  onScoreInput);
@@ -752,8 +776,7 @@ function buildJornadas(letter, teams) {
       const matchIdx = jIdx * 2 + pIdx;
       const k0 = scoreKey(letter, matchIdx, 0);
       const k1 = scoreKey(letter, matchIdx, 1);
-      const v0 = STATE.scores[k0] ?? '';
-      const v1 = STATE.scores[k1] ?? '';
+      const v0 = STATE.scores[k0] ?? '', v1 = STATE.scores[k1] ?? '';
       const t0 = teams[par[0]], t1 = teams[par[1]];
       const mi = (MATCH_INFO[letter] || [])[matchIdx] || {};
       return `
@@ -802,7 +825,7 @@ function buildDefaultRows(teams) {
 }
 
 /* ================================================================
-   QUINIELA — Score input handler
+   QUINIELA — Score input
 ================================================================ */
 function onScoreInput(e) {
   const { group, match, side } = e.target.dataset;
@@ -822,47 +845,34 @@ function onScoreInput(e) {
 /* ================================================================
    QUINIELA — Tabla de posiciones
 ================================================================ */
-function recalcAllGroups() {
-  Object.keys(GROUPS).forEach(recalcGroup);
-}
+function recalcAllGroups() { Object.keys(GROUPS).forEach(recalcGroup); }
 
 function recalcGroup(letter) {
   const teams = GROUPS[letter].teams;
-  const st = teams.map((t, idx) => ({
-    name: t.n, flag: t.code, idx, j:0, g:0, e:0, p:0, gf:0, gc:0, pts:0
-  }));
+  const st = teams.map((t, idx) => ({ name: t.n, flag: t.code, idx, j:0, g:0, e:0, p:0, gf:0, gc:0, pts:0 }));
 
   JORNADAS.forEach((jornada, jIdx) => {
     jornada.pares.forEach((par, pIdx) => {
       const matchIdx = jIdx * 2 + pIdx;
-      const k0 = scoreKey(letter, matchIdx, 0);
-      const k1 = scoreKey(letter, matchIdx, 1);
+      const k0 = scoreKey(letter, matchIdx, 0), k1 = scoreKey(letter, matchIdx, 1);
       if (!(k0 in STATE.scores) || !(k1 in STATE.scores)) return;
       const s0 = STATE.scores[k0], s1 = STATE.scores[k1];
       const t0 = par[0], t1 = par[1];
       st[t0].j++; st[t1].j++;
       st[t0].gf += s0; st[t0].gc += s1;
       st[t1].gf += s1; st[t1].gc += s0;
-      if (s0 > s1) {
-        st[t0].g++; st[t0].pts += 3; st[t1].p++;
-      } else if (s0 < s1) {
-        st[t1].g++; st[t1].pts += 3; st[t0].p++;
-      } else {
-        st[t0].e++; st[t1].e++; st[t0].pts++; st[t1].pts++;
-      }
+      if (s0 > s1)      { st[t0].g++; st[t0].pts += 3; st[t1].p++; }
+      else if (s0 < s1) { st[t1].g++; st[t1].pts += 3; st[t0].p++; }
+      else              { st[t0].e++; st[t1].e++; st[t0].pts++; st[t1].pts++; }
     });
   });
 
   st.sort((a, b) =>
-    b.pts - a.pts ||
-    (b.gf - b.gc) - (a.gf - a.gc) ||
-    b.gf - a.gf ||
-    a.name.localeCompare(b.name)
+    b.pts - a.pts || (b.gf - b.gc) - (a.gf - a.gc) || b.gf - a.gf || a.name.localeCompare(b.name)
   );
 
   const posClasses = ['p1','p2','p3','p4'];
   const rowClasses = ['st-advances','st-advances','st-maybe',''];
-
   const tbody = document.getElementById(`st-body-${letter}`);
   if (!tbody) return;
   tbody.innerHTML = st.map((s, pos) => {
@@ -894,25 +904,21 @@ function renderBracket() {
 
 function buildRoundHTML(ronda) {
   const matches = Array.from({ length: ronda.partidos }, (_, i) => {
-    const ph0 = ronda.placeholders[i * 2]     || `Eq. ${i * 2 + 1}`;
-    const ph1 = ronda.placeholders[i * 2 + 1] || `Eq. ${i * 2 + 2}`;
-    const kt0 = `${ronda.id}-${i}-t0`, kt1 = `${ronda.id}-${i}-t1`;
-    const ks0 = `${ronda.id}-${i}-s0`, ks1 = `${ronda.id}-${i}-s1`;
+    const ph0   = ronda.placeholders[i * 2]     || `Eq. ${i * 2 + 1}`;
+    const ph1   = ronda.placeholders[i * 2 + 1] || `Eq. ${i * 2 + 2}`;
+    const kt0   = `${ronda.id}-${i}-t0`, kt1 = `${ronda.id}-${i}-t1`;
+    const ks0   = `${ronda.id}-${i}-s0`, ks1 = `${ronda.id}-${i}-s1`;
     const isFin = ronda.id === 'fin';
     const winner = detectWinner(ronda.id, i);
     return `
 <div class="bracket-match${isFin ? ' is-final' : ''}">
   <div class="bm-row${winner === 't0' ? ' winner' : ''}">
-    <input type="text" class="bm-team" data-key="${kt0}"
-      value="${STATE.bracket[kt0] || ''}" placeholder="${ph0}" autocomplete="off">
-    <input type="number" class="bm-score" data-key="${ks0}"
-      value="${STATE.bracket[ks0] || ''}" min="0" max="99" placeholder="0">
+    <input type="text"   class="bm-team"  data-key="${kt0}" value="${STATE.bracket[kt0] || ''}" placeholder="${ph0}" autocomplete="off">
+    <input type="number" class="bm-score" data-key="${ks0}" value="${STATE.bracket[ks0] || ''}" min="0" max="99" placeholder="0">
   </div>
   <div class="bm-row${winner === 't1' ? ' winner' : ''}">
-    <input type="text" class="bm-team" data-key="${kt1}"
-      value="${STATE.bracket[kt1] || ''}" placeholder="${ph1}" autocomplete="off">
-    <input type="number" class="bm-score" data-key="${ks1}"
-      value="${STATE.bracket[ks1] || ''}" min="0" max="99" placeholder="0">
+    <input type="text"   class="bm-team"  data-key="${kt1}" value="${STATE.bracket[kt1] || ''}" placeholder="${ph1}" autocomplete="off">
+    <input type="number" class="bm-score" data-key="${ks1}" value="${STATE.bracket[ks1] || ''}" min="0" max="99" placeholder="0">
   </div>
 </div>`;
   }).join('');
@@ -925,8 +931,7 @@ function buildRoundHTML(ronda) {
 }
 
 function onBracketInput(e) {
-  const key = e.target.dataset.key;
-  STATE.bracket[key] = e.target.value;
+  STATE.bracket[e.target.dataset.key] = e.target.value;
   highlightWinnerRows();
   updateChampion();
   saveDraft();
@@ -939,7 +944,7 @@ function highlightWinnerRows() {
         `#bracket-render .bracket-match:has([data-key="${ronda.id}-${i}-t0"])`
       );
       if (!matchEl) continue;
-      const rows = matchEl.querySelectorAll('.bm-row');
+      const rows   = matchEl.querySelectorAll('.bm-row');
       const winner = detectWinner(ronda.id, i);
       rows[0].classList.toggle('winner', winner === 't0');
       rows[1].classList.toggle('winner', winner === 't1');
@@ -969,9 +974,7 @@ function updateChampion() {
 function loadSavedBracketInputs() {
   document.querySelectorAll('#view-polla [data-key]').forEach(el => {
     const key = el.dataset.key;
-    if (key && STATE.bracket[key] !== undefined) {
-      el.value = STATE.bracket[key];
-    }
+    if (key && STATE.bracket[key] !== undefined) el.value = STATE.bracket[key];
   });
   const champEl = document.getElementById('champion-display');
   if (champEl) champEl.textContent = STATE.bracket['champion'] || ' ';
@@ -983,9 +986,7 @@ function loadSavedBracketInputs() {
 ================================================================ */
 function initThirdPlace() {
   document.querySelectorAll('#third-match [data-key]').forEach(inp => {
-    if (STATE.bracket[inp.dataset.key] !== undefined) {
-      inp.value = STATE.bracket[inp.dataset.key];
-    }
+    if (STATE.bracket[inp.dataset.key] !== undefined) inp.value = STATE.bracket[inp.dataset.key];
     inp.removeEventListener('input', onThirdInput);
     inp.addEventListener('input', onThirdInput);
   });
@@ -997,7 +998,7 @@ function onThirdInput(e) {
 }
 
 /* ================================================================
-   BONOS — polla activa
+   BONOS
 ================================================================ */
 function initBonusInputs() {
   document.querySelectorAll('[data-bonus]').forEach(inp => {
@@ -1015,16 +1016,13 @@ function loadBonusInputs() {
 }
 
 /* ================================================================
-   CONTROLES DE LA QUINIELA (nombre + export + limpiar)
+   CONTROLES DE LA QUINIELA
 ================================================================ */
 function initPollaControls() {
   const nameInp = document.getElementById('q-player-name');
   if (nameInp) {
-    nameInp.value = STATE.player || '';
-    nameInp.addEventListener('input', e => {
-      STATE.player = e.target.value;
-      saveDraft();
-    });
+    nameInp.value = CURRENT_USER?.name || STATE.player || '';
+    STATE.player  = CURRENT_USER?.name || STATE.player || '';
   }
 
   document.getElementById('btn-export-polla')?.addEventListener('click', exportJSON);
@@ -1045,7 +1043,7 @@ function initPollaControls() {
 }
 
 /* ================================================================
-   EXPORT PDF — grupos
+   EXPORT PDF
 ================================================================ */
 function exportGroupsPDF() {
   document.body.classList.add('printing-grupos');
@@ -1060,11 +1058,7 @@ function exportGroupsPDF() {
 ================================================================ */
 function exportJSON() {
   const name = STATE.player.trim();
-  if (!name) {
-    alert('Escribe tu nombre antes de exportar.');
-    document.getElementById('q-player-name')?.focus();
-    return;
-  }
+  if (!name) { alert('No se pudo obtener tu nombre.'); return; }
   const payload = {
     name,
     exported: new Date().toISOString(),
@@ -1076,33 +1070,153 @@ function exportJSON() {
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   const slug = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
-  a.href     = url;
-  a.download = `${slug}.json`;
-  a.click();
+  a.href = url; a.download = `${slug}.json`; a.click();
   URL.revokeObjectURL(url);
 }
 
 /* ================================================================
-   PERSISTENCIA — borrador en localStorage
+   PERSISTENCIA — localStorage + Supabase (debounced)
 ================================================================ */
+let _saveTimer = null;
+
 function saveDraft() {
   try { localStorage.setItem(LS_DRAFT, JSON.stringify(STATE)); } catch (_) {}
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(syncToSupabase, 1500);
 }
 
-function loadDraft() {
+async function syncToSupabase() {
+  if (!CURRENT_USER) return;
+  await sb.from('pollas').upsert(
+    {
+      user_id:    CURRENT_USER.id,
+      scores:     STATE.scores,
+      bracket:    STATE.bracket,
+      bonuses:    STATE.bonuses,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id' }
+  );
+}
+
+async function loadDraft() {
   try {
     const raw = localStorage.getItem(LS_DRAFT);
-    if (raw) STATE = JSON.parse(raw);
+    if (raw) STATE = { ...STATE, ...JSON.parse(raw) };
   } catch (_) {}
+
+  if (!CURRENT_USER) return;
+
+  const { data } = await sb
+    .from('pollas')
+    .select('scores, bracket, bonuses')
+    .eq('user_id', CURRENT_USER.id)
+    .single();
+
+  if (data) {
+    STATE.scores  = data.scores  || {};
+    STATE.bracket = data.bracket || {};
+    STATE.bonuses = data.bonuses || {};
+    STATE.player  = CURRENT_USER.name;
+    try { localStorage.setItem(LS_DRAFT, JSON.stringify(STATE)); } catch (_) {}
+  }
+}
+
+/* ================================================================
+   ADMIN
+================================================================ */
+function initAdminPanel() {
+  if (!CURRENT_USER?.is_admin) return;
+
+  document.getElementById('create-user-form')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const name     = document.getElementById('new-user-name').value.trim();
+    const email    = document.getElementById('new-user-email').value.trim();
+    const password = document.getElementById('new-user-password').value;
+    const msg      = document.getElementById('create-user-msg');
+    const btn      = document.getElementById('btn-create-user');
+
+    btn.disabled    = true;
+    msg.textContent = 'Creando usuario…';
+    msg.className   = 'admin-msg';
+
+    const { error } = await sb.functions.invoke('create-user', {
+      body: { name, email, password },
+    });
+
+    if (error) {
+      msg.textContent = 'Error: ' + (error.message || 'No se pudo crear el usuario');
+      msg.className   = 'admin-msg error';
+    } else {
+      msg.textContent = `Usuario "${name}" creado correctamente.`;
+      msg.className   = 'admin-msg success';
+      e.target.reset();
+    }
+    btn.disabled = false;
+  });
+
+  document.getElementById('btn-save-results')?.addEventListener('click', async () => {
+    const ta  = document.getElementById('official-results-json');
+    const msg = document.getElementById('save-results-msg');
+    try {
+      const parsed = JSON.parse(ta.value);
+      const { error } = await sb.from('official_results').upsert({
+        id:         1,
+        scores:     parsed.scores  || {},
+        bracket:    parsed.bracket || {},
+        bonuses:    parsed.bonuses || {},
+        updated_at: new Date().toISOString(),
+      });
+      msg.textContent = error ? 'Error: ' + error.message : 'Resultados guardados correctamente.';
+      msg.className   = 'admin-msg ' + (error ? 'error' : 'success');
+    } catch (_) {
+      msg.textContent = 'JSON inválido. Revisa el formato.';
+      msg.className   = 'admin-msg error';
+    }
+  });
+}
+
+async function loadOfficialResultsEditor() {
+  const ta = document.getElementById('official-results-json');
+  if (!ta) return;
+  const { data } = await sb.from('official_results').select('*').eq('id', 1).single();
+  if (data) {
+    ta.value = JSON.stringify(
+      { scores: data.scores || {}, bracket: data.bracket || {}, bonuses: data.bonuses || {} },
+      null, 2
+    );
+  }
+}
+
+/* ================================================================
+   TABS INTERNOS
+================================================================ */
+function initInnerTabs() {
+  document.querySelectorAll('.inner-tab[data-inner]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.inner-tab[data-inner]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('#view-polla .inner-section').forEach(s => s.classList.add('hidden'));
+      const target = document.getElementById('inner-' + btn.dataset.inner);
+      if (target) target.classList.remove('hidden');
+    });
+  });
+}
+
+function initInnerTabsVer() {
+  document.querySelectorAll('.inner-tab[data-inner-ver]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.inner-tab[data-inner-ver]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('#view-ver .inner-section').forEach(s => s.classList.add('hidden'));
+      const target = document.getElementById('inner-' + btn.dataset.innerVer);
+      if (target) target.classList.remove('hidden');
+    });
+  });
 }
 
 /* ================================================================
    UTILS
 ================================================================ */
-function scoreKey(group, match, side) {
-  return `${group}-${match}-${side}`;
-}
-
-function flag(t) {
-  return `<span class="fi fi-${t.code}"></span>`;
-}
+function scoreKey(group, match, side) { return `${group}-${match}-${side}`; }
+function flag(t) { return `<span class="fi fi-${t.code}"></span>`; }

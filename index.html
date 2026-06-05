@@ -10,446 +10,390 @@
 <body>
 
   <!-- ======================================================
-       HEADER
+       LOGIN
   ====================================================== -->
-  <header>
-    <div class="header-inner">
-      <div class="header-badge">FIFA</div>
-      <h1>Polla <span class="gold">Mundialista 2026</span></h1>
-      <p class="header-dates">11 Junio – 19 Julio 2026 &nbsp;·&nbsp; 🇺🇸 USA &nbsp;·&nbsp; 🇨🇦 Canadá &nbsp;·&nbsp; 🇲🇽 México</p>
-    </div>
-  </header>
-
-  <!-- ======================================================
-       NAV
-  ====================================================== -->
-  <nav class="tabs" role="tablist">
-    <button class="tab-btn" data-hash="#home" role="tab">🏠 Inicio</button>
-    <button class="tab-btn" data-hash="#polla" role="tab">⚽ Mi Polla</button>
-    <button class="tab-btn" data-hash="#reglamento" role="tab">📋 Reglamento</button>
-  </nav>
-
-  <!-- ======================================================
-       VIEW: HOME
-  ====================================================== -->
-  <section class="page-section hidden" id="view-home">
-
-    <!-- Partidos del día -->
-    <div id="today-section" class="today-section hidden">
-      <div class="section-header">
-        <h2>⚽ Partidos de Hoy</h2>
-        <p class="section-sub" id="today-date-label"></p>
+  <div id="view-login" class="hidden">
+    <div class="login-box">
+      <div class="login-header">
+        <div class="header-badge">FIFA</div>
+        <h1>Polla <span class="gold">Mundialista 2026</span></h1>
+        <p class="header-dates">11 Junio – 19 Julio 2026 · 🇺🇸 · 🇨🇦 · 🇲🇽</p>
       </div>
-      <div class="today-grid" id="today-grid"></div>
+      <form id="login-form" class="login-form">
+        <div class="login-field">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" placeholder="tu@email.com"
+            autocomplete="email" required>
+        </div>
+        <div class="login-field">
+          <label for="login-password">Contraseña</label>
+          <input type="password" id="login-password" placeholder="••••••••"
+            autocomplete="current-password" required>
+        </div>
+        <p id="login-error" class="login-error"></p>
+        <button type="submit" class="btn btn-gold btn-full" id="login-btn">Ingresar</button>
+      </form>
     </div>
-
-    <!-- Podio + Ranking -->
-    <div class="section-header" style="margin-top:28px">
-      <h2>🏆 Ranking</h2>
-      <p class="section-sub" id="results-updated-label"></p>
-    </div>
-
-    <div id="ranking-empty" class="empty-msg hidden">
-      Aún no hay participantes. Cuando alguien suba su polla aparecerá aquí.
-    </div>
-
-    <div id="podium-wrap" class="podium hidden"></div>
-
-    <div id="ranking-table-wrap" class="hidden">
-      <table class="ranking-table" id="ranking-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Participante</th>
-            <th title="Puntos totales">Pts</th>
-            <th title="Resultados exactos">Exactos</th>
-            <th title="Ganadores correctos (no exactos)">Ganadores</th>
-            <th title="Bonos acertados">Bonos</th>
-          </tr>
-        </thead>
-        <tbody id="ranking-tbody"></tbody>
-      </table>
-    </div>
-
-  </section>
+  </div>
 
   <!-- ======================================================
-       VIEW: QUINIELA (llenar y exportar)
+       APP SHELL (oculto hasta autenticar)
   ====================================================== -->
-  <section class="page-section hidden" id="view-polla">
+  <div id="app-shell" class="hidden">
 
-    <div class="section-header">
-      <h2>Mi Polla</h2>
-      <p class="section-sub">Llena tus predicciones, exporta el JSON y súbelo al repositorio</p>
-    </div>
+    <!-- HEADER -->
+    <header>
+      <div class="header-inner">
+        <div class="header-badge">FIFA</div>
+        <h1>Polla <span class="gold">Mundialista 2026</span></h1>
+        <p class="header-dates">11 Junio – 19 Julio 2026 &nbsp;·&nbsp; 🇺🇸 USA &nbsp;·&nbsp; 🇨🇦 Canadá &nbsp;·&nbsp; 🇲🇽 México</p>
+      </div>
+      <div class="header-user-bar">
+        <span class="header-user-name" id="header-user-name"></span>
+        <button class="btn btn-outline btn-sm" id="btn-logout">Cerrar sesión</button>
+      </div>
+    </header>
 
-    <!-- Nombre del participante -->
-    <div class="player-name-bar">
-      <label for="q-player-name">Tu nombre:</label>
-      <input type="text" id="q-player-name" placeholder="Escribe tu nombre…" maxlength="60" autocomplete="off">
-      <button class="btn btn-gold" id="btn-export-polla">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Exportar JSON
-      </button>
-      <button class="btn btn-outline" id="btn-export-pdf">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
-        PDF Grupos
-      </button>
-      <button class="btn btn-outline" id="btn-clear-polla">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-        Limpiar
-      </button>
-    </div>
-
-    <!-- Tabs internos: Grupos / Bracket / Bonos -->
-    <nav class="inner-tabs" role="tablist">
-      <button class="inner-tab active" data-inner="grupos">⚽ Fase de Grupos</button>
-      <button class="inner-tab" data-inner="bracket">🏆 Eliminatorias</button>
-      <button class="inner-tab" data-inner="bonos">⭐ Bonos</button>
+    <!-- NAV -->
+    <nav class="tabs" role="tablist">
+      <button class="tab-btn" data-hash="#home"       role="tab">🏠 Inicio</button>
+      <button class="tab-btn" data-hash="#polla"      role="tab">⚽ Mi Polla</button>
+      <button class="tab-btn" data-hash="#reglamento" role="tab">📋 Reglamento</button>
+      <button class="tab-btn hidden" data-hash="#admin" role="tab">⚙️ Admin</button>
     </nav>
 
-    <!-- Grupos -->
-    <div class="inner-section" id="inner-grupos">
-      <div class="legend">
-        <span class="legend-item advances">&#9646; Clasificado directo</span>
-        <span class="legend-item maybe">&#9646; Posible mejor 3.°</span>
+    <!-- ================================================
+         VIEW: HOME
+    ================================================ -->
+    <section class="page-section hidden" id="view-home">
+
+      <div id="today-section" class="today-section hidden">
+        <div class="section-header">
+          <h2>⚽ Partidos de Hoy</h2>
+          <p class="section-sub" id="today-date-label"></p>
+        </div>
+        <div class="today-grid" id="today-grid"></div>
       </div>
-      <div class="groups-grid" id="groups-grid"></div>
-    </div>
 
-    <!-- Bracket -->
-    <div class="inner-section hidden" id="inner-bracket">
-      <div class="bracket-wrapper">
-        <div class="bracket" id="bracket-render"></div>
-        <div class="champion-col">
-          <div class="champion-box">
-            <span class="trophy-icon">🏆</span>
-            <p class="champion-label">CAMPEÓN MUNDIAL</p>
-            <div class="champion-name" id="champion-display">&nbsp;</div>
-            <div class="champion-flag" id="champion-flag"></div>
-          </div>
-        </div>
+      <div class="section-header" style="margin-top:28px">
+        <h2>🏆 Ranking</h2>
+        <p class="section-sub" id="results-updated-label"></p>
       </div>
-      <div class="third-place-section">
-        <h3 class="third-title">🥉 Tercer y Cuarto Lugar</h3>
-        <p class="third-sub">19 Julio 2026 · Miami Gardens, Florida</p>
-        <div class="bracket-match" id="third-match">
-          <div class="bm-row">
-            <input type="text" class="bm-team" data-key="3rd-t0" placeholder="Perdedor Semifinal 1" autocomplete="off">
-            <input type="number" class="bm-score" data-key="3rd-s0" min="0" max="99" placeholder="0">
-          </div>
-          <div class="bm-divider"></div>
-          <div class="bm-row">
-            <input type="text" class="bm-team" data-key="3rd-t1" placeholder="Perdedor Semifinal 2" autocomplete="off">
-            <input type="number" class="bm-score" data-key="3rd-s1" min="0" max="99" placeholder="0">
-          </div>
-        </div>
+
+      <div id="ranking-empty" class="empty-msg hidden">
+        Aún no hay participantes con polla guardada.
       </div>
-    </div>
-
-    <!-- Bonos -->
-    <div class="inner-section hidden" id="inner-bonos">
-      <div class="bonuses-grid">
-
-        <div class="bonus-group">
-          <h3 class="bonus-group-title">🏅 Posiciones finales</h3>
-          <div class="bonus-field">
-            <label>Campeón <span class="bonus-pts">+6 pts</span></label>
-            <input type="text" data-bonus="campeon" placeholder="Selección campeona…" autocomplete="off">
-          </div>
-          <div class="bonus-field">
-            <label>Subcampeón <span class="bonus-pts">+5 pts</span></label>
-            <input type="text" data-bonus="subcampeon" placeholder="Finalista…" autocomplete="off">
-          </div>
-          <div class="bonus-field">
-            <label>3° Puesto <span class="bonus-pts">+4 pts</span></label>
-            <input type="text" data-bonus="tercero" placeholder="Tercer lugar…" autocomplete="off">
-          </div>
-          <div class="bonus-field">
-            <label>4° Puesto <span class="bonus-pts">+3 pts</span></label>
-            <input type="text" data-bonus="cuarto" placeholder="Cuarto lugar…" autocomplete="off">
-          </div>
-        </div>
-
-        <div class="bonus-group">
-          <h3 class="bonus-group-title">⭐ Premios individuales</h3>
-          <div class="bonus-field">
-            <label>Goleador del torneo <span class="bonus-pts">+3 pts</span></label>
-            <input type="text" data-bonus="goleador" placeholder="Nombre del goleador…" autocomplete="off">
-          </div>
-          <div class="bonus-field">
-            <label>Mejor jugador <span class="bonus-pts">+3 pts</span></label>
-            <input type="text" data-bonus="mejorJugador" placeholder="Balón de Oro…" autocomplete="off">
-          </div>
-          <div class="bonus-field">
-            <label>Mejor arquero <span class="bonus-pts">+3 pts</span></label>
-            <input type="text" data-bonus="mejorArquero" placeholder="Guante de Oro…" autocomplete="off">
-          </div>
-        </div>
-
-        <div class="bonus-group">
-          <h3 class="bonus-group-title">📊 Primera ronda</h3>
-          <div class="bonus-field">
-            <label>Valla menos vencida <span class="bonus-pts">+3 pts</span></label>
-            <input type="text" data-bonus="vallaMin" placeholder="Selección con menos GC…" autocomplete="off">
-          </div>
-          <div class="bonus-field">
-            <label>Valla más vencida <span class="bonus-pts">+2 pts</span></label>
-            <input type="text" data-bonus="vallaMax" placeholder="Selección con más GC…" autocomplete="off">
-          </div>
-          <div class="bonus-field">
-            <label>Más puntos en grupos <span class="bonus-pts">+3 pts</span></label>
-            <input type="text" data-bonus="masPuntosGrupos" placeholder="Selección líder…" autocomplete="off">
-          </div>
-          <div class="bonus-field">
-            <label>Menos puntos en grupos <span class="bonus-pts">+2 pts</span></label>
-            <input type="text" data-bonus="menosPuntosGrupos" placeholder="Selección última…" autocomplete="off">
-          </div>
-        </div>
-
-        <div class="bonus-group">
-          <h3 class="bonus-group-title">🇨🇴 Colombia Especiales</h3>
-          <div class="bonus-field">
-            <label>1° gol inaugural (Méx o Sudáfrica) <span class="bonus-pts">+2 pts</span></label>
-            <input type="text" data-bonus="primerGolInaugural" placeholder="México o Sudáfrica…" autocomplete="off">
-          </div>
-          <div class="bonus-field">
-            <label>Jugador Colombia 1° gol vs Uzbekistán <span class="bonus-pts">+2 pts</span></label>
-            <input type="text" data-bonus="colPrimerGolUzb" placeholder="Nombre del jugador…" autocomplete="off">
-          </div>
-          <div class="bonus-field">
-            <label>Jugador Colombia 1° amarilla vs Uzbekistán <span class="bonus-pts">+2 pts</span></label>
-            <input type="text" data-bonus="colPrimerAmarillaUzb" placeholder="Nombre del jugador…" autocomplete="off">
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-  </section>
-
-  <!-- ======================================================
-       VIEW: VER participante (solo lectura)
-  ====================================================== -->
-  <section class="page-section hidden" id="view-ver">
-    <div class="ver-header">
-      <button class="btn btn-outline btn-back" id="btn-back-home">← Volver al ranking</button>
-      <h2 id="ver-player-title"></h2>
-      <div class="ver-score-badge" id="ver-score-badge"></div>
-    </div>
-
-    <nav class="inner-tabs" role="tablist">
-      <button class="inner-tab active" data-inner-ver="grupos-ver">⚽ Grupos</button>
-      <button class="inner-tab" data-inner-ver="bracket-ver">🏆 Eliminatorias</button>
-      <button class="inner-tab" data-inner-ver="bonos-ver">⭐ Bonos</button>
-    </nav>
-
-    <div class="inner-section" id="inner-grupos-ver">
-      <div class="groups-grid" id="groups-grid-ver"></div>
-    </div>
-
-    <div class="inner-section hidden" id="inner-bracket-ver">
-      <div class="bracket-wrapper">
-        <div class="bracket" id="bracket-render-ver"></div>
-        <div class="champion-col">
-          <div class="champion-box">
-            <span class="trophy-icon">🏆</span>
-            <p class="champion-label">CAMPEÓN</p>
-            <div class="champion-name" id="champion-display-ver">&nbsp;</div>
-          </div>
-        </div>
-      </div>
-      <div class="third-place-section">
-        <h3 class="third-title">🥉 Tercer y Cuarto Lugar</h3>
-        <div class="bracket-match" id="third-match-ver">
-          <div class="bm-row">
-            <input type="text" class="bm-team" disabled placeholder="Perdedor SF1">
-            <input type="number" class="bm-score" disabled placeholder="0">
-          </div>
-          <div class="bm-divider"></div>
-          <div class="bm-row">
-            <input type="text" class="bm-team" disabled placeholder="Perdedor SF2">
-            <input type="number" class="bm-score" disabled placeholder="0">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="inner-section hidden" id="inner-bonos-ver">
-      <div class="bonuses-grid" id="bonuses-grid-ver"></div>
-    </div>
-
-  </section>
-
-  <!-- ======================================================
-       VIEW: REGLAMENTO
-  ====================================================== -->
-  <section class="page-section hidden" id="view-reglamento">
-
-    <div class="section-header">
-      <h2>📋 Reglamento</h2>
-      <p class="section-sub">Polla Mundialista · Canadá – Estados Unidos – México</p>
-    </div>
-
-    <div class="reglamento-grid">
-
-      <!-- SISTEMA DE PUNTUACIÓN -->
-      <div class="reg-card">
-        <h3 class="reg-card-title">Sistema de Puntuación</h3>
-
-        <table class="reg-table">
+      <div id="podium-wrap" class="podium hidden"></div>
+      <div id="ranking-table-wrap" class="hidden">
+        <table class="ranking-table" id="ranking-table">
           <thead>
             <tr>
-              <th>Ronda</th>
-              <th>Marcador exacto</th>
-              <th>Solo resultado (L/E/V)</th>
+              <th>#</th>
+              <th>Participante</th>
+              <th title="Puntos totales">Pts</th>
+              <th title="Resultados exactos">Exactos</th>
+              <th title="Ganadores correctos">Ganadores</th>
+              <th title="Bonos acertados">Bonos</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td>Primera ronda (Grupos)</td>
-              <td class="pts-exact">3 pts</td>
-              <td class="pts-result">1 pt</td>
-            </tr>
-            <tr>
-              <td>Dieciséisavos de final</td>
-              <td class="pts-exact">4 pts</td>
-              <td class="pts-result">2 pts</td>
-            </tr>
-            <tr>
-              <td>Octavos de final</td>
-              <td class="pts-exact">5 pts</td>
-              <td class="pts-result">3 pts</td>
-            </tr>
-            <tr>
-              <td>Cuartos de final</td>
-              <td class="pts-exact">6 pts</td>
-              <td class="pts-result">4 pts</td>
-            </tr>
-            <tr>
-              <td>Semifinales</td>
-              <td class="pts-exact">7 pts</td>
-              <td class="pts-result">5 pts</td>
-            </tr>
-            <tr>
-              <td>Tercer y cuarto puesto</td>
-              <td class="pts-exact">8 pts</td>
-              <td class="pts-result">6 pts</td>
-            </tr>
-            <tr>
-              <td><strong>Final</strong></td>
-              <td class="pts-exact"><strong>9 pts</strong></td>
-              <td class="pts-result"><strong>7 pts</strong></td>
-            </tr>
-          </tbody>
+          <tbody id="ranking-tbody"></tbody>
         </table>
-
-        <p class="reg-note">⚠️ En caso de tiempo complementario o penaltis, <strong>solo se cuenta el resultado de los 90 minutos</strong>.</p>
       </div>
 
-      <!-- PUNTOS EXTRA -->
-      <div class="reg-card">
-        <h3 class="reg-card-title">Cómo Conseguir Puntos Extra</h3>
+    </section>
 
-        <div class="reg-bonus-list">
-          <div class="reg-bonus-row">
-            <span class="reg-bonus-label">Acertar el campeón</span>
-            <span class="reg-bonus-pts">+6 pts</span>
+    <!-- ================================================
+         VIEW: MI POLLA
+    ================================================ -->
+    <section class="page-section hidden" id="view-polla">
+
+      <div class="section-header">
+        <h2>Mi Polla</h2>
+        <p class="section-sub">Llena tus predicciones — se guardan automáticamente</p>
+      </div>
+
+      <div class="player-name-bar">
+        <label for="q-player-name">Tu nombre:</label>
+        <input type="text" id="q-player-name" placeholder="Tu nombre…" maxlength="60" autocomplete="off" readonly>
+        <button class="btn btn-gold" id="btn-export-polla">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar JSON
+        </button>
+        <button class="btn btn-outline" id="btn-export-pdf">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+          PDF Grupos
+        </button>
+        <button class="btn btn-outline" id="btn-clear-polla">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          Limpiar
+        </button>
+      </div>
+
+      <nav class="inner-tabs" role="tablist">
+        <button class="inner-tab active" data-inner="grupos">⚽ Fase de Grupos</button>
+        <button class="inner-tab" data-inner="bracket">🏆 Eliminatorias</button>
+        <button class="inner-tab" data-inner="bonos">⭐ Bonos</button>
+      </nav>
+
+      <!-- Grupos -->
+      <div class="inner-section" id="inner-grupos">
+        <div class="legend">
+          <span class="legend-item advances">&#9646; Clasificado directo</span>
+          <span class="legend-item maybe">&#9646; Posible mejor 3.°</span>
+        </div>
+        <div class="groups-grid" id="groups-grid"></div>
+      </div>
+
+      <!-- Bracket -->
+      <div class="inner-section hidden" id="inner-bracket">
+        <div class="bracket-wrapper">
+          <div class="bracket" id="bracket-render"></div>
+          <div class="champion-col">
+            <div class="champion-box">
+              <span class="trophy-icon">🏆</span>
+              <p class="champion-label">CAMPEÓN MUNDIAL</p>
+              <div class="champion-name" id="champion-display">&nbsp;</div>
+              <div class="champion-flag" id="champion-flag"></div>
+            </div>
           </div>
-          <div class="reg-bonus-row">
-            <span class="reg-bonus-label">Acertar el subcampeón</span>
-            <span class="reg-bonus-pts">+5 pts</span>
-          </div>
-          <div class="reg-bonus-row">
-            <span class="reg-bonus-label">Acertar la selección 3° puesto</span>
-            <span class="reg-bonus-pts">+4 pts</span>
-          </div>
-          <div class="reg-bonus-row">
-            <span class="reg-bonus-label">Acertar la selección 4° puesto</span>
-            <span class="reg-bonus-pts">+3 pts</span>
-          </div>
-          <div class="reg-bonus-row">
-            <span class="reg-bonus-label">Acertar el goleador del torneo</span>
-            <span class="reg-bonus-pts">+3 pts</span>
-          </div>
-          <div class="reg-bonus-row">
-            <span class="reg-bonus-label">Selección valla menos vencida (primera ronda)</span>
-            <span class="reg-bonus-pts">+3 pts</span>
-          </div>
-          <div class="reg-bonus-row">
-            <span class="reg-bonus-label">Selección valla más vencida (primera ronda)</span>
-            <span class="reg-bonus-pts">+2 pts</span>
-          </div>
-          <div class="reg-bonus-row">
-            <span class="reg-bonus-label">Mejor jugador del torneo</span>
-            <span class="reg-bonus-pts">+3 pts</span>
-          </div>
-          <div class="reg-bonus-row">
-            <span class="reg-bonus-label">Mejor arquero del torneo</span>
-            <span class="reg-bonus-pts">+3 pts</span>
-          </div>
-          <div class="reg-bonus-row">
-            <span class="reg-bonus-label">Selección (Méx. o Sudáfrica) que anote el 1° gol del partido inaugural</span>
-            <span class="reg-bonus-pts">+2 pts</span>
-          </div>
-          <div class="reg-bonus-row">
-            <span class="reg-bonus-label">Selección con más puntos en la primera ronda</span>
-            <span class="reg-bonus-pts">+3 pts</span>
-          </div>
-          <div class="reg-bonus-row">
-            <span class="reg-bonus-label">Selección con menos puntos en la primera ronda</span>
-            <span class="reg-bonus-pts">+2 pts</span>
-          </div>
-          <div class="reg-bonus-row reg-bonus-col">
-            <span class="reg-bonus-label">🇨🇴 Jugador de Colombia que anote el 1° gol frente a Uzbekistán</span>
-            <span class="reg-bonus-pts">+2 pts</span>
-          </div>
-          <div class="reg-bonus-row reg-bonus-col">
-            <span class="reg-bonus-label">🇨🇴 Jugador de Colombia que reciba la 1° tarjeta amarilla vs Uzbekistán</span>
-            <span class="reg-bonus-pts">+2 pts</span>
+        </div>
+        <div class="third-place-section">
+          <h3 class="third-title">🥉 Tercer y Cuarto Lugar</h3>
+          <p class="third-sub">19 Julio 2026 · Miami Gardens, Florida</p>
+          <div class="bracket-match" id="third-match">
+            <div class="bm-row">
+              <input type="text"   class="bm-team"  data-key="3rd-t0" placeholder="Perdedor Semifinal 1" autocomplete="off">
+              <input type="number" class="bm-score" data-key="3rd-s0" min="0" max="99" placeholder="0">
+            </div>
+            <div class="bm-divider"></div>
+            <div class="bm-row">
+              <input type="text"   class="bm-team"  data-key="3rd-t1" placeholder="Perdedor Semifinal 2" autocomplete="off">
+              <input type="number" class="bm-score" data-key="3rd-s1" min="0" max="99" placeholder="0">
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- PREMIO EXTRAORDINARIO -->
-      <div class="reg-card reg-card-gold">
-        <h3 class="reg-card-title">🏅 Premio Extraordinario</h3>
-        <p class="reg-text">Quien acierte el marcador de la final se hará acreedor a un premio por definir. Si dos o más concursantes aciertan el marcador, se realizará una rifa para definir el ganador.</p>
+      <!-- Bonos -->
+      <div class="inner-section hidden" id="inner-bonos">
+        <div class="bonuses-grid">
+
+          <div class="bonus-group">
+            <h3 class="bonus-group-title">🏅 Posiciones finales</h3>
+            <div class="bonus-field"><label>Campeón <span class="bonus-pts">+6 pts</span></label><input type="text" data-bonus="campeon" placeholder="Selección campeona…" autocomplete="off"></div>
+            <div class="bonus-field"><label>Subcampeón <span class="bonus-pts">+5 pts</span></label><input type="text" data-bonus="subcampeon" placeholder="Finalista…" autocomplete="off"></div>
+            <div class="bonus-field"><label>3° Puesto <span class="bonus-pts">+4 pts</span></label><input type="text" data-bonus="tercero" placeholder="Tercer lugar…" autocomplete="off"></div>
+            <div class="bonus-field"><label>4° Puesto <span class="bonus-pts">+3 pts</span></label><input type="text" data-bonus="cuarto" placeholder="Cuarto lugar…" autocomplete="off"></div>
+          </div>
+
+          <div class="bonus-group">
+            <h3 class="bonus-group-title">⭐ Premios individuales</h3>
+            <div class="bonus-field"><label>Goleador del torneo <span class="bonus-pts">+3 pts</span></label><input type="text" data-bonus="goleador" placeholder="Nombre del goleador…" autocomplete="off"></div>
+            <div class="bonus-field"><label>Mejor jugador <span class="bonus-pts">+3 pts</span></label><input type="text" data-bonus="mejorJugador" placeholder="Balón de Oro…" autocomplete="off"></div>
+            <div class="bonus-field"><label>Mejor arquero <span class="bonus-pts">+3 pts</span></label><input type="text" data-bonus="mejorArquero" placeholder="Guante de Oro…" autocomplete="off"></div>
+          </div>
+
+          <div class="bonus-group">
+            <h3 class="bonus-group-title">📊 Primera ronda</h3>
+            <div class="bonus-field"><label>Valla menos vencida <span class="bonus-pts">+3 pts</span></label><input type="text" data-bonus="vallaMin" placeholder="Selección con menos GC…" autocomplete="off"></div>
+            <div class="bonus-field"><label>Valla más vencida <span class="bonus-pts">+2 pts</span></label><input type="text" data-bonus="vallaMax" placeholder="Selección con más GC…" autocomplete="off"></div>
+            <div class="bonus-field"><label>Más puntos en grupos <span class="bonus-pts">+3 pts</span></label><input type="text" data-bonus="masPuntosGrupos" placeholder="Selección líder…" autocomplete="off"></div>
+            <div class="bonus-field"><label>Menos puntos en grupos <span class="bonus-pts">+2 pts</span></label><input type="text" data-bonus="menosPuntosGrupos" placeholder="Selección última…" autocomplete="off"></div>
+          </div>
+
+          <div class="bonus-group">
+            <h3 class="bonus-group-title">🇨🇴 Colombia Especiales</h3>
+            <div class="bonus-field"><label>1° gol inaugural (Méx o Sudáfrica) <span class="bonus-pts">+2 pts</span></label><input type="text" data-bonus="primerGolInaugural" placeholder="México o Sudáfrica…" autocomplete="off"></div>
+            <div class="bonus-field"><label>Jugador Colombia 1° gol vs Uzbekistán <span class="bonus-pts">+2 pts</span></label><input type="text" data-bonus="colPrimerGolUzb" placeholder="Nombre del jugador…" autocomplete="off"></div>
+            <div class="bonus-field"><label>Jugador Colombia 1° amarilla vs Uzbekistán <span class="bonus-pts">+2 pts</span></label><input type="text" data-bonus="colPrimerAmarillaUzb" placeholder="Nombre del jugador…" autocomplete="off"></div>
+          </div>
+
+        </div>
       </div>
 
-      <!-- OBJETIVO Y PREMIOS -->
-      <div class="reg-card">
-        <h3 class="reg-card-title">🎯 Objetivo y Premios</h3>
-        <p class="reg-text">Acumular puntos a lo largo del Mundial. Quien sume más será el ganador.</p>
-        <ul class="reg-list">
-          <li><strong>1° puesto</strong> — Mayor puntaje acumulado. Premio por definir.</li>
-          <li><strong>2° puesto</strong> — Segundo en puntaje acumulado. Premio por definir.</li>
-          <li><strong>3° puesto</strong> — Tercer puntaje acumulado. Premio por definir.</li>
-        </ul>
-        <p class="reg-note">En caso de empate, la puntuación total acumulada se resuelve por parte de los concursantes para definir el ganador.</p>
+    </section>
+
+    <!-- ================================================
+         VIEW: VER PARTICIPANTE
+    ================================================ -->
+    <section class="page-section hidden" id="view-ver">
+      <div class="ver-header">
+        <button class="btn btn-outline btn-back" id="btn-back-home">← Volver al ranking</button>
+        <h2 id="ver-player-title"></h2>
+        <div class="ver-score-badge" id="ver-score-badge"></div>
       </div>
 
-      <!-- FECHAS CLAVE -->
-      <div class="reg-card">
-        <h3 class="reg-card-title">📅 Fechas Clave</h3>
-        <ul class="reg-list">
-          <li>Primera ronda finaliza el <strong>27 de junio</strong>. Plazo para entregar marcadores de dieciséisavos: <strong>10:00 a.m. del 28 de junio</strong>.</li>
-          <li>Participación: <strong>$30.000 pesos</strong> por persona + $5.000 para gastos de papelería.</li>
-          <li>Entregar dos hojas diligenciadas antes del <strong>8 de junio</strong>.</li>
-        </ul>
-        <p class="reg-note">Responsable: <strong>Juan David Jiménez Giraldo</strong> · 316 343 2234</p>
+      <nav class="inner-tabs" role="tablist">
+        <button class="inner-tab active" data-inner-ver="grupos-ver">⚽ Grupos</button>
+        <button class="inner-tab" data-inner-ver="bracket-ver">🏆 Eliminatorias</button>
+        <button class="inner-tab" data-inner-ver="bonos-ver">⭐ Bonos</button>
+      </nav>
+
+      <div class="inner-section" id="inner-grupos-ver">
+        <div class="groups-grid" id="groups-grid-ver"></div>
       </div>
 
-    </div>
-  </section>
+      <div class="inner-section hidden" id="inner-bracket-ver">
+        <div class="bracket-wrapper">
+          <div class="bracket" id="bracket-render-ver"></div>
+          <div class="champion-col">
+            <div class="champion-box">
+              <span class="trophy-icon">🏆</span>
+              <p class="champion-label">CAMPEÓN</p>
+              <div class="champion-name" id="champion-display-ver">&nbsp;</div>
+            </div>
+          </div>
+        </div>
+        <div class="third-place-section">
+          <h3 class="third-title">🥉 Tercer y Cuarto Lugar</h3>
+          <div class="bracket-match" id="third-match-ver">
+            <div class="bm-row">
+              <input type="text"   class="bm-team"  data-key="3rd-t0" disabled placeholder="Perdedor SF1">
+              <input type="number" class="bm-score" data-key="3rd-s0" disabled placeholder="0">
+            </div>
+            <div class="bm-divider"></div>
+            <div class="bm-row">
+              <input type="text"   class="bm-team"  data-key="3rd-t1" disabled placeholder="Perdedor SF2">
+              <input type="number" class="bm-score" data-key="3rd-s1" disabled placeholder="0">
+            </div>
+          </div>
+        </div>
+      </div>
 
-  <!-- ======================================================
-       FOOTER
-  ====================================================== -->
-  <footer>
-    <p>Polla Mundialista FIFA 2026 &copy; · 🇺🇸 · 🇨🇦 · 🇲🇽 · Responsable: Juan David Jiménez Giraldo · 316 343 2234</p>
-  </footer>
+      <div class="inner-section hidden" id="inner-bonos-ver">
+        <div class="bonuses-grid" id="bonuses-grid-ver"></div>
+      </div>
+    </section>
 
+    <!-- ================================================
+         VIEW: REGLAMENTO
+    ================================================ -->
+    <section class="page-section hidden" id="view-reglamento">
+
+      <div class="section-header">
+        <h2>📋 Reglamento</h2>
+        <p class="section-sub">Polla Mundialista · Canadá – Estados Unidos – México</p>
+      </div>
+
+      <div class="reglamento-grid">
+
+        <div class="reg-card">
+          <h3 class="reg-card-title">Sistema de Puntuación</h3>
+          <table class="reg-table">
+            <thead><tr><th>Ronda</th><th>Marcador exacto</th><th>Solo resultado (L/E/V)</th></tr></thead>
+            <tbody>
+              <tr><td>Primera ronda (Grupos)</td><td class="pts-exact">3 pts</td><td class="pts-result">1 pt</td></tr>
+              <tr><td>Dieciséisavos de final</td><td class="pts-exact">4 pts</td><td class="pts-result">2 pts</td></tr>
+              <tr><td>Octavos de final</td><td class="pts-exact">5 pts</td><td class="pts-result">3 pts</td></tr>
+              <tr><td>Cuartos de final</td><td class="pts-exact">6 pts</td><td class="pts-result">4 pts</td></tr>
+              <tr><td>Semifinales</td><td class="pts-exact">7 pts</td><td class="pts-result">5 pts</td></tr>
+              <tr><td>Tercer y cuarto puesto</td><td class="pts-exact">8 pts</td><td class="pts-result">6 pts</td></tr>
+              <tr><td><strong>Final</strong></td><td class="pts-exact"><strong>9 pts</strong></td><td class="pts-result"><strong>7 pts</strong></td></tr>
+            </tbody>
+          </table>
+          <p class="reg-note">⚠️ En caso de tiempo complementario o penaltis, <strong>solo se cuenta el resultado de los 90 minutos</strong>.</p>
+        </div>
+
+        <div class="reg-card">
+          <h3 class="reg-card-title">Cómo Conseguir Puntos Extra</h3>
+          <div class="reg-bonus-list">
+            <div class="reg-bonus-row"><span class="reg-bonus-label">Acertar el campeón</span><span class="reg-bonus-pts">+6 pts</span></div>
+            <div class="reg-bonus-row"><span class="reg-bonus-label">Acertar el subcampeón</span><span class="reg-bonus-pts">+5 pts</span></div>
+            <div class="reg-bonus-row"><span class="reg-bonus-label">Acertar la selección 3° puesto</span><span class="reg-bonus-pts">+4 pts</span></div>
+            <div class="reg-bonus-row"><span class="reg-bonus-label">Acertar la selección 4° puesto</span><span class="reg-bonus-pts">+3 pts</span></div>
+            <div class="reg-bonus-row"><span class="reg-bonus-label">Acertar el goleador del torneo</span><span class="reg-bonus-pts">+3 pts</span></div>
+            <div class="reg-bonus-row"><span class="reg-bonus-label">Selección valla menos vencida (primera ronda)</span><span class="reg-bonus-pts">+3 pts</span></div>
+            <div class="reg-bonus-row"><span class="reg-bonus-label">Selección valla más vencida (primera ronda)</span><span class="reg-bonus-pts">+2 pts</span></div>
+            <div class="reg-bonus-row"><span class="reg-bonus-label">Mejor jugador del torneo</span><span class="reg-bonus-pts">+3 pts</span></div>
+            <div class="reg-bonus-row"><span class="reg-bonus-label">Mejor arquero del torneo</span><span class="reg-bonus-pts">+3 pts</span></div>
+            <div class="reg-bonus-row"><span class="reg-bonus-label">Selección (Méx. o Sudáfrica) que anote el 1° gol del partido inaugural</span><span class="reg-bonus-pts">+2 pts</span></div>
+            <div class="reg-bonus-row"><span class="reg-bonus-label">Selección con más puntos en la primera ronda</span><span class="reg-bonus-pts">+3 pts</span></div>
+            <div class="reg-bonus-row"><span class="reg-bonus-label">Selección con menos puntos en la primera ronda</span><span class="reg-bonus-pts">+2 pts</span></div>
+            <div class="reg-bonus-row reg-bonus-col"><span class="reg-bonus-label">🇨🇴 Jugador de Colombia que anote el 1° gol frente a Uzbekistán</span><span class="reg-bonus-pts">+2 pts</span></div>
+            <div class="reg-bonus-row reg-bonus-col"><span class="reg-bonus-label">🇨🇴 Jugador de Colombia que reciba la 1° tarjeta amarilla vs Uzbekistán</span><span class="reg-bonus-pts">+2 pts</span></div>
+          </div>
+        </div>
+
+        <div class="reg-card reg-card-gold">
+          <h3 class="reg-card-title">🏅 Premio Extraordinario</h3>
+          <p class="reg-text">Quien acierte el marcador de la final se hará acreedor a un premio por definir. Si dos o más concursantes aciertan el marcador, se realizará una rifa para definir el ganador.</p>
+        </div>
+
+        <div class="reg-card">
+          <h3 class="reg-card-title">🎯 Objetivo y Premios</h3>
+          <p class="reg-text">Acumular puntos a lo largo del Mundial. Quien sume más será el ganador.</p>
+          <ul class="reg-list">
+            <li><strong>1° puesto</strong> — Mayor puntaje acumulado. Premio por definir.</li>
+            <li><strong>2° puesto</strong> — Segundo en puntaje acumulado. Premio por definir.</li>
+            <li><strong>3° puesto</strong> — Tercer puntaje acumulado. Premio por definir.</li>
+          </ul>
+          <p class="reg-note">En caso de empate, la puntuación total acumulada se resuelve por parte de los concursantes para definir el ganador.</p>
+        </div>
+
+        <div class="reg-card">
+          <h3 class="reg-card-title">📅 Fechas Clave</h3>
+          <ul class="reg-list">
+            <li>Primera ronda finaliza el <strong>27 de junio</strong>. Plazo para entregar marcadores de dieciséisavos: <strong>10:00 a.m. del 28 de junio</strong>.</li>
+            <li>Participación: <strong>$30.000 pesos</strong> por persona + $5.000 para gastos de papelería.</li>
+            <li>Entregar dos hojas diligenciadas antes del <strong>8 de junio</strong>.</li>
+          </ul>
+          <p class="reg-note">Responsable: <strong>Juan David Jiménez Giraldo</strong> · 316 343 2234</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================================================
+         VIEW: ADMIN
+    ================================================ -->
+    <section class="page-section hidden" id="view-admin">
+
+      <div class="section-header">
+        <h2>⚙️ Panel de Administración</h2>
+      </div>
+
+      <div class="admin-grid">
+
+        <div class="admin-card">
+          <h3 class="admin-card-title">👤 Crear Participante</h3>
+          <form id="create-user-form">
+            <div class="admin-field">
+              <label>Nombre</label>
+              <input type="text" id="new-user-name" placeholder="Nombre completo" required>
+            </div>
+            <div class="admin-field">
+              <label>Email</label>
+              <input type="email" id="new-user-email" placeholder="email@ejemplo.com" required>
+            </div>
+            <div class="admin-field">
+              <label>Contraseña inicial</label>
+              <input type="password" id="new-user-password" placeholder="Mínimo 6 caracteres" minlength="6" required>
+            </div>
+            <button type="submit" class="btn btn-gold" id="btn-create-user">Crear usuario</button>
+            <p id="create-user-msg" class="admin-msg"></p>
+          </form>
+        </div>
+
+        <div class="admin-card">
+          <h3 class="admin-card-title">📊 Resultados Oficiales</h3>
+          <p class="admin-desc">Edita el JSON y guarda para actualizar el ranking.</p>
+          <textarea id="official-results-json" class="admin-textarea" rows="20"
+            placeholder='{"scores":{}, "bracket":{}, "bonuses":{}}'></textarea>
+          <button class="btn btn-gold" id="btn-save-results">Guardar resultados</button>
+          <p id="save-results-msg" class="admin-msg"></p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      <p>Polla Mundialista FIFA 2026 &copy; · 🇺🇸 · 🇨🇦 · 🇲🇽 · Responsable: Juan David Jiménez Giraldo · 316 343 2234</p>
+    </footer>
+
+  </div><!-- /app-shell -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./assets/js/app.js"></script>
 </body>
 </html>
