@@ -78,6 +78,27 @@ create policy "resultados_update_admin"
   with check ((select is_admin from public.profiles where id = auth.uid()));
 
 -- ================================================================
+--  TRIGGER: auto-crear perfil cuando se registra un usuario
+-- ================================================================
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, name, is_admin)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
+    false
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create or replace trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- ================================================================
 --  CREAR PRIMER ADMIN
 --  Después de crear el usuario vía Supabase Dashboard → Authentication,
 --  ejecuta esto reemplazando el email:

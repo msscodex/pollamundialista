@@ -121,6 +121,7 @@ header h1 {
 }
 .tab-btn:hover { color: var(--text); background: rgba(255,255,255,.04); }
 .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-btn.hidden { display: none; }
 
 /* ================================================================
    SECTIONS
