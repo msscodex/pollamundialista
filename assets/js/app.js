@@ -246,9 +246,9 @@ const BONUS_LABELS = {
 };
 
 const BONUS_GROUPS = [
-  { label: '🏅 Posiciones finales',  keys: ['campeon', 'subcampeon', 'tercero', 'cuarto'] },
+  { label: '🏅 Posiciones finales', keys: ['campeon', 'subcampeon', 'tercero', 'cuarto'] },
   { label: '⭐ Premios individuales', keys: ['goleador', 'mejorJugador', 'mejorArquero'] },
-  { label: '📊 Primera ronda',       keys: ['vallaMin', 'vallaMax', 'masPuntosGrupos', 'menosPuntosGrupos'] },
+  { label: '📊 Primera ronda', keys: ['vallaMin', 'vallaMax', 'masPuntosGrupos', 'menosPuntosGrupos'] },
   { label: '🇨🇴 Colombia Especiales', keys: ['primerGolInaugural', 'colPrimerGolUzb', 'colPrimerAmarillaUzb'] }
 ];
 const MANUAL_BONUS_KEYS = new Set(['goleador', 'mejorJugador', 'mejorArquero']);
@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       CURRENT_USER = null;
       _appReady = false;
       STATE = { player: '', scores: {}, bracket: {}, bonuses: {} };
-      try { localStorage.removeItem(LS_DRAFT); } catch (_) {}
+      try { localStorage.removeItem(LS_DRAFT); } catch (_) { }
       updateHeaderState();
       location.hash = '#home';
     }
@@ -1814,6 +1814,64 @@ function initMusicBtn() {
     }
   });
 }
+
+/* ================================================================
+   LAYOUT FIJO — offsets dinámicos
+================================================================ */
+function updateLayoutOffsets() {
+  const header = document.querySelector('header');
+  const tabs = document.querySelector('.tabs');
+  const footer = document.querySelector('footer');
+  const shell = document.getElementById('app-shell');
+  if (!header || !tabs || !footer || !shell) return;
+
+  const headerH = header.offsetHeight;
+  const footerH = footer.offsetHeight;
+  tabs.style.top = headerH + 'px';
+
+  const isMobile = window.innerWidth <= 640;
+  const tabsH = isMobile ? 0 : tabs.offsetHeight;
+  shell.style.paddingTop = (headerH + tabsH) + 'px';
+  shell.style.paddingBottom = footerH + 'px';
+}
+
+function initHamburger() {
+  const btn = document.getElementById('btn-hamburger');
+  const nav = document.getElementById('main-nav');
+  if (!btn || !nav) return;
+
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const open = nav.classList.toggle('nav-open');
+    btn.setAttribute('aria-expanded', String(open));
+    btn.textContent = open ? '✕' : '☰';
+    updateLayoutOffsets();
+  });
+
+  document.addEventListener('click', e => {
+    if (nav.classList.contains('nav-open') && !nav.contains(e.target) && e.target !== btn) {
+      nav.classList.remove('nav-open');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.textContent = '☰';
+      updateLayoutOffsets();
+    }
+  });
+
+  nav.querySelectorAll('.tab-btn').forEach(tab => {
+    tab.addEventListener('click', () => {
+      nav.classList.remove('nav-open');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.textContent = '☰';
+      updateLayoutOffsets();
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateLayoutOffsets();
+  initHamburger();
+  window.addEventListener('resize', updateLayoutOffsets);
+});
 
 document.addEventListener('DOMContentLoaded', initMusicBtn);
 

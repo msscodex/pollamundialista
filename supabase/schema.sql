@@ -18,6 +18,7 @@ create table public.pollas (
   scores           jsonb   not null default '{}',
   bracket          jsonb   not null default '{}',
   bonuses          jsonb   not null default '{}',
+  manual_bonus_pts jsonb   not null default '{}',
   is_groups_locked boolean not null default false,
   updated_at       timestamptz not null default now()
 );
@@ -77,6 +78,12 @@ create policy "polla_update_propia"
     END
   );
 
+-- Admin puede actualizar manual_bonus_pts en cualquier polla
+create policy "polla_update_admin"
+  on public.pollas for update to authenticated
+  using  ((select is_admin from public.profiles where id = auth.uid()))
+  with check ((select is_admin from public.profiles where id = auth.uid()));
+
 -- ---- OFFICIAL RESULTS ----
 create policy "resultados_select"
   on public.official_results for select to authenticated, anon using (true);
@@ -119,3 +126,15 @@ create or replace trigger on_auth_user_created
 -- update public.profiles
 -- set is_admin = true
 -- where id = (select id from auth.users where email = 'tu@email.com');
+
+-- ================================================================
+--  MIGRACIONES (ejecutar solo en BD ya existente)
+-- ================================================================
+-- Agregar columna manual_bonus_pts si la tabla pollas ya existe:
+-- alter table public.pollas add column if not exists manual_bonus_pts jsonb not null default '{}';
+
+-- Agregar política de update para admin si no existe:
+-- create policy "polla_update_admin"
+--   on public.pollas for update to authenticated
+--   using  ((select is_admin from public.profiles where id = auth.uid()))
+--   with check ((select is_admin from public.profiles where id = auth.uid()));

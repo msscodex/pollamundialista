@@ -45,6 +45,71 @@
     <!-- HEADER -->
     <header>
       <div class="header-inner">
+        <div class="logo-mundial-anim" aria-hidden="true">
+          <svg class="lm-logo-svg" viewBox="0 0 220 232" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="lm-gold-h" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%"   stop-color="#8C6220"/>
+                <stop offset="28%"  stop-color="#FFE48A"/>
+                <stop offset="60%"  stop-color="#C9A84C"/>
+                <stop offset="100%" stop-color="#8C6220"/>
+              </linearGradient>
+              <linearGradient id="lm-gold-v" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%"   stop-color="#FFE48A"/>
+                <stop offset="100%" stop-color="#9E7230"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Número 2 -->
+            <text x="4" y="157"
+                  font-family="'Arial Black','Franklin Gothic Heavy',Impact,sans-serif"
+                  font-size="152" font-weight="900"
+                  fill="#001428" fill-opacity="0.88">2</text>
+
+            <!-- Número 6 -->
+            <text x="90" y="230"
+                  font-family="'Arial Black','Franklin Gothic Heavy',Impact,sans-serif"
+                  font-size="152" font-weight="900"
+                  fill="#001428" fill-opacity="0.88">6</text>
+
+            <!-- ── TROFEO (flota con animación) ── -->
+            <g class="lm-trophy-g">
+              <!-- Copa -->
+              <path d="M 72 86 Q 71 30 108 14 Q 145 30 144 86 Q 144 115 108 123 Q 72 115 72 86 Z"
+                    fill="url(#lm-gold-h)"/>
+              <!-- Reflejo interior copa -->
+              <path d="M 84 50 Q 82 28 108 16 Q 96 30 90 64 Z"
+                    fill="rgba(255,245,190,0.36)"/>
+              <!-- Asa izquierda -->
+              <path d="M 72 50 Q 51 50 51 69 Q 51 88 72 89"
+                    stroke="url(#lm-gold-h)" stroke-width="9.5" fill="none" stroke-linecap="round"/>
+              <!-- Asa derecha -->
+              <path d="M 144 50 Q 165 50 165 69 Q 165 88 144 89"
+                    stroke="url(#lm-gold-h)" stroke-width="9.5" fill="none" stroke-linecap="round"/>
+              <!-- Cuello copa → banda -->
+              <path d="M 91 123 L 125 123 L 121 145 L 95 145 Z"
+                    fill="url(#lm-gold-v)"/>
+              <!-- Banda decorativa -->
+              <rect x="79" y="145" width="58" height="27" rx="3" fill="url(#lm-gold-h)"/>
+              <!-- Rayas verdes -->
+              <line x1="82" y1="153" x2="135" y2="153" stroke="#28683A" stroke-width="3.5" stroke-linecap="round"/>
+              <line x1="82" y1="162" x2="135" y2="162" stroke="#28683A" stroke-width="3.5" stroke-linecap="round"/>
+              <!-- Tallo -->
+              <rect x="92" y="172" width="32" height="22" rx="2" fill="url(#lm-gold-v)"/>
+              <!-- Base -->
+              <rect x="74" y="194" width="68" height="17" rx="4" fill="url(#lm-gold-h)"/>
+            </g>
+
+            <!-- FIFA -->
+            <text x="153" y="223"
+                  font-family="'Arial Black',Impact,sans-serif"
+                  font-size="22" font-weight="900" letter-spacing="3"
+                  fill="white" text-anchor="middle">FIFA</text>
+            <!-- TM -->
+            <text x="202" y="220" font-size="9" fill="rgba(255,255,255,0.5)"
+                  font-family="sans-serif">™</text>
+          </svg>
+        </div>
         <div class="header-badge">FIFA</div>
         <h1>Polla <span class="gold">Mundialista 2026</span></h1>
         <p class="header-dates">11 Junio – 19 Julio 2026 &nbsp;·&nbsp; 🇺🇸 USA &nbsp;·&nbsp; 🇨🇦 Canadá &nbsp;·&nbsp; 🇲🇽 México</p>
@@ -57,6 +122,7 @@
         <span class="header-user-name hidden" id="header-user-name"></span>
         <button class="btn btn-outline btn-sm hidden" id="btn-logout">Cerrar sesión</button>
         <button class="btn btn-gold btn-sm" id="btn-show-login">Ingresar</button>
+        <button class="btn-hamburger" id="btn-hamburger" aria-label="Abrir menú" aria-expanded="false">☰</button>
       </div>
     </header>
 
@@ -66,11 +132,11 @@
     </div>
 
     <!-- NAV -->
-    <nav class="tabs" role="tablist">
-      <button class="tab-btn" data-hash="#home"       role="tab">🏠 Inicio</button>
-      <button class="tab-btn hidden" data-hash="#polla" role="tab">⚽ Mi Polla</button>
-      <button class="tab-btn" data-hash="#reglamento" role="tab">📋 Reglamento</button>
-      <button class="tab-btn hidden" data-hash="#admin" role="tab">⚙️ Admin</button>
+    <nav class="tabs" id="main-nav" role="tablist">
+      <button class="tab-btn hidden" data-hash="#admin"      role="tab">⚙️ Admin</button>
+      <button class="tab-btn"        data-hash="#home"       role="tab">🏠 Inicio</button>
+      <button class="tab-btn hidden" data-hash="#polla"      role="tab">⚽ Mi Polla</button>
+      <button class="tab-btn"        data-hash="#reglamento" role="tab">📋 Reglamento</button>
     </nav>
 
     <!-- ================================================
