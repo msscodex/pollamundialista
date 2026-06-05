@@ -1987,14 +1987,37 @@ async function loadParticipantsView() {
   searchEl.value = '';
   searchEl.oninput = null;
 
-  const { data } = await sb
-    .from('pollas')
-    .select('is_groups_locked, profiles(name, is_admin)');
+  const [{ data: profilesData }, { data: pollasData }] = await Promise.all([
+    sb.from('profiles').select('id, name, is_admin'),
+    sb.from('pollas').select('user_id, is_groups_locked, scores, bonuses'),
+  ]);
 
-  const participants = (data || [])
-    .filter(p => !p.profiles?.is_admin)
-    .map(p => ({ name: p.profiles?.name || 'Sin nombre', locked: p.is_groups_locked || false }))
+  const pollasMap = {};
+  (pollasData || []).forEach(p => { pollasMap[p.user_id] = p; });
+
+  const participants = (profilesData || [])
+    .filter(p => !p.is_admin)
+    .map(p => {
+      const polla = pollasMap[p.id];
+      const hasData = polla && (
+        Object.keys(polla.scores  || {}).length > 0 ||
+        Object.keys(polla.bonuses || {}).length > 0
+      );
+      return {
+        name:     p.name || 'Sin nombre',
+        locked:   polla?.is_groups_locked || false,
+        hasPolla: !!polla,
+        hasData:  !!hasData,
+      };
+    })
     .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+
+  function statusTag(p) {
+    if (p.locked)   return ['pc-locked',  '<i class="fa-solid fa-lock"></i> Enviada'];
+    if (p.hasData)  return ['pc-open',    '<i class="fa-solid fa-pen"></i> En progreso'];
+    if (p.hasPolla) return ['pc-nodata',  '<i class="fa-solid fa-circle-minus"></i> Sin datos'];
+    return                 ['pc-nopolla', '<i class="fa-solid fa-circle-xmark"></i> Sin polla'];
+  }
 
   function render(filter) {
     const filtered = filter
@@ -2006,12 +2029,15 @@ async function loadParticipantsView() {
       return;
     }
 
-    listEl.innerHTML = filtered.map(p => `
+    listEl.innerHTML = filtered.map(p => {
+      const [cls, label] = statusTag(p);
+      return `
 <a class="participante-card" href="#ver/${encodeURIComponent(p.name)}">
   <span class="pc-name">${p.name}</span>
-  <span class="pc-status ${p.locked ? 'pc-locked' : 'pc-open'}">${p.locked ? '🔒 Enviada' : '✏️ En progreso'}</span>
-  <span class="pc-arrow">→</span>
-</a>`).join('');
+  <span class="pc-status ${cls}">${label}</span>
+  <span class="pc-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+</a>`;
+    }).join('');
   }
 
   render('');
