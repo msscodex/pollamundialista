@@ -16,12 +16,13 @@ from auth.users
 where email = 'maycolsanchez@150porciento.com'
 on conflict (id) do update set is_admin = true;
 create table public.pollas (
-  id         uuid    primary key default gen_random_uuid(),
-  user_id    uuid    references public.profiles(id) on delete cascade not null unique,
-  scores     jsonb   not null default '{}',
-  bracket    jsonb   not null default '{}',
-  bonuses    jsonb   not null default '{}',
-  updated_at timestamptz not null default now()
+  id               uuid    primary key default gen_random_uuid(),
+  user_id          uuid    references public.profiles(id) on delete cascade not null unique,
+  scores           jsonb   not null default '{}',
+  bracket          jsonb   not null default '{}',
+  bonuses          jsonb   not null default '{}',
+  is_groups_locked boolean not null default false,
+  updated_at       timestamptz not null default now()
 );
 
 -- 3. RESULTADOS OFICIALES (fila única id=1, solo admin escribe)
@@ -65,7 +66,19 @@ create policy "polla_insert_propia"
 create policy "polla_update_propia"
   on public.pollas for update to authenticated
   using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  with check (
+    auth.uid() = user_id AND
+    CASE
+      -- Si YA está bloqueado en DB: solo puede cambiar bracket, nunca desbloquear
+      WHEN (select is_groups_locked from public.pollas where user_id = auth.uid())
+      THEN
+        is_groups_locked = true
+        AND scores  IS NOT DISTINCT FROM (select scores  from public.pollas where user_id = auth.uid())
+        AND bonuses IS NOT DISTINCT FROM (select bonuses from public.pollas where user_id = auth.uid())
+      -- Si no está bloqueado: puede hacer cualquier cambio en su fila
+      ELSE true
+    END
+  );
 
 -- ---- OFFICIAL RESULTS ----
 create policy "resultados_select"

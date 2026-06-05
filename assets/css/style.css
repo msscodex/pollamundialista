@@ -1400,3 +1400,47 @@ footer {
   .ranking-table { font-size: 12px; }
   .reglamento-grid { grid-template-columns: 1fr; }
 }
+
+/* ================================================================
+   POLLA SUBMIT / LOCK BAR
+================================================================ */
+.polla-submit-bar {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.locked-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--gold);
+}
+
+.lock-hint {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.lock-errors {
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.35);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #FF6B6B;
+}
+.lock-errors ul { margin: 6px 0 0 18px; padding: 0; }
+.lock-errors li { margin-bottom: 3px; }
+
+#inner-grupos .m-score:disabled,
+#inner-bonos [data-bonus]:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

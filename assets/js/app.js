@@ -8,8 +8,9 @@ const SUPABASE_URL  = 'https://txwvhlearumjshvadedd.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4d3ZobGVhcnVtanNodmFkZWRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTQ0ODUsImV4cCI6MjA5NjIzMDQ4NX0.9BhmsyMrWwoWIgA11xIoobT-BaanOZEoVUlnuVu_ILo';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-let CURRENT_USER = null; // { id, email, name, is_admin }
-let _appReady    = false;
+let CURRENT_USER     = null; // { id, email, name, is_admin }
+let IS_GROUPS_LOCKED = false;
+let _appReady        = false;
 
 /* ----------------------------------------------------------------
    DATOS: 12 Grupos (Sorteo diciembre 2024)
@@ -366,6 +367,7 @@ function route() {
     loadSavedBracketInputs();
     loadBonusInputs();
     initThirdPlace();
+    applyLockedState();
   } else if (hash === '#reglamento') {
     showView('view-reglamento');
     setActiveTab('#reglamento');
@@ -848,6 +850,7 @@ function buildDefaultRows(teams) {
    QUINIELA — Score input
 ================================================================ */
 function onScoreInput(e) {
+  if (IS_GROUPS_LOCKED) return; // triple capa: DB + syncToSupabase + aquí
   const { group, match, side } = e.target.dataset;
   const val = e.target.value;
   const key = scoreKey(group, match, side);
@@ -1023,6 +1026,7 @@ function onThirdInput(e) {
 function initBonusInputs() {
   document.querySelectorAll('[data-bonus]').forEach(inp => {
     inp.addEventListener('input', e => {
+      if (IS_GROUPS_LOCKED) return; // triple capa de seguridad
       STATE.bonuses[e.target.dataset.bonus] = e.target.value;
       saveDraft();
     });
@@ -1048,7 +1052,10 @@ function initPollaControls() {
   document.getElementById('btn-export-polla')?.addEventListener('click', exportJSON);
   document.getElementById('btn-export-pdf')?.addEventListener('click', exportGroupsPDF);
 
+  document.getElementById('btn-lock-polla')?.addEventListener('click', lockPolla);
+
   document.getElementById('btn-clear-polla')?.addEventListener('click', () => {
+    if (IS_GROUPS_LOCKED) return; // grupos+bonos bloqueados, no se puede limpiar
     if (!confirm('¿Borrar TODOS los datos de tu polla?\nEsta acción no se puede deshacer.')) return;
     const player = STATE.player;
     STATE = { player, scores: {}, bracket: {}, bonuses: {} };
@@ -1060,6 +1067,107 @@ function initPollaControls() {
     loadBonusInputs();
     initThirdPlace();
   });
+}
+
+/* ================================================================
+   CIERRE DE POLLA — Grupos + Bonos
+================================================================ */
+function validateForLock() {
+  const groupErrors = [];
+  Object.keys(GROUPS).forEach(group => {
+    JORNADAS.forEach((jornada, jIdx) => {
+      jornada.pares.forEach((_, pIdx) => {
+        const matchIdx = jIdx * 2 + pIdx;
+        const k0 = `${group}-${matchIdx}-0`;
+        const k1 = `${group}-${matchIdx}-1`;
+        if (!(k0 in STATE.scores) || !(k1 in STATE.scores)) {
+          groupErrors.push(`Grupo ${group} — ${jornada.label}, partido ${pIdx + 1}`);
+        }
+      });
+    });
+  });
+
+  const bonusErrors = [];
+  Object.keys(BONUS_LABELS).forEach(key => {
+    const val = STATE.bonuses[key];
+    if (!val || !val.trim()) bonusErrors.push(BONUS_LABELS[key]);
+  });
+
+  return { groupErrors, bonusErrors };
+}
+
+async function lockPolla() {
+  const { groupErrors, bonusErrors } = validateForLock();
+  const errEl = document.getElementById('polla-lock-errors');
+
+  if (groupErrors.length > 0 || bonusErrors.length > 0) {
+    let html = '';
+    if (groupErrors.length > 0) {
+      html += `<strong>Partidos incompletos (${groupErrors.length}):</strong><ul>` +
+        groupErrors.map(e => `<li>${e}</li>`).join('') + '</ul>';
+    }
+    if (bonusErrors.length > 0) {
+      html += `<strong>Bonos sin llenar:</strong><ul>` +
+        bonusErrors.map(e => `<li>${e}</li>`).join('') + '</ul>';
+    }
+    errEl.innerHTML = html;
+    errEl.classList.remove('hidden');
+    errEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return;
+  }
+  errEl.classList.add('hidden');
+
+  if (!confirm(
+    '¿Seguro que quieres enviar tu polla?\n\n' +
+    'Grupos y bonos quedarán bloqueados para siempre.\n' +
+    'Las eliminatorias siguen abiertas.'
+  )) return;
+
+  const btn = document.getElementById('btn-lock-polla');
+  btn.disabled    = true;
+  btn.textContent = 'Enviando…';
+
+  const { error } = await sb.from('pollas').upsert({
+    user_id:          CURRENT_USER.id,
+    scores:           STATE.scores,
+    bonuses:          STATE.bonuses,
+    bracket:          STATE.bracket,
+    is_groups_locked: true,
+    updated_at:       new Date().toISOString(),
+  }, { onConflict: 'user_id' });
+
+  if (error) {
+    btn.disabled    = false;
+    btn.textContent = '🔒 Enviar y cerrar polla';
+    alert('Error al guardar: ' + error.message);
+    return;
+  }
+
+  IS_GROUPS_LOCKED = true;
+  applyLockedState();
+}
+
+function applyLockedState() {
+  const banner  = document.getElementById('polla-locked-banner');
+  const actions = document.getElementById('polla-lock-actions');
+  const clearBtn = document.getElementById('btn-clear-polla');
+
+  if (IS_GROUPS_LOCKED) {
+    banner?.classList.remove('hidden');
+    actions?.classList.add('hidden');
+    clearBtn?.classList.add('hidden');
+
+    document.querySelectorAll('#inner-grupos .m-score').forEach(inp => {
+      inp.disabled = true;
+    });
+    document.querySelectorAll('#inner-bonos [data-bonus]').forEach(inp => {
+      inp.disabled = true;
+    });
+  } else {
+    banner?.classList.add('hidden');
+    actions?.classList.remove('hidden');
+    clearBtn?.classList.remove('hidden');
+  }
 }
 
 /* ================================================================
@@ -1107,16 +1215,17 @@ function saveDraft() {
 
 async function syncToSupabase() {
   if (!CURRENT_USER) return;
-  await sb.from('pollas').upsert(
-    {
-      user_id:    CURRENT_USER.id,
-      scores:     STATE.scores,
-      bracket:    STATE.bracket,
-      bonuses:    STATE.bonuses,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'user_id' }
-  );
+  const payload = {
+    user_id:    CURRENT_USER.id,
+    bracket:    STATE.bracket,
+    updated_at: new Date().toISOString(),
+  };
+  // Si grupos+bonos están bloqueados, NO los mandamos — la DB los rechazaría igualmente
+  if (!IS_GROUPS_LOCKED) {
+    payload.scores  = STATE.scores;
+    payload.bonuses = STATE.bonuses;
+  }
+  await sb.from('pollas').upsert(payload, { onConflict: 'user_id' });
 }
 
 async function loadDraft() {
@@ -1129,15 +1238,16 @@ async function loadDraft() {
 
   const { data } = await sb
     .from('pollas')
-    .select('scores, bracket, bonuses')
+    .select('scores, bracket, bonuses, is_groups_locked')
     .eq('user_id', CURRENT_USER.id)
     .single();
 
   if (data) {
-    STATE.scores  = data.scores  || {};
-    STATE.bracket = data.bracket || {};
-    STATE.bonuses = data.bonuses || {};
-    STATE.player  = CURRENT_USER.name;
+    STATE.scores     = data.scores  || {};
+    STATE.bracket    = data.bracket || {};
+    STATE.bonuses    = data.bonuses || {};
+    STATE.player     = CURRENT_USER.name;
+    IS_GROUPS_LOCKED = data.is_groups_locked || false;
     try { localStorage.setItem(LS_DRAFT, JSON.stringify(STATE)); } catch (_) {}
   }
 }

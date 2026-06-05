@@ -131,6 +131,18 @@
         </button>
       </div>
 
+      <!-- Barra de envío / estado de bloqueo -->
+      <div id="polla-submit-bar" class="polla-submit-bar">
+        <div id="polla-locked-banner" class="locked-banner hidden">
+          🔒 Grupos y bonos enviados — ya no puedes modificarlos
+        </div>
+        <div id="polla-lock-actions">
+          <p class="lock-hint">Completa todos los partidos de grupos y los bonos, luego envía tu polla. Esta acción no se puede deshacer.</p>
+          <div id="polla-lock-errors" class="lock-errors hidden"></div>
+          <button class="btn btn-gold" id="btn-lock-polla">🔒 Enviar y cerrar polla</button>
+        </div>
+      </div>
+
       <nav class="inner-tabs" role="tablist">
         <button class="inner-tab active" data-inner="grupos">⚽ Fase de Grupos</button>
         <button class="inner-tab" data-inner="bracket">🏆 Eliminatorias</button>
