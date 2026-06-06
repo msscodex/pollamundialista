@@ -386,7 +386,6 @@ function showApp() {
 function updateHeaderState() {
   const isLogged = !!CURRENT_USER;
   document.getElementById('header-user-name').classList.toggle('hidden', !isLogged);
-  document.getElementById('btn-logout').classList.toggle('hidden', !isLogged);
   document.getElementById('btn-show-login').classList.toggle('hidden', isLogged);
   document.getElementById('nav-logout-wrap')?.classList.toggle('hidden', !isLogged);
   const pollaTab = document.querySelector('.tab-btn[data-hash="#polla"]');
@@ -444,7 +443,6 @@ function initLoginUI() {
   });
 
   const doLogout = async () => { await sb.auth.signOut(); };
-  document.getElementById('btn-logout')?.addEventListener('click', doLogout);
   document.getElementById('btn-logout-nav')?.addEventListener('click', doLogout);
 
   document.getElementById('btn-close-login')?.addEventListener('click', () => {
