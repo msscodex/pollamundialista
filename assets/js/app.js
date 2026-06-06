@@ -698,8 +698,12 @@ function renderRanking(players, results) {
       const icon = i < 3
         ? `<div class="podium-medal">${MEDALS[i]}</div>`
         : `<div class="podium-pos">${pos}°</div>`;
+      const trophy = i === 0
+        ? `<img src="./assets/trophy_only.svg" alt="Trofeo" class="podium-trophy">`
+        : '';
       return `
 <div class="podium-step pos-${pos}">
+  ${trophy}
   ${icon}
   <div class="podium-name">${p.name}</div>
   <div class="podium-pts">${p.score.total} pts</div>
