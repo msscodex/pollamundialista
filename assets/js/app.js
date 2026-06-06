@@ -1607,7 +1607,8 @@ function initTeamPickers() {
 }
 
 function _buildTeamPicker(key, teams) {
-  const inp = document.querySelector(`input[data-bonus="${key}"]`);
+  const scope = document.getElementById('view-polla');
+  const inp = scope ? scope.querySelector(`input[data-bonus="${key}"]`) : document.querySelector(`input[data-bonus="${key}"]`);
   if (!inp) return;
   const picker = document.createElement('div');
   picker.className = 'team-picker';
@@ -1629,7 +1630,8 @@ function _buildTeamPicker(key, teams) {
 }
 
 function _buildPlayerPicker(key) {
-  const inp = document.querySelector(`input[data-bonus="${key}"]`);
+  const scope = document.getElementById('view-polla');
+  const inp = scope ? scope.querySelector(`input[data-bonus="${key}"]`) : document.querySelector(`input[data-bonus="${key}"]`);
   if (!inp) return;
   const picker = document.createElement('div');
   picker.className = 'team-picker';
@@ -1894,8 +1896,9 @@ function initAdminBonusPickers() {
    BONOS
 ================================================================ */
 function initBonusInputs() {
-  // Solo inputs de texto (los team-pickers son divs manejados por initTeamPickers)
-  document.querySelectorAll('input[data-bonus]').forEach(inp => {
+  const scope = document.getElementById('view-polla');
+  if (!scope) return;
+  scope.querySelectorAll('input[data-bonus]').forEach(inp => {
     inp.addEventListener('input', e => {
       if (IS_GROUPS_LOCKED) return;
       STATE.bonuses[e.target.dataset.bonus] = e.target.value;
@@ -1905,13 +1908,13 @@ function initBonusInputs() {
 }
 
 function loadBonusInputs() {
-  // Inputs de texto (si aún no han sido reemplazados por pickers)
-  document.querySelectorAll('input[data-bonus]').forEach(inp => {
+  const scope = document.getElementById('view-polla');
+  if (!scope) return;
+  scope.querySelectorAll('input[data-bonus]').forEach(inp => {
     inp.value = STATE.bonuses[inp.dataset.bonus] || '';
   });
-  // Team pickers (equipos: todos los países + solo inaugurales)
   const allTeams = Object.values(GROUPS).flatMap(g => g.teams).concat(INAUGURAL_TEAMS);
-  document.querySelectorAll('.team-picker[data-bonus]').forEach(picker => {
+  scope.querySelectorAll('.team-picker[data-bonus]').forEach(picker => {
     const key = picker.dataset.bonus;
     const val = STATE.bonuses[key];
     if (!val) return;
@@ -1934,6 +1937,10 @@ function initPollaControls() {
     STATE.player = CURRENT_USER?.name || STATE.player || '';
   }
 
+  if (!CURRENT_USER?.is_admin) {
+    document.getElementById('btn-export-polla')?.classList.add('hidden');
+    document.getElementById('btn-clear-polla')?.classList.add('hidden');
+  }
   document.getElementById('btn-export-polla')?.addEventListener('click', exportJSON);
   document.getElementById('btn-export-pdf')?.addEventListener('click', exportGroupsPDF);
 
