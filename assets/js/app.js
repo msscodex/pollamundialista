@@ -172,7 +172,7 @@ const MATCH_INFO = {
     { date: '27 jun', time: '21:00', venue: 'Arrowhead Stadium, Kansas City' },
   ],
   K: [
-    { date: '5 jun', time: '12:00', venue: 'NRG Stadium, Houston' },       // TEST — original: 17 jun
+    { date: '17 jun', time: '12:00', venue: 'NRG Stadium, Houston' },       // TEST — original: 17 jun
     { date: '17 jun', time: '21:00', venue: 'Est. Azteca, Cd. de México' }, // TEST — original: 17 jun
     { date: '23 jun', time: '12:00', venue: 'NRG Stadium, Houston' },
     { date: '23 jun', time: '21:00', venue: 'Est. Akron, Guadalajara' },
