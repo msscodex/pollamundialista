@@ -186,6 +186,16 @@ header {
 }
 .side-nav-close:hover { background: rgba(255,255,255,.12); }
 
+.side-nav-footer {
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+.nav-logout-btn {
+  width: 100%;
+  justify-content: center;
+}
+
 /* Overlay oscuro detrás del panel */
 .nav-overlay {
   display: none;
