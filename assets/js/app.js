@@ -588,6 +588,16 @@ function isMatchLive(dateStr, timeStr) {
   } catch (_) { return false; }
 }
 
+function isMatchFinished(dateStr, timeStr) {
+  try {
+    const { day, month } = parseMatchDate(dateStr);
+    const [h, m] = timeStr.split(':').map(Number);
+    const nowCOT = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+    const end = new Date(new Date(2026, month - 1, day, h, m, 0).getTime() + 110 * 60 * 1000);
+    return nowCOT > end;
+  } catch (_) { return false; }
+}
+
 function renderTodayMatches() {
   const today = new Date();
   const todayDay = today.getDate();
@@ -605,7 +615,8 @@ function renderTodayMatches() {
           group, matchIdx,
           t0: teams[par[0]], t1: teams[par[1]],
           time: mi.time, venue: mi.venue,
-          live: isMatchLive(mi.date, mi.time)
+          live: isMatchLive(mi.date, mi.time),
+          finished: isMatchFinished(mi.date, mi.time)
         });
       }
     });
@@ -628,21 +639,30 @@ function renderTodayMatches() {
   document.getElementById('today-section').querySelector('h2').innerHTML =
     anyLive ? '<i class="fa-solid fa-circle" style="color:#ff3b3b"></i> Partidos en Vivo' : '<i class="fa-solid fa-futbol"></i> Partidos de Hoy';
 
-  grid.innerHTML = todayMatches.map(m => `
-<div class="today-card${m.live ? ' today-live' : ''}">
+  grid.innerHTML = todayMatches.map(m => {
+    const cardClass = m.live ? ' today-live' : m.finished ? ' today-finished' : '';
+    const badge = m.live
+      ? '<span class="live-badge"><i class="fa-solid fa-circle"></i> EN VIVO</span>'
+      : m.finished
+        ? '<span class="finished-badge"><i class="fa-solid fa-flag-checkered"></i> Finalizado</span>'
+        : `<span class="today-time"><i class="fa-regular fa-clock"></i> ${m.time} COT</span>`;
+    const vs = m.live ? '●' : m.finished ? '-' : 'VS';
+    return `
+<div class="today-card${cardClass}">
   <div class="today-card-top">
     <span class="today-group-badge">Grupo ${m.group}</span>
-    ${m.live ? '<span class="live-badge"><i class="fa-solid fa-circle"></i> EN VIVO</span>' : `<span class="today-time"><i class="fa-regular fa-clock"></i> ${m.time} COT</span>`}
+    ${badge}
   </div>
   <div class="today-teams">
     <div class="today-team">${flag(m.t0)}<span>${m.t0.n}</span></div>
-    <div class="today-vs">${m.live ? '●' : 'VS'}</div>
+    <div class="today-vs">${vs}</div>
     <div class="today-team">${flag(m.t1)}<span>${m.t1.n}</span></div>
   </div>
   <div class="today-info">
     <span><i class="fa-solid fa-location-dot"></i> ${m.venue}</span>
   </div>
-</div>`).join('');
+</div>`;
+  }).join('');
   section.classList.remove('hidden');
 }
 

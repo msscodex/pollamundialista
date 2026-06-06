@@ -1706,8 +1706,17 @@ footer {
   .mpc-team { font-size: 11px; }
   .mpc-result { font-size: 14px; letter-spacing: 1px; }
 
-  /* Header — ocultar título en pantallas muy pequeñas */
-  .header-title { display: none; }
+  /* Header — título adaptado a móvil */
+  .header-title {
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 130px;
+  }
+  .header-logo-img { height: 34px; }
+  .header-brand { gap: 6px; }
 }
 
 /* ================================================================
@@ -2011,6 +2020,25 @@ footer {
 .today-live .today-vs {
   color: #ff3b3b;
   font-size: 18px;
+}
+
+.today-finished {
+  border-top-color: #555;
+  opacity: 0.7;
+}
+
+.today-finished .today-vs {
+  color: #888;
+}
+
+.finished-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #888;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 2px 7px;
 }
 
 /* ================================================================
