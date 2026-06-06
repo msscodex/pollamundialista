@@ -332,6 +332,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
     await loadCurrentUser(session.user.id);
+    showApp();
     await initApp();
     route();           // re-render current view with auth data
   }
@@ -343,6 +344,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       showApp();
       await initApp();
       updateHeaderState();
+      location.hash = CURRENT_USER?.is_admin ? '#admin' : '#polla';
       route();
     } else if (event === 'SIGNED_OUT') {
       CURRENT_USER = null;

@@ -90,10 +90,13 @@
            inkscape:label="2026">
           <path
              d="m 0,0 h -85.232 c -23.538,0 -42.617,-19.08 -42.617,-42.616 v -42.616 c 0,-23.537 19.079,-42.617 42.617,-42.617 H 0 c 23.537,0 42.616,19.08 42.616,42.617 0,23.536 -19.079,42.616 -42.616,42.616 H 42.616 C 42.616,-19.08 23.537,0 0,0 m 0,135.151 h -85.232 c -23.538,0 -42.617,-19.08 -42.617,-42.616 h 42.617 c -23.538,0 -42.617,-19.079 -42.617,-42.616 V 7.302 H 42.616 V 49.919 H 0 c 23.537,0 42.616,19.08 42.616,42.616 0,23.536 -19.079,42.616 -42.616,42.616"
-             style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             fill="#ff0000"
+             style="fill-opacity:1;fill-rule:nonzero;stroke:none"
              id="path626"
              inkscape:label="2026"
-             sodipodi:nodetypes="cssssssccccsccsccccsc" />
+             sodipodi:nodetypes="cssssssccccsccsccccsc">
+            <animate attributeName="fill" values="#ff0000;#ff0000;#00bb00;#00bb00;#0055ff;#0055ff;#ff0000" keyTimes="0;0.2;0.37;0.57;0.73;0.93;1" calcMode="linear" dur="9s" repeatCount="indefinite" />
+          </path>
         </g>
         <g
            id="g628"

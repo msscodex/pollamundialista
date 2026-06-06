@@ -1242,6 +1242,12 @@ footer {
   text-align: center;
   margin-bottom: 28px;
 }
+.login-logo {
+  width: 80px;
+  height: auto;
+  display: block;
+  margin: 0 auto 12px;
+}
 .login-header h1 {
   font-size: clamp(20px, 5vw, 28px);
   font-weight: 900;
