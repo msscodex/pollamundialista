@@ -95,7 +95,7 @@
              id="path626"
              inkscape:label="2026"
              sodipodi:nodetypes="cssssssccccsccsccccsc">
-            <animate attributeName="fill" values="#ff0000;#ff0000;#00bb00;#00bb00;#0055ff;#0055ff;#ff0000" keyTimes="0;0.2;0.37;0.57;0.73;0.93;1" calcMode="linear" dur="9s" repeatCount="indefinite" />
+            <animate attributeName="fill" values="#ff0000;#ff0000;#00bb00;#00bb00;#0055ff;#0055ff;#ff0000" keyTimes="0;0.2;0.37;0.57;0.73;0.93;1" calcMode="linear" dur="20s" repeatCount="indefinite" />
           </path>
         </g>
         <g
