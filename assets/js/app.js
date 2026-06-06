@@ -1936,9 +1936,9 @@ function initPollaControls() {
     STATE.player = CURRENT_USER?.name || STATE.player || '';
   }
 
-  if (!CURRENT_USER?.is_admin) {
-    document.getElementById('btn-export-polla')?.classList.add('hidden');
-    document.getElementById('btn-clear-polla')?.classList.add('hidden');
+  if (CURRENT_USER?.is_admin) {
+    document.getElementById('btn-export-polla')?.classList.remove('hidden');
+    document.getElementById('btn-clear-polla')?.classList.remove('hidden');
   }
   document.getElementById('btn-export-polla')?.addEventListener('click', exportJSON);
   document.getElementById('btn-export-pdf')?.addEventListener('click', exportGroupsPDF);
