@@ -1679,16 +1679,38 @@ function _wirePicker(picker, renderFn) {
 
 function _wireTeamPicker(picker, teams, bonusKey) {
   const list = picker.querySelector('.tp-list');
+  const origPlaceholder = picker.querySelector('.tp-name')?.textContent || 'Seleccionar';
+
+  const clearPicker = () => {
+    const nameEl = picker.querySelector('.tp-name');
+    const flagEl = picker.querySelector('.tp-flag');
+    if (nameEl) { nameEl.textContent = origPlaceholder; nameEl.classList.add('tp-placeholder'); }
+    if (flagEl) flagEl.innerHTML = '';
+    delete STATE.bonuses[bonusKey];
+    saveDraft();
+    picker.querySelector('.team-picker-dropdown').classList.add('hidden');
+    picker.classList.remove('open');
+  };
+
   const renderList = (filter = '') => {
     const filtered = filter
       ? teams.filter(t => t.n.toLowerCase().includes(filter.toLowerCase()))
       : teams;
-    list.innerHTML = filtered.map(t =>
+
+    const clearHTML = STATE.bonuses[bonusKey]
+      ? `<div class="tp-option tp-option-clear">✕ Quitar selección</div>`
+      : '';
+
+    list.innerHTML = clearHTML + filtered.map(t =>
       `<div class="tp-option" data-name="${t.n}" data-code="${t.code}">
          <span class="fi fi-${t.code}"></span> ${t.n}
        </div>`
     ).join('');
-    list.querySelectorAll('.tp-option').forEach(opt =>
+
+    const clearBtn = list.querySelector('.tp-option-clear');
+    if (clearBtn) clearBtn.addEventListener('click', clearPicker);
+
+    list.querySelectorAll('.tp-option:not(.tp-option-clear)').forEach(opt =>
       opt.addEventListener('click', () => {
         if (IS_GROUPS_LOCKED) return;
         _setTeamPickerValue(picker, opt.dataset.name, teams);
@@ -1705,14 +1727,34 @@ function _wireTeamPicker(picker, teams, bonusKey) {
 
 function _wirePlayerPicker(picker, players, bonusKey) {
   const list = picker.querySelector('.tp-list');
+  const origPlaceholder = picker.querySelector('.tp-name')?.textContent || 'Seleccionar';
+
+  const clearPicker = () => {
+    const nameEl = picker.querySelector('.tp-name');
+    if (nameEl) { nameEl.textContent = origPlaceholder; nameEl.classList.add('tp-placeholder'); }
+    delete STATE.bonuses[bonusKey];
+    saveDraft();
+    picker.querySelector('.team-picker-dropdown').classList.add('hidden');
+    picker.classList.remove('open');
+  };
+
   const renderList = (filter = '') => {
     const filtered = filter
       ? players.filter(p => p.toLowerCase().includes(filter.toLowerCase()))
       : players;
-    list.innerHTML = filtered.map(p =>
+
+    const clearHTML = STATE.bonuses[bonusKey]
+      ? `<div class="tp-option tp-option-clear">✕ Quitar selección</div>`
+      : '';
+
+    list.innerHTML = clearHTML + filtered.map(p =>
       `<div class="tp-option" data-name="${p}">🇨🇴 ${p}</div>`
     ).join('');
-    list.querySelectorAll('.tp-option').forEach(opt =>
+
+    const clearBtn = list.querySelector('.tp-option-clear');
+    if (clearBtn) clearBtn.addEventListener('click', clearPicker);
+
+    list.querySelectorAll('.tp-option:not(.tp-option-clear)').forEach(opt =>
       opt.addEventListener('click', () => {
         if (IS_GROUPS_LOCKED) return;
         _setPlayerPickerValue(picker, opt.dataset.name);
@@ -1938,26 +1980,12 @@ function initPollaControls() {
 
   if (CURRENT_USER?.is_admin) {
     document.getElementById('btn-export-polla')?.classList.remove('hidden');
-    document.getElementById('btn-clear-polla')?.classList.remove('hidden');
   }
   document.getElementById('btn-export-polla')?.addEventListener('click', exportJSON);
   document.getElementById('btn-export-pdf')?.addEventListener('click', exportGroupsPDF);
 
   document.getElementById('btn-lock-polla')?.addEventListener('click', lockPolla);
 
-  document.getElementById('btn-clear-polla')?.addEventListener('click', () => {
-    if (IS_GROUPS_LOCKED) return; // grupos+bonos bloqueados, no se puede limpiar
-    if (!confirm('¿Borrar TODOS los datos de tu polla?\nEsta acción no se puede deshacer.')) return;
-    const player = STATE.player;
-    STATE = { player, scores: {}, bracket: {}, bonuses: {} };
-    saveDraft();
-    renderGroups();
-    renderBracket();
-    recalcAllGroups();
-    loadSavedBracketInputs();
-    loadBonusInputs();
-    initThirdPlace();
-  });
 }
 
 /* ================================================================
@@ -2058,12 +2086,9 @@ async function lockPolla() {
 function applyLockedState() {
   const banner = document.getElementById('polla-locked-banner');
   const actions = document.getElementById('polla-lock-actions');
-  const clearBtn = document.getElementById('btn-clear-polla');
-
   if (IS_GROUPS_LOCKED) {
     banner?.classList.remove('hidden');
     actions?.classList.add('hidden');
-    clearBtn?.classList.add('hidden');
 
     document.querySelectorAll('#inner-grupos .m-score').forEach(inp => {
       inp.disabled = true;
