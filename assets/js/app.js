@@ -172,8 +172,8 @@ const MATCH_INFO = {
     { date: '27 jun', time: '21:00', venue: 'Arrowhead Stadium, Kansas City' },
   ],
   K: [
-    { date: '17 jun', time: '12:00', venue: 'NRG Stadium, Houston' },
-    { date: '17 jun', time: '21:00', venue: 'Est. Azteca, Cd. de México' },
+    { date: '5 jun', time: '12:00', venue: 'NRG Stadium, Houston' },       // TEST — original: 17 jun
+    { date: '17 jun', time: '21:00', venue: 'Est. Azteca, Cd. de México' }, // TEST — original: 17 jun
     { date: '23 jun', time: '12:00', venue: 'NRG Stadium, Houston' },
     { date: '23 jun', time: '21:00', venue: 'Est. Akron, Guadalajara' },
     { date: '27 jun', time: '18:30', venue: 'Hard Rock Stadium, Miami' },
@@ -407,9 +407,9 @@ async function loadCurrentUser(userId) {
 }
 
 function initLoginUI() {
-  const pwInput  = document.getElementById('login-password');
-  const eyeBtn   = document.getElementById('btn-toggle-password');
-  const eyeIcon  = document.getElementById('eye-icon');
+  const pwInput = document.getElementById('login-password');
+  const eyeBtn = document.getElementById('btn-toggle-password');
+  const eyeIcon = document.getElementById('eye-icon');
   if (pwInput && eyeBtn) {
     eyeBtn.addEventListener('click', () => {
       const show = pwInput.type === 'password';
@@ -580,15 +580,15 @@ function isMatchLive(dateStr, timeStr) {
     const { day, month } = parseMatchDate(dateStr);
     const [h, m] = timeStr.split(':').map(Number);
     const nowCOT = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
-    const start  = new Date(2026, month - 1, day, h, m, 0);
-    const end    = new Date(start.getTime() + 110 * 60 * 1000);
+    const start = new Date(2026, month - 1, day, h, m, 0);
+    const end = new Date(start.getTime() + 110 * 60 * 1000);
     return nowCOT >= start && nowCOT <= end;
   } catch (_) { return false; }
 }
 
 function renderTodayMatches() {
   const today = new Date();
-  const todayDay   = today.getDate();
+  const todayDay = today.getDate();
   const todayMonth = today.getMonth() + 1;
   const todayMatches = [];
 
@@ -597,8 +597,8 @@ function renderTodayMatches() {
       const { day, month } = parseMatchDate(mi.date);
       if (day === todayDay && month === todayMonth) {
         const jornada = JORNADAS[Math.floor(matchIdx / 2)];
-        const par     = jornada.pares[matchIdx % 2];
-        const teams   = GROUPS[group].teams;
+        const par = jornada.pares[matchIdx % 2];
+        const teams = GROUPS[group].teams;
         todayMatches.push({
           group, matchIdx,
           t0: teams[par[0]], t1: teams[par[1]],
@@ -610,8 +610,8 @@ function renderTodayMatches() {
   });
 
   const section = document.getElementById('today-section');
-  const grid    = document.getElementById('today-grid');
-  const label   = document.getElementById('today-date-label');
+  const grid = document.getElementById('today-grid');
+  const label = document.getElementById('today-date-label');
 
   if (todayMatches.length === 0) {
     label.textContent = today.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -623,7 +623,7 @@ function renderTodayMatches() {
   label.textContent = today.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   const anyLive = todayMatches.some(m => m.live);
-  document.getElementById('today-section').querySelector('h2').textContent =
+  document.getElementById('today-section').querySelector('h2').innerHTML =
     anyLive ? '<i class="fa-solid fa-circle" style="color:#ff3b3b"></i> Partidos en Vivo' : '<i class="fa-solid fa-futbol"></i> Partidos de Hoy';
 
   grid.innerHTML = todayMatches.map(m => `
@@ -720,7 +720,7 @@ function renderUpcomingMatches() {
   const grid = document.getElementById('upcoming-grid');
   if (!grid) return;
 
-  const now      = new Date();
+  const now = new Date();
   const todayDay = now.getDate();
   const todayMon = now.getMonth() + 1;
 
@@ -730,14 +730,14 @@ function renderUpcomingMatches() {
     matches.forEach((mi, matchIdx) => {
       const { day, month } = parseMatchDate(mi.date);
       const isToday = day === todayDay && month === todayMon;
-      const isPast  = month < todayMon || (month === todayMon && day < todayDay);
+      const isPast = month < todayMon || (month === todayMon && day < todayDay);
       if (isPast || isToday) return;
 
-      const jIdx    = Math.floor(matchIdx / 2);
-      const pIdx    = matchIdx % 2;
+      const jIdx = Math.floor(matchIdx / 2);
+      const pIdx = matchIdx % 2;
       const jornada = JORNADAS[jIdx];
-      const par     = jornada.pares[pIdx];
-      const teams   = GROUPS[group].teams;
+      const par = jornada.pares[pIdx];
+      const teams = GROUPS[group].teams;
 
       all.push({ group, t0: teams[par[0]], t1: teams[par[1]], date: mi.date, time: mi.time, venue: mi.venue, month, day });
     });
@@ -785,7 +785,7 @@ function renderUpcomingMatches() {
 ================================================================ */
 function renderBonosGanados(players, results) {
   const section = document.getElementById('bonos-ganados-section');
-  const grid    = document.getElementById('bonos-ganados-grid');
+  const grid = document.getElementById('bonos-ganados-grid');
   if (!section || !grid) return;
 
   const scored = players.map(p => ({ ...p, score: calcScore(p, results) }));
@@ -809,7 +809,7 @@ function renderBonosGanados(players, results) {
   }
 
   grid.innerHTML = bonosConRespuesta.map(key => {
-    const label   = BONUS_LABELS[key] || key;
+    const label = BONUS_LABELS[key] || key;
     const oficial = results.bonuses?.[key] || null;
     const esManual = !oficial && bonosManuales.has(key);
 
@@ -829,9 +829,9 @@ function renderBonosGanados(players, results) {
   <div class="bgc-answer">${esManual ? '<i class="fa-solid fa-hand-holding-heart"></i> Otorgado manualmente' : `<i class="fa-solid fa-circle-check"></i> ${oficial}`}</div>
   <div class="bgc-players">
     ${aciertos.length === 0
-      ? '<span class="bgc-none">Nadie acertó</span>'
-      : aciertos.map(p => `<span class="bgc-winner"><i class="fa-solid fa-medal"></i> ${p.name}</span>`).join('')
-    }
+        ? '<span class="bgc-none">Nadie acertó</span>'
+        : aciertos.map(p => `<span class="bgc-winner"><i class="fa-solid fa-medal"></i> ${p.name}</span>`).join('')
+      }
   </div>
 </div>`;
   }).join('');
@@ -844,12 +844,12 @@ function renderBonosGanados(players, results) {
 ================================================================ */
 function renderMatchPoints(players, results) {
   const section = document.getElementById('match-points-section');
-  const grid    = document.getElementById('match-points-grid');
+  const grid = document.getElementById('match-points-grid');
   if (!section || !grid) return;
 
   const scored = players.map(p => ({ ...p, score: calcScore(p, results) }));
 
-  const now      = new Date();
+  const now = new Date();
   const todayDay = now.getDate();
   const todayMon = now.getMonth() + 1;
 
@@ -869,7 +869,7 @@ function renderMatchPoints(players, results) {
         const r0 = results.scores[k0];
         const r1 = results.scores[k1];
         const teams = GROUPS[group].teams;
-        const par   = jornada.pares[pIdx];
+        const par = jornada.pares[pIdx];
 
         const earners = [];
         scored.forEach(p => {
@@ -1703,9 +1703,9 @@ function _wirePlayerPicker(picker, players, bonusKey) {
 /* --------- Admin bonus pickers — write to ADMIN_RESULTS, no IS_GROUPS_LOCKED --------- */
 
 function _wirePicker_admin(picker, renderFn) {
-  const trigger  = picker.querySelector('.team-picker-trigger');
+  const trigger = picker.querySelector('.team-picker-trigger');
   const dropdown = picker.querySelector('.team-picker-dropdown');
-  const search   = picker.querySelector('.tp-search');
+  const search = picker.querySelector('.tp-search');
 
   trigger.addEventListener('click', e => {
     e.stopPropagation();
@@ -2179,23 +2179,23 @@ async function loadParticipantsView() {
     .map(p => {
       const polla = pollasMap[p.id];
       const hasData = polla && (
-        Object.keys(polla.scores  || {}).length > 0 ||
+        Object.keys(polla.scores || {}).length > 0 ||
         Object.keys(polla.bonuses || {}).length > 0
       );
       return {
-        name:     p.name || 'Sin nombre',
-        locked:   polla?.is_groups_locked || false,
+        name: p.name || 'Sin nombre',
+        locked: polla?.is_groups_locked || false,
         hasPolla: !!polla,
-        hasData:  !!hasData,
+        hasData: !!hasData,
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
   function statusTag(p) {
-    if (p.locked)   return ['pc-locked',  '<i class="fa-solid fa-lock"></i> Enviada'];
-    if (p.hasData)  return ['pc-open',    '<i class="fa-solid fa-pen"></i> En progreso'];
-    if (p.hasPolla) return ['pc-nodata',  '<i class="fa-solid fa-circle-minus"></i> Sin datos'];
-    return                 ['pc-nopolla', '<i class="fa-solid fa-circle-xmark"></i> Sin polla'];
+    if (p.locked) return ['pc-locked', '<i class="fa-solid fa-lock"></i> Enviada'];
+    if (p.hasData) return ['pc-open', '<i class="fa-solid fa-pen"></i> En progreso'];
+    if (p.hasPolla) return ['pc-nodata', '<i class="fa-solid fa-circle-minus"></i> Sin datos'];
+    return ['pc-nopolla', '<i class="fa-solid fa-circle-xmark"></i> Sin polla'];
   }
 
   function render(filter) {
@@ -2297,7 +2297,7 @@ async function loadAdminResultsEditor() {
 
   const { data } = await sb.from('official_results').select('*').eq('id', 1).single();
   if (data) {
-    ADMIN_RESULTS.scores  = data.scores  || {};
+    ADMIN_RESULTS.scores = data.scores || {};
     ADMIN_RESULTS.bracket = data.bracket || {};
     ADMIN_RESULTS.bonuses = data.bonuses || {};
   }
@@ -2496,7 +2496,7 @@ function _wireAdminBracketPicker(picker, teams, key) {
         _setTeamPickerValue(picker, opt.dataset.name, teams);
         dropdown.classList.add('hidden');
         picker.classList.remove('open');
-        
+
         // Guardar el valor en el estado temporal
         ADMIN_RESULTS.bracket[key] = opt.dataset.name;
         highlightAdminWinnerRows();
@@ -2531,7 +2531,7 @@ function renderAdminBracket() {
   const container = document.getElementById('admin-bracket-render');
   if (!container) return;
   container.innerHTML = RONDAS.map(ronda => buildAdminRoundHTML(ronda)).join('');
-  
+
   const allTeams = _allTeamsSorted();
 
   // Wire all admin bracket pickers (including rounds and third place)
@@ -2556,13 +2556,13 @@ function renderAdminBracket() {
       inp.addEventListener('input', onAdminBracketInput);
     });
   }
-  
+
   updateAdminChampion();
 }
 
 function buildAdminRoundHTML(ronda) {
   const matches = Array.from({ length: ronda.partidos }, (_, i) => {
-    const ph0 = ronda.placeholders[i * 2]     || `Equipo ${i * 2 + 1}`;
+    const ph0 = ronda.placeholders[i * 2] || `Equipo ${i * 2 + 1}`;
     const ph1 = ronda.placeholders[i * 2 + 1] || `Equipo ${i * 2 + 2}`;
     const kt0 = `${ronda.id}-${i}-t0`, kt1 = `${ronda.id}-${i}-t1`;
     const ks0 = `${ronda.id}-${i}-s0`, ks1 = `${ronda.id}-${i}-s1`;
@@ -2571,7 +2571,7 @@ function buildAdminRoundHTML(ronda) {
     const s1 = parseFloat(ADMIN_RESULTS.bracket[ks1]);
     const winner = (!isNaN(s0) && !isNaN(s1)) ? (s0 > s1 ? 't0' : s1 > s0 ? 't1' : null) : null;
     const metaHTML = getMatchMetaHTML(ronda.id, i);
-    
+
     const picker0 = `
 <div class="team-picker admin-bracket-picker" data-admin-key="${kt0}">
   <div class="team-picker-trigger">
@@ -2597,7 +2597,7 @@ function buildAdminRoundHTML(ronda) {
     <div class="tp-list"></div>
   </div>
 </div>`;
-    
+
     return `
 <div class="bracket-match${isFin ? ' is-final' : ''}">
   ${metaHTML}
@@ -2713,9 +2713,9 @@ async function saveAdminSection(msgId) {
   msgEl.textContent = 'Guardando…';
   const { error } = await sb.from('official_results').upsert({
     id: 1,
-    scores:     ADMIN_RESULTS.scores,
-    bracket:    ADMIN_RESULTS.bracket,
-    bonuses:    ADMIN_RESULTS.bonuses,
+    scores: ADMIN_RESULTS.scores,
+    bracket: ADMIN_RESULTS.bracket,
+    bonuses: ADMIN_RESULTS.bonuses,
     updated_at: new Date().toISOString(),
   });
   msgEl.textContent = error ? 'Error: ' + error.message : '<i class="fa-solid fa-circle-check"></i> Guardado';
@@ -2887,13 +2887,13 @@ function updateLayoutOffsets() {
   const footer = document.querySelector('footer');
   const shell = document.getElementById('app-shell');
   if (!header || !footer || !shell) return;
-  shell.style.paddingTop  = header.offsetHeight + 'px';
+  shell.style.paddingTop = header.offsetHeight + 'px';
   shell.style.paddingBottom = footer.offsetHeight + 'px';
 }
 
 function initHamburger() {
-  const btn     = document.getElementById('btn-hamburger');
-  const nav     = document.getElementById('main-nav');
+  const btn = document.getElementById('btn-hamburger');
+  const nav = document.getElementById('main-nav');
   const overlay = document.getElementById('nav-overlay');
   if (!btn || !nav) return;
 
@@ -2918,7 +2918,7 @@ function initHamburger() {
   // Delegación en el nav: captura clic en botón ✕ y en cualquier tab
   nav.addEventListener('click', e => {
     if (e.target.closest('#btn-nav-close')) { closeNav(); return; }
-    if (e.target.closest('.tab-btn'))       { closeNav(); }
+    if (e.target.closest('.tab-btn')) { closeNav(); }
   });
 
   if (overlay) overlay.addEventListener('click', closeNav);
