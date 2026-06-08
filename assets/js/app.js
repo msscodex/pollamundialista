@@ -96,7 +96,7 @@ const MATCH_INFO = {
     { date: '11 jun', time: '21:00', venue: 'Est. Akron, Guadalajara' },
     { date: '18 jun', time: '20:00', venue: 'Est. Akron, Guadalajara' },
     { date: '18 jun', time: '11:00', venue: 'Mercedes-Benz Stadium, Atlanta' },
-    { date: '24 jun', time: '20:00', venue: 'Est. Azteca, Cd. de México', pair: [0, 3] },
+    { date: '24 jun', time: '20:00', venue: 'Est. Azteca, Cd. de México' },
     { date: '24 jun', time: '20:00', venue: 'Est. BBVA, Monterrey' },
   ],
   B: [
@@ -104,7 +104,7 @@ const MATCH_INFO = {
     { date: '13 jun', time: '14:00', venue: "Levi's Stadium, San Francisco" },
     { date: '18 jun', time: '17:00', venue: 'BC Place, Vancouver' },
     { date: '18 jun', time: '14:00', venue: 'SoFi Stadium, Los Ángeles' },
-    { date: '24 jun', time: '14:00', venue: 'BC Place, Vancouver', pair: [0, 3] },
+    { date: '24 jun', time: '14:00', venue: 'BC Place, Vancouver' },
     { date: '24 jun', time: '14:00', venue: 'Lumen Field, Seattle' },
   ],
   C: [
@@ -120,7 +120,7 @@ const MATCH_INFO = {
     { date: '12 jun', time: '23:00', venue: 'BC Place, Vancouver' },
     { date: '19 jun', time: '14:00', venue: 'Lumen Field, Seattle' },
     { date: '18 jun', time: '23:00', venue: "Levi's Stadium, San Francisco" },
-    { date: '25 jun', time: '21:00', venue: 'SoFi Stadium, Los Ángeles', pair: [0, 3] },
+    { date: '25 jun', time: '21:00', venue: 'SoFi Stadium, Los Ángeles' },
     { date: '25 jun', time: '21:00', venue: "Levi's Stadium, San Francisco" },
   ],
   E: [
@@ -173,7 +173,7 @@ const MATCH_INFO = {
   ],
   K: [
     { date: '17 jun', time: '12:00', venue: 'NRG Stadium, Houston' },
-    { date: '17 jun', time: '21:00', venue: 'Est. Azteca, Cd. de México', pair: [3, 2] },
+    { date: '17 jun', time: '21:00', venue: 'Est. Azteca, Cd. de México' },
     { date: '23 jun', time: '12:00', venue: 'NRG Stadium, Houston' },
     { date: '23 jun', time: '21:00', venue: 'Est. Akron, Guadalajara' },
     { date: '27 jun', time: '18:30', venue: 'Hard Rock Stadium, Miami' },
