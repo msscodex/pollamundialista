@@ -96,7 +96,7 @@ const MATCH_INFO = {
     { date: '11 jun', time: '21:00', venue: 'Est. Akron, Guadalajara' },
     { date: '18 jun', time: '20:00', venue: 'Est. Akron, Guadalajara' },
     { date: '18 jun', time: '11:00', venue: 'Mercedes-Benz Stadium, Atlanta' },
-    { date: '24 jun', time: '20:00', venue: 'Est. Azteca, Cd. de México' },
+    { date: '24 jun', time: '20:00', venue: 'Est. Azteca, Cd. de México', pair: [0, 3] },
     { date: '24 jun', time: '20:00', venue: 'Est. BBVA, Monterrey' },
   ],
   B: [
@@ -104,7 +104,7 @@ const MATCH_INFO = {
     { date: '13 jun', time: '14:00', venue: "Levi's Stadium, San Francisco" },
     { date: '18 jun', time: '17:00', venue: 'BC Place, Vancouver' },
     { date: '18 jun', time: '14:00', venue: 'SoFi Stadium, Los Ángeles' },
-    { date: '24 jun', time: '14:00', venue: 'BC Place, Vancouver' },
+    { date: '24 jun', time: '14:00', venue: 'BC Place, Vancouver', pair: [0, 3] },
     { date: '24 jun', time: '14:00', venue: 'Lumen Field, Seattle' },
   ],
   C: [
@@ -120,7 +120,7 @@ const MATCH_INFO = {
     { date: '12 jun', time: '23:00', venue: 'BC Place, Vancouver' },
     { date: '19 jun', time: '14:00', venue: 'Lumen Field, Seattle' },
     { date: '18 jun', time: '23:00', venue: "Levi's Stadium, San Francisco" },
-    { date: '25 jun', time: '21:00', venue: 'SoFi Stadium, Los Ángeles' },
+    { date: '25 jun', time: '21:00', venue: 'SoFi Stadium, Los Ángeles', pair: [0, 3] },
     { date: '25 jun', time: '21:00', venue: "Levi's Stadium, San Francisco" },
   ],
   E: [
@@ -172,8 +172,8 @@ const MATCH_INFO = {
     { date: '27 jun', time: '21:00', venue: 'Arrowhead Stadium, Kansas City' },
   ],
   K: [
-    { date: '17 jun', time: '12:00', venue: 'NRG Stadium, Houston' },       // TEST — original: 17 jun
-    { date: '17 jun', time: '21:00', venue: 'Est. Azteca, Cd. de México' }, // TEST — original: 17 jun
+    { date: '17 jun', time: '12:00', venue: 'NRG Stadium, Houston' },
+    { date: '17 jun', time: '21:00', venue: 'Est. Azteca, Cd. de México', pair: [3, 2] },
     { date: '23 jun', time: '12:00', venue: 'NRG Stadium, Houston' },
     { date: '23 jun', time: '21:00', venue: 'Est. Akron, Guadalajara' },
     { date: '27 jun', time: '18:30', venue: 'Hard Rock Stadium, Miami' },
@@ -248,8 +248,8 @@ function getMatchMetaHTML(rondaId, idx) {
 
 const JORNADAS = [
   { label: 'Jornada 1', pares: [[0, 1], [2, 3]] },
-  { label: 'Jornada 2', pares: [[0, 2], [1, 3]] },
-  { label: 'Jornada 3', pares: [[0, 3], [1, 2]] }
+  { label: 'Jornada 2', pares: [[0, 2], [3, 1]] },
+  { label: 'Jornada 3', pares: [[3, 0], [1, 2]] }
 ];
 
 const RONDAS = [
@@ -271,6 +271,14 @@ const RONDAS = [
   { id: 'sf', label: 'Semifinales', partidos: 2, placeholders: [] },
   { id: 'fin', label: 'FINAL 🏆', partidos: 1, placeholders: [] }
 ];
+
+function getMatchPair(letter, matchIdx) {
+  const mi = (MATCH_INFO[letter] || [])[matchIdx];
+  if (mi?.pair) return mi.pair;
+  const jIdx = Math.floor(matchIdx / 2);
+  const pIdx = matchIdx % 2;
+  return JORNADAS[jIdx]?.pares[pIdx] || [0, 1];
+}
 
 /* ----------------------------------------------------------------
    PUNTUACIÓN
@@ -1062,8 +1070,18 @@ function renderGroupsReadonly(scores, containerId) {
 
 function buildGroupCardReadonly(letter, teams, scores) {
   const matches = JORNADAS.map((jornada, jIdx) => {
-    return jornada.pares.map((par, pIdx) => {
-      const matchIdx = jIdx * 2 + pIdx;
+    const slots = jornada.pares
+      .map((_, pIdx) => { const matchIdx = jIdx * 2 + pIdx; return { par: getMatchPair(letter, matchIdx), matchIdx }; })
+      .sort((a, b) => {
+        const miA = (MATCH_INFO[letter] || [])[a.matchIdx] || {};
+        const miB = (MATCH_INFO[letter] || [])[b.matchIdx] || {};
+        const dA = parseMatchDate(miA.date || '1 ene');
+        const dB = parseMatchDate(miB.date || '1 ene');
+        if (dA.month !== dB.month) return dA.month - dB.month;
+        if (dA.day !== dB.day) return dA.day - dB.day;
+        return (miA.time || '').localeCompare(miB.time || '');
+      });
+    return slots.map(({ par, matchIdx }) => {
       const k0 = scoreKey(letter, matchIdx, 0);
       const k1 = scoreKey(letter, matchIdx, 1);
       const v0 = scores[k0] ?? '', v1 = scores[k1] ?? '';
@@ -1259,8 +1277,19 @@ function buildGroupCard(letter, teams) {
 
 function buildJornadas(letter, teams) {
   return JORNADAS.map((jornada, jIdx) => {
-    const rows = jornada.pares.map((par, pIdx) => {
-      const matchIdx = jIdx * 2 + pIdx;
+    const slots = jornada.pares
+      .map((_, pIdx) => { const matchIdx = jIdx * 2 + pIdx; return { par: getMatchPair(letter, matchIdx), matchIdx }; })
+      .sort((a, b) => {
+        const miA = (MATCH_INFO[letter] || [])[a.matchIdx] || {};
+        const miB = (MATCH_INFO[letter] || [])[b.matchIdx] || {};
+        const dA = parseMatchDate(miA.date || '1 ene');
+        const dB = parseMatchDate(miB.date || '1 ene');
+        if (dA.month !== dB.month) return dA.month - dB.month;
+        if (dA.day !== dB.day) return dA.day - dB.day;
+        return (miA.time || '').localeCompare(miB.time || '');
+      });
+
+    const rows = slots.map(({ par, matchIdx }) => {
       const k0 = scoreKey(letter, matchIdx, 0);
       const k1 = scoreKey(letter, matchIdx, 1);
       const v0 = STATE.scores[k0] ?? '', v1 = STATE.scores[k1] ?? '';
@@ -1340,12 +1369,12 @@ function recalcGroup(letter) {
   const st = teams.map((t, idx) => ({ name: t.n, flag: t.code, idx, j: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, pts: 0 }));
 
   JORNADAS.forEach((jornada, jIdx) => {
-    jornada.pares.forEach((par, pIdx) => {
+    jornada.pares.forEach((_, pIdx) => {
       const matchIdx = jIdx * 2 + pIdx;
+      const [t0, t1] = getMatchPair(letter, matchIdx);
       const k0 = scoreKey(letter, matchIdx, 0), k1 = scoreKey(letter, matchIdx, 1);
       if (!(k0 in STATE.scores) || !(k1 in STATE.scores)) return;
       const s0 = STATE.scores[k0], s1 = STATE.scores[k1];
-      const t0 = par[0], t1 = par[1];
       st[t0].j++; st[t1].j++;
       st[t0].gf += s0; st[t0].gc += s1;
       st[t1].gf += s1; st[t1].gc += s0;
@@ -2410,8 +2439,18 @@ function buildAdminGroupCard(letter, teams) {
 
 function buildAdminJornadas(letter, teams) {
   return JORNADAS.map((jornada, jIdx) => {
-    const rows = jornada.pares.map((par, pIdx) => {
-      const matchIdx = jIdx * 2 + pIdx;
+    const slots = jornada.pares
+      .map((_, pIdx) => { const matchIdx = jIdx * 2 + pIdx; return { par: getMatchPair(letter, matchIdx), matchIdx }; })
+      .sort((a, b) => {
+        const miA = (MATCH_INFO[letter] || [])[a.matchIdx] || {};
+        const miB = (MATCH_INFO[letter] || [])[b.matchIdx] || {};
+        const dA = parseMatchDate(miA.date || '1 ene');
+        const dB = parseMatchDate(miB.date || '1 ene');
+        if (dA.month !== dB.month) return dA.month - dB.month;
+        if (dA.day !== dB.day) return dA.day - dB.day;
+        return (miA.time || '').localeCompare(miB.time || '');
+      });
+    const rows = slots.map(({ par, matchIdx }) => {
       const k0 = scoreKey(letter, matchIdx, 0);
       const k1 = scoreKey(letter, matchIdx, 1);
       const v0 = ADMIN_RESULTS.scores[k0] ?? '';
@@ -2469,12 +2508,12 @@ function recalcAdminGroup(letter) {
   const st = teams.map((t, idx) => ({ name: t.n, flag: t.code, idx, j: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, pts: 0 }));
 
   JORNADAS.forEach((jornada, jIdx) => {
-    jornada.pares.forEach((par, pIdx) => {
+    jornada.pares.forEach((_, pIdx) => {
       const matchIdx = jIdx * 2 + pIdx;
+      const [t0, t1] = getMatchPair(letter, matchIdx);
       const k0 = scoreKey(letter, matchIdx, 0), k1 = scoreKey(letter, matchIdx, 1);
       if (!(k0 in ADMIN_RESULTS.scores) || !(k1 in ADMIN_RESULTS.scores)) return;
       const s0 = ADMIN_RESULTS.scores[k0], s1 = ADMIN_RESULTS.scores[k1];
-      const t0 = par[0], t1 = par[1];
       st[t0].j++; st[t1].j++;
       st[t0].gf += s0; st[t0].gc += s1;
       st[t1].gf += s1; st[t1].gc += s0;
