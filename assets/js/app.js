@@ -117,7 +117,7 @@ const MATCH_INFO = {
   ],
   D: [
     { date: '12 jun', time: '20:00', venue: 'SoFi Stadium, Los Ángeles' },
-    { date: '12 jun', time: '23:00', venue: 'BC Place, Vancouver' },
+    { date: '13 jun', time: '23:00', venue: 'BC Place, Vancouver' },
     { date: '19 jun', time: '14:00', venue: 'Lumen Field, Seattle' },
     { date: '19 jun', time: '23:00', venue: "Levi's Stadium, san Francisco" },
     { date: '25 jun', time: '21:00', venue: 'SoFi Stadium, Los Ángeles' },
@@ -847,13 +847,13 @@ function renderBonosGanados(players, results) {
     const esManual = !oficial && bonosManuales.has(key);
 
     const aciertos = scored.filter(p => {
+      const manualOverride = (p.manual_bonus_pts || {})[key] === true;
       if (oficial) {
         const pVal = (p.bonuses || {})[key];
-        if (pVal == null) return false;
-        return String(pVal).toLowerCase() === String(oficial).toLowerCase();
+        const textHit = pVal != null && String(pVal).toLowerCase() === String(oficial).toLowerCase();
+        return textHit || manualOverride;
       }
-      // bono manual: solo quienes tienen manual_bonus_pts[key] === true
-      return (p.manual_bonus_pts || {})[key] === true;
+      return manualOverride;
     });
 
     return `
