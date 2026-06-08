@@ -119,7 +119,7 @@ const MATCH_INFO = {
     { date: '12 jun', time: '20:00', venue: 'SoFi Stadium, Los Ángeles' },
     { date: '12 jun', time: '23:00', venue: 'BC Place, Vancouver' },
     { date: '19 jun', time: '14:00', venue: 'Lumen Field, Seattle' },
-    { date: '18 jun', time: '23:00', venue: "Levi's Stadium, San Francisco" },
+    { date: '19jun', time: '23:00', venue: "Levi's Stadium, San Francisco" },
     { date: '25 jun', time: '21:00', venue: 'SoFi Stadium, Los Ángeles' },
     { date: '25 jun', time: '21:00', venue: "Levi's Stadium, San Francisco" },
   ],
