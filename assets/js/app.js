@@ -92,7 +92,7 @@ const GROUPS = {
 
 const MATCH_INFO = {
   A: [
-    { date: '11 jun', time: '14:00', venue: 'Est. Azteca, Cd. de México' },
+    { date: '9 jun', time: '14:00', venue: 'Est. Azteca, Cd. de México' },
     { date: '11 jun', time: '21:00', venue: 'Est. Akron, Guadalajara' },
     { date: '18 jun', time: '11:00', venue: 'Mercedes-Benz Stadium, Atlanta' },
     { date: '18 jun', time: '20:00', venue: 'Est. Akron, Guadalajara' },
@@ -711,9 +711,9 @@ function renderRanking(players, results) {
   const scored = players
     .map(p => ({ ...p, score: calcScore(p, results) }))
     .sort((a, b) =>
-      b.score.total   - a.score.total   ||
-      b.score.exact   - a.score.exact   ||
-      b.score.result  - a.score.result  ||
+      b.score.total - a.score.total ||
+      b.score.exact - a.score.exact ||
+      b.score.result - a.score.result ||
       b.score.bonuses - a.score.bonuses ||
       a.name.localeCompare(b.name)
     );
@@ -725,9 +725,9 @@ function renderRanking(players, results) {
     if (idx > 0) {
       const prev = scored[idx - 1];
       const trueTie =
-        p.score.total   === prev.score.total   &&
-        p.score.exact   === prev.score.exact   &&
-        p.score.result  === prev.score.result  &&
+        p.score.total === prev.score.total &&
+        p.score.exact === prev.score.exact &&
+        p.score.result === prev.score.result &&
         p.score.bonuses === prev.score.bonuses;
       if (!trueTie) currentRank = idx + 1;
     }
@@ -859,14 +859,14 @@ function openPlayerDetailModal(playerName) {
     return dA.month - dB.month || dA.day - dB.day || (a.time || '').localeCompare(b.time || '');
   });
 
-  const TIPO_ICON  = { exact: '⭐', result: '✓', miss: '✗' };
+  const TIPO_ICON = { exact: '⭐', result: '✓', miss: '✗' };
   const TIPO_LABEL = { exact: 'Exacto', result: 'Resultado', miss: 'Fallido' };
 
   const matchesHTML = matchRows.length === 0
     ? '<p class="pdm-empty">Aún no hay resultados oficiales de grupos.</p>'
     : matchRows.map(m => {
-        const pred = m.hasPlayer ? `${m.p0} — ${m.p1}` : '—';
-        return `
+      const pred = m.hasPlayer ? `${m.p0} — ${m.p1}` : '—';
+      return `
 <div class="pdm-match pdm-match-${m.tipo}">
   <div class="pdm-match-teams">${flag(m.t0)} ${m.t0.n} <span class="pdm-vs">vs</span> ${m.t1.n} ${flag(m.t1)}</div>
   <div class="pdm-match-scores">
@@ -878,7 +878,7 @@ function openPlayerDetailModal(playerName) {
     ${TIPO_ICON[m.tipo]} ${TIPO_LABEL[m.tipo]}${m.pts > 0 ? ` <strong>+${m.pts} pts</strong>` : ''}
   </div>
 </div>`;
-      }).join('');
+    }).join('');
 
   document.getElementById('pdm-content').innerHTML = `
 <div class="pdm-section-title"><i class="fa-solid fa-futbol"></i> Partidos de Grupos</div>
@@ -2366,11 +2366,11 @@ async function loadDraft() {
   ]);
 
   const dbData = pollaRes.data;
-  STATE.scores  = dbData?.scores            || {};
-  STATE.bracket = dbData?.bracket           || {};
-  STATE.bonuses = dbData?.bonuses           || {};
+  STATE.scores = dbData?.scores || {};
+  STATE.bracket = dbData?.bracket || {};
+  STATE.bonuses = dbData?.bonuses || {};
   IS_GROUPS_LOCKED = dbData?.is_groups_locked || false;
-  STATE.player  = CURRENT_USER.name;
+  STATE.player = CURRENT_USER.name;
   try { localStorage.setItem(LS_DRAFT, JSON.stringify({ ...STATE, userId: CURRENT_USER.id })); } catch (_) { }
 
   const resultsBracket = resultsRes.data?.bracket || {};
