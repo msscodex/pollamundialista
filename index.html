@@ -183,6 +183,7 @@
               <th>#</th>
               <th>Participante</th>
               <th title="Puntos totales">Pts</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="ranking-tbody"></tbody>
@@ -728,6 +729,20 @@
           <button class="btn btn-outline" id="btn-lock-cancel">Cancelar</button>
           <button class="btn btn-gold" id="btn-lock-confirm">Sí, enviar polla</button>
         </div>
+      </div>
+    </div>
+
+    <!-- MODAL: detalle participante ranking -->
+    <div id="player-detail-modal" class="modal-overlay hidden">
+      <div class="modal-box modal-box-wide">
+        <div class="pdm-modal-header">
+          <div>
+            <h3 id="pdm-player-name"></h3>
+            <div id="pdm-summary"></div>
+          </div>
+          <button class="modal-close-btn" id="btn-pdm-close" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="pdm-content" class="pdm-content"></div>
       </div>
     </div>
 

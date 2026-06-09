@@ -329,6 +329,8 @@ const LS_DRAFT = 'mundial2026_draft';
 let _officialBracket = {};   // admin-set bracket (teams + scores) for participant pre-fill
 let _verPlayerData = null;
 let _verResults = null;
+let _rankingPlayers = [];    // cache para modal de detalle en ranking
+let _rankingResults = null;
 
 /* ================================================================
    INIT
@@ -336,6 +338,7 @@ let _verResults = null;
 document.addEventListener('DOMContentLoaded', async () => {
   initLoginUI();
   initRouter();        // hashchange listener + render initial public view
+  initPlayerDetailModal();
 
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
@@ -773,6 +776,9 @@ function renderRanking(players, results) {
 </div>`;
     }).join('');
 
+  _rankingPlayers = scored;
+  _rankingResults = results;
+
   tableWrap.classList.remove('hidden');
   tbody.innerHTML = scored.map(p => {
     const rank = p._rank;
@@ -782,8 +788,103 @@ function renderRanking(players, results) {
   <td class="rank-pos">${rank}${isTied ? '<span class="tie-eq"> =</span>' : ''}</td>
   <td class="rank-name"><a href="#ver/${encodeURIComponent(p.name)}">${p.name}</a></td>
   <td class="rank-pts">${p.score.total}</td>
+  <td class="rank-eye"><button class="btn-eye-detail" data-player="${p.name}" title="Ver detalle"><i class="fa-regular fa-eye"></i></button></td>
 </tr>`;
   }).join('');
+
+  tbody.querySelectorAll('.btn-eye-detail').forEach(btn => {
+    btn.addEventListener('click', () => openPlayerDetailModal(btn.dataset.player));
+  });
+}
+
+/* ================================================================
+   MODAL DETALLE PARTICIPANTE (ranking)
+================================================================ */
+function initPlayerDetailModal() {
+  document.getElementById('btn-pdm-close')?.addEventListener('click', closePlayerDetailModal);
+  document.getElementById('player-detail-modal')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) closePlayerDetailModal();
+  });
+}
+
+function closePlayerDetailModal() {
+  document.getElementById('player-detail-modal')?.classList.add('hidden');
+}
+
+function openPlayerDetailModal(playerName) {
+  const player = _rankingPlayers.find(p => p.name === playerName);
+  if (!player || !_rankingResults) return;
+
+  const results = _rankingResults;
+  const score = calcScore(player, results);
+
+  document.getElementById('pdm-player-name').textContent = playerName;
+  document.getElementById('pdm-summary').innerHTML = `
+<div class="pdm-total-pts">${score.total} pts</div>
+<div class="pdm-breakdown">
+  <span class="pdm-tag pdm-tag-exact"><i class="fa-solid fa-bullseye"></i> ${score.exact} pts exactos</span>
+  <span class="pdm-tag pdm-tag-result"><i class="fa-solid fa-check"></i> ${score.result} pts resultado</span>
+  <span class="pdm-tag pdm-tag-bonus"><i class="fa-solid fa-star"></i> ${score.bonuses} pts bonos</span>
+</div>`;
+
+  // Recoger todos los partidos con resultado oficial
+  const matchRows = [];
+  JORNADAS.forEach((jornada, jIdx) => {
+    jornada.pares.forEach((_, pIdx) => {
+      const matchIdx = jIdx * 2 + pIdx;
+      Object.keys(GROUPS).forEach(group => {
+        const k0 = scoreKey(group, matchIdx, 0);
+        const k1 = scoreKey(group, matchIdx, 1);
+        if (!(k0 in results.scores) || !(k1 in results.scores)) return;
+        const r0 = results.scores[k0], r1 = results.scores[k1];
+        const hasPlayer = k0 in (player.scores || {}) && k1 in (player.scores || {});
+        const p0 = hasPlayer ? player.scores[k0] : null;
+        const p1 = hasPlayer ? player.scores[k1] : null;
+        const par = getMatchPair(group, matchIdx);
+        const teams = GROUPS[group].teams;
+        const mi = (MATCH_INFO[group] || [])[matchIdx] || {};
+        let pts = 0, tipo = 'miss';
+        if (hasPlayer) {
+          if (p0 === r0 && p1 === r1) { pts = ROUND_PTS.groups.exact; tipo = 'exact'; }
+          else if (Math.sign(p0 - p1) === Math.sign(r0 - r1)) { pts = ROUND_PTS.groups.result; tipo = 'result'; }
+        }
+        matchRows.push({ group, t0: teams[par[0]], t1: teams[par[1]], r0, r1, p0, p1, pts, tipo, hasPlayer, date: mi.date, time: mi.time });
+      });
+    });
+  });
+
+  matchRows.sort((a, b) => {
+    const dA = parseMatchDate(a.date || '1 ene');
+    const dB = parseMatchDate(b.date || '1 ene');
+    return dA.month - dB.month || dA.day - dB.day || (a.time || '').localeCompare(b.time || '');
+  });
+
+  const TIPO_ICON  = { exact: '⭐', result: '✓', miss: '✗' };
+  const TIPO_LABEL = { exact: 'Exacto', result: 'Resultado', miss: 'Fallido' };
+
+  const matchesHTML = matchRows.length === 0
+    ? '<p class="pdm-empty">Aún no hay resultados oficiales de grupos.</p>'
+    : matchRows.map(m => {
+        const pred = m.hasPlayer ? `${m.p0} — ${m.p1}` : '—';
+        return `
+<div class="pdm-match pdm-match-${m.tipo}">
+  <div class="pdm-match-teams">${flag(m.t0)} ${m.t0.n} <span class="pdm-vs">vs</span> ${m.t1.n} ${flag(m.t1)}</div>
+  <div class="pdm-match-scores">
+    <span class="pdm-pred" title="Tu predicción"><i class="fa-regular fa-user"></i> ${pred}</span>
+    <span class="pdm-arrow">→</span>
+    <span class="pdm-real" title="Resultado real"><i class="fa-solid fa-flag-checkered"></i> ${m.r0} — ${m.r1}</span>
+  </div>
+  <div class="pdm-match-result-col pdm-result-${m.tipo}">
+    ${TIPO_ICON[m.tipo]} ${TIPO_LABEL[m.tipo]}${m.pts > 0 ? ` <strong>+${m.pts} pts</strong>` : ''}
+  </div>
+</div>`;
+      }).join('');
+
+  document.getElementById('pdm-content').innerHTML = `
+<div class="pdm-section-title"><i class="fa-solid fa-futbol"></i> Partidos de Grupos</div>
+${matchesHTML}`;
+
+  document.getElementById('player-detail-modal').classList.remove('hidden');
 }
 
 /* ================================================================
