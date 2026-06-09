@@ -737,27 +737,39 @@ function renderRanking(players, results) {
     '<i class="fa-solid fa-medal" style="color:#C0C0C0"></i>',
     '<i class="fa-solid fa-medal" style="color:#CD7F32"></i>'
   ];
-  // Orden visual: 4°, 2°, 1°, 3°, 5°
+
+  // Agrupar empatados en una sola barra por posición
+  const rankGroups = [];
+  scored.forEach(p => {
+    const last = rankGroups[rankGroups.length - 1];
+    if (last && last.rank === p._rank) {
+      last.players.push(p);
+    } else {
+      rankGroups.push({ rank: p._rank, players: [p], pts: p.score.total });
+    }
+  });
+
+  // Orden visual: 4°, 2°, 1°, 3°, 5° (por índice de grupo)
   const podiumPositions = [3, 1, 0, 2, 4];
   podiumWrap.innerHTML = podiumPositions
-    .filter(i => scored[i])
+    .filter(i => rankGroups[i])
     .map(i => {
-      const p = scored[i];
-      const rank = p._rank;
-      const isTied = scored.filter(s => s._rank === rank).length > 1;
+      const g = rankGroups[i];
+      const { rank, players, pts } = g;
       const medalIcon = rank <= 3 ? MEDALS[rank - 1] : null;
       const icon = medalIcon
-        ? `<div class="podium-medal">${medalIcon}${isTied ? '<span class="podium-tie-label"> =</span>' : ''}</div>`
-        : `<div class="podium-pos">${rank}°${isTied ? ' =' : ''}</div>`;
+        ? `<div class="podium-medal">${medalIcon}</div>`
+        : `<div class="podium-pos">${rank}°</div>`;
       const trophy = rank === 1
         ? `<img src="./assets/trophy_only.svg" alt="Trofeo" class="podium-trophy">`
         : '';
+      const namesHTML = players.map(p => `<div class="podium-name">${p.name}</div>`).join('');
       return `
 <div class="podium-step pos-${rank}">
   ${trophy}
   ${icon}
-  <div class="podium-name">${p.name}</div>
-  <div class="podium-pts">${p.score.total} pts</div>
+  ${namesHTML}
+  <div class="podium-pts">${pts} pts</div>
 </div>`;
     }).join('');
 
@@ -2252,14 +2264,13 @@ async function loadDraft() {
     sb.from('official_results').select('bracket').eq('id', 1).single()
   ]);
 
-  if (pollaRes.data) {
-    STATE.scores = pollaRes.data.scores || {};
-    STATE.bracket = pollaRes.data.bracket || {};
-    STATE.bonuses = pollaRes.data.bonuses || {};
-    STATE.player = CURRENT_USER.name;
-    IS_GROUPS_LOCKED = pollaRes.data.is_groups_locked || false;
-    try { localStorage.setItem(LS_DRAFT, JSON.stringify(STATE)); } catch (_) { }
-  }
+  const dbData = pollaRes.data;
+  STATE.scores  = dbData?.scores            || {};
+  STATE.bracket = dbData?.bracket           || {};
+  STATE.bonuses = dbData?.bonuses           || {};
+  IS_GROUPS_LOCKED = dbData?.is_groups_locked || false;
+  STATE.player  = CURRENT_USER.name;
+  try { localStorage.setItem(LS_DRAFT, JSON.stringify({ ...STATE, userId: CURRENT_USER.id })); } catch (_) { }
 
   const resultsBracket = resultsRes.data?.bracket || {};
   _officialBracket = resultsBracket;   // store for participant pre-fill
