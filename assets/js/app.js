@@ -882,10 +882,6 @@ function renderMatchPoints(players, results) {
 
   const scored = players.map(p => ({ ...p, score: calcScore(p, results) }));
 
-  const now = new Date();
-  const todayDay = now.getDate();
-  const todayMon = now.getMonth() + 1;
-
   const completedMatches = [];
 
   JORNADAS.forEach((jornada, jIdx) => {
@@ -898,7 +894,6 @@ function renderMatchPoints(players, results) {
         const mi = (MATCH_INFO[group] || [])[matchIdx];
         if (!mi) return;
         const { day, month } = parseMatchDate(mi.date);
-        if (day !== todayDay || month !== todayMon) return;
         const r0 = results.scores[k0];
         const r1 = results.scores[k1];
         const teams = GROUPS[group].teams;
@@ -918,20 +913,24 @@ function renderMatchPoints(players, results) {
           group, matchIdx,
           t0: teams[par[0]], t1: teams[par[1]],
           r0, r1, earners,
-          date: mi ? mi.date : '',
-          time: mi ? mi.time : ''
+          date: mi.date, time: mi.time,
+          sortKey: month * 100 + day
         });
       });
     });
   });
 
-  if (completedMatches.length === 0) {
-    grid.innerHTML = '<p class="section-placeholder">Hoy no hay partidos con resultado oficial aún.</p>';
+  // Más recientes primero, máximo 10
+  completedMatches.sort((a, b) => b.sortKey - a.sortKey || b.time.localeCompare(a.time));
+  const recent = completedMatches.slice(0, 10);
+
+  if (recent.length === 0) {
+    grid.innerHTML = '<p class="section-placeholder">No hay partidos con resultado oficial aún.</p>';
     section.classList.remove('hidden');
     return;
   }
 
-  grid.innerHTML = completedMatches.map(m => `
+  grid.innerHTML = recent.map(m => `
 <div class="mpc-card">
   <div class="mpc-header">
     <span class="mpc-group">Grupo ${m.group}</span>
