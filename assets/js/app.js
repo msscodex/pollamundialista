@@ -92,7 +92,7 @@ const GROUPS = {
 
 const MATCH_INFO = {
   A: [
-    { date: '9 jun', time: '14:00', venue: 'Est. Azteca, Cd. de México' },
+    { date: '11 jun', time: '14:00', venue: 'Est. Azteca, Cd. de México' },
     { date: '11 jun', time: '21:00', venue: 'Est. Akron, Guadalajara' },
     { date: '18 jun', time: '11:00', venue: 'Mercedes-Benz Stadium, Atlanta' },
     { date: '18 jun', time: '20:00', venue: 'Est. Akron, Guadalajara' },
