@@ -38,9 +38,9 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
 }
-input[type="number"] { -moz-appearance: textfield; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; }
 button { cursor: pointer; font-family: inherit; }
 
 /* ================================================================
@@ -672,6 +672,7 @@ footer {
   header {
     background: var(--blue) !important;
     -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
     padding: 14px;
   }
   header h1, .header-badge, .host-pill { color: #fff !important; }
@@ -920,7 +921,6 @@ footer {
 .inner-tab:hover { background: rgba(255,255,255,.05); color: var(--text); }
 .inner-tab.active { background: var(--blue); color: var(--gold); }
 
-.inner-section { }
 .inner-section.hidden { display: none; }
 
 /* ================================================================
@@ -1923,22 +1923,16 @@ footer {
 .pdm-result-result { font-size: 12px; font-weight: 700; color: #4cd97b; }
 .pdm-result-miss   { font-size: 12px; color: var(--muted); }
 
-/* Modal ancho — móvil: anclado abajo, pantalla completa */
+/* Modal ancho — móvil: centrado, ajustado al ancho disponible */
 @media (max-width: 680px) {
-  .modal-overlay:has(.modal-box-wide) {
-    align-items: flex-end;
-    padding: 0;
-  }
   .modal-box-wide {
     max-width: 100%;
     max-height: 92vh;
-    border-radius: 16px 16px 0 0;
-    border-bottom: none;
   }
   .pdm-modal-header { padding: 16px 16px 12px; }
   .pdm-modal-header h3 { font-size: 16px; }
   .pdm-total-pts { font-size: 22px; }
-  .pdm-content { padding: 12px 16px 32px; }
+  .pdm-content { padding: 12px 16px 24px; }
 
   /* Cada partido: 2 filas en vez de 3 columnas */
   .pdm-match {
