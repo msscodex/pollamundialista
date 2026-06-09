@@ -707,7 +707,29 @@ function renderRanking(players, results) {
 
   const scored = players
     .map(p => ({ ...p, score: calcScore(p, results) }))
-    .sort((a, b) => b.score.total - a.score.total);
+    .sort((a, b) =>
+      b.score.total   - a.score.total   ||
+      b.score.exact   - a.score.exact   ||
+      b.score.result  - a.score.result  ||
+      b.score.bonuses - a.score.bonuses ||
+      a.name.localeCompare(b.name)
+    );
+
+  // Rango estilo competencia: 1,1,3 (no 1,2,2)
+  // Empate genuino = iguales en TODOS los criterios de desempate
+  let currentRank = 1;
+  scored.forEach((p, idx) => {
+    if (idx > 0) {
+      const prev = scored[idx - 1];
+      const trueTie =
+        p.score.total   === prev.score.total   &&
+        p.score.exact   === prev.score.exact   &&
+        p.score.result  === prev.score.result  &&
+        p.score.bonuses === prev.score.bonuses;
+      if (!trueTie) currentRank = idx + 1;
+    }
+    p._rank = currentRank;
+  });
 
   podiumWrap.classList.remove('hidden');
   const MEDALS = [
@@ -721,15 +743,17 @@ function renderRanking(players, results) {
     .filter(i => scored[i])
     .map(i => {
       const p = scored[i];
-      const pos = i + 1;
-      const icon = i < 3
-        ? `<div class="podium-medal">${MEDALS[i]}</div>`
-        : `<div class="podium-pos">${pos}°</div>`;
-      const trophy = i === 0
+      const rank = p._rank;
+      const isTied = scored.filter(s => s._rank === rank).length > 1;
+      const medalIcon = rank <= 3 ? MEDALS[rank - 1] : null;
+      const icon = medalIcon
+        ? `<div class="podium-medal">${medalIcon}${isTied ? '<span class="podium-tie-label"> =</span>' : ''}</div>`
+        : `<div class="podium-pos">${rank}°${isTied ? ' =' : ''}</div>`;
+      const trophy = rank === 1
         ? `<img src="./assets/trophy_only.svg" alt="Trofeo" class="podium-trophy">`
         : '';
       return `
-<div class="podium-step pos-${pos}">
+<div class="podium-step pos-${rank}">
   ${trophy}
   ${icon}
   <div class="podium-name">${p.name}</div>
@@ -738,12 +762,16 @@ function renderRanking(players, results) {
     }).join('');
 
   tableWrap.classList.remove('hidden');
-  tbody.innerHTML = scored.map((p, idx) => `
-<tr class="${idx === 0 ? 'rank-first' : ''}">
-  <td class="rank-pos">${idx + 1}</td>
+  tbody.innerHTML = scored.map(p => {
+    const rank = p._rank;
+    const isTied = scored.filter(s => s._rank === rank).length > 1;
+    return `
+<tr class="${rank === 1 ? 'rank-first' : ''}">
+  <td class="rank-pos">${rank}${isTied ? '<span class="tie-eq"> =</span>' : ''}</td>
   <td class="rank-name"><a href="#ver/${encodeURIComponent(p.name)}">${p.name}</a></td>
   <td class="rank-pts">${p.score.total}</td>
-</tr>`).join('');
+</tr>`;
+  }).join('');
 }
 
 /* ================================================================
