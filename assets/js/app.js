@@ -502,6 +502,9 @@ function route() {
   } else if (hash === '#reglamento') {
     showView('view-reglamento');
     setActiveTab('#reglamento');
+  } else if (hash === '#juego') {
+    showView('view-juego');
+    setActiveTab('#juego');
   } else if (hash === '#admin' && CURRENT_USER?.is_admin) {
     showView('view-admin');
     setActiveTab('#admin');

@@ -2644,3 +2644,34 @@ h3 .fa-solid, h3 .fa-regular,
   font-size: 7.5px;
 }
 
+/* ================================================================
+   VISTA: JUEGO (PENALTY STRIKE)
+   ================================================================ */
+.game-container {
+  width: 100%;
+  max-width: 960px;
+  height: 640px;
+  max-height: 70vh;
+  margin: 20px auto 0;
+  background: #0a1f0a; /* Fondo verde del estadio */
+  border: 3px solid var(--gold);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .game-container {
+    height: 480px;
+    max-height: 60vh;
+  }
+}
+
+.game-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
