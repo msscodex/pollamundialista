@@ -1086,6 +1086,48 @@ footer {
 /* ================================================================
    RANKING TABLE
 ================================================================ */
+.ranking-total {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-left: 8px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* Acordeón: en estado colapsado solo se ven las primeras 10 filas */
+#ranking-table-wrap.rank-collapsed .rank-row-extra { display: none; }
+#ranking-table-wrap:not(.rank-collapsed) .rank-row-extra { animation: rankRowIn .25s ease both; }
+@keyframes rankRowIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.btn-ranking-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+}
+.btn-ranking-more:hover { color: var(--gold); border-color: var(--gold); background: rgba(201,168,76,.08); }
+.btn-ranking-more i { transition: transform .25s ease; }
+.btn-ranking-more.expanded i { transform: rotate(180deg); }
+
 .ranking-table {
   width: 100%;
   border-collapse: collapse;

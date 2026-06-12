@@ -169,7 +169,7 @@
     <section class="page-section hidden" id="view-home">
 
       <div class="section-header" style="margin-top:28px">
-        <h2><i class="fa-solid fa-ranking-star"></i> Ranking</h2>
+        <h2><i class="fa-solid fa-ranking-star"></i> Ranking <span id="ranking-total" class="ranking-total hidden"></span></h2>
         <p class="section-sub" id="results-updated-label"></p>
       </div>
 
@@ -189,6 +189,9 @@
           </thead>
           <tbody id="ranking-tbody"></tbody>
         </table>
+        <button id="btn-ranking-more" class="btn-ranking-more hidden">
+          <span id="ranking-more-label"></span> <i class="fa-solid fa-chevron-down"></i>
+        </button>
       </div>
 
       <div id="today-section" class="today-section hidden">

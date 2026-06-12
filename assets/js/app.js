@@ -802,12 +802,21 @@ function renderRanking(players, results) {
     btn.addEventListener('click', () => openPodiumNamesModal(parseInt(btn.dataset.rank, 10)));
   });
 
+  // Contador total de participantes en el encabezado
+  const totalEl = document.getElementById('ranking-total');
+  if (totalEl) {
+    totalEl.textContent = `${scored.length} participantes`;
+    totalEl.classList.remove('hidden');
+  }
+
   tableWrap.classList.remove('hidden');
-  tbody.innerHTML = scored.map(p => {
+  const RANK_PREVIEW = 10;
+  tbody.innerHTML = scored.map((p, idx) => {
     const rank = p._rank;
     const isTied = scored.filter(s => s._rank === rank).length > 1;
+    const extra = idx >= RANK_PREVIEW ? ' rank-row-extra' : '';
     return `
-<tr class="${rank === 1 ? 'rank-first' : ''}">
+<tr class="${rank === 1 ? 'rank-first' : ''}${extra}">
   <td class="rank-pos">${rank}${isTied ? '<span class="tie-eq"> =</span>' : ''}</td>
   <td class="rank-name"><a href="#ver/${encodeURIComponent(p.name)}">${p.name}</a></td>
   <td class="rank-pts">${p.score.total}</td>
@@ -818,6 +827,27 @@ function renderRanking(players, results) {
   tbody.querySelectorAll('.btn-eye-detail').forEach(btn => {
     btn.addEventListener('click', () => openPlayerDetailModal(btn.dataset.player));
   });
+
+  // Acordeón: top 10 visible, botón para desplegar/plegar el resto
+  const moreBtn = document.getElementById('btn-ranking-more');
+  const moreLabel = document.getElementById('ranking-more-label');
+  if (moreBtn && moreLabel) {
+    const hiddenCount = scored.length - RANK_PREVIEW;
+    if (hiddenCount > 0) {
+      tableWrap.classList.add('rank-collapsed');
+      moreBtn.classList.remove('hidden', 'expanded');
+      moreLabel.textContent = `Ver los ${scored.length} participantes`;
+      moreBtn.onclick = () => {
+        const collapsed = tableWrap.classList.toggle('rank-collapsed');
+        moreBtn.classList.toggle('expanded', !collapsed);
+        moreLabel.textContent = collapsed ? `Ver los ${scored.length} participantes` : 'Ver menos';
+        if (collapsed) tableWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+    } else {
+      tableWrap.classList.remove('rank-collapsed');
+      moreBtn.classList.add('hidden');
+    }
+  }
 }
 
 /* ================================================================
