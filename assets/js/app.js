@@ -756,6 +756,14 @@ function renderRanking(players, results) {
     }
   });
 
+  // Altura proporcional a los puntos (entre 90px y 220px sobre los grupos visibles)
+  const shownPts = rankGroups.slice(0, 5).map(g => g.pts);
+  const maxPts = Math.max(...shownPts), minPts = Math.min(...shownPts);
+  const H_MAX = 220, H_MIN = 90;
+  const heightFor = pts => maxPts === minPts
+    ? H_MAX
+    : Math.round(H_MIN + (pts - minPts) / (maxPts - minPts) * (H_MAX - H_MIN));
+
   // Orden visual: 4°, 2°, 1°, 3°, 5° (por índice de grupo)
   const podiumPositions = [3, 1, 0, 2, 4];
   podiumWrap.innerHTML = podiumPositions
@@ -775,8 +783,10 @@ function renderRanking(players, results) {
         ? players.map(p => `<div class="podium-name">${p.name}</div>`).join('')
         : `<div class="podium-name podium-name-grouped">${players.length} participantes</div>
            <button class="btn-eye-detail podium-eye" data-rank="${rank}" title="Ver nombres"><i class="fa-regular fa-eye"></i></button>`;
+      // La clase visual va por orden del grupo (i+1), no por el rango real,
+      // para que con empates (rangos 1,3,7…) siempre haya estilo definido
       return `
-<div class="podium-step pos-${rank}">
+<div class="podium-step pos-${i + 1}" style="min-height:${heightFor(pts)}px">
   ${trophy}
   ${icon}
   ${namesHTML}

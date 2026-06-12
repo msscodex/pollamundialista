@@ -1021,31 +1021,27 @@ footer {
   min-width: 0;
 }
 
+/* La altura de cada barra la fija el JS (min-height inline) proporcional a los puntos */
 .podium-step.pos-1 {
-  min-height: 220px;
   border-color: var(--gold);
   background: linear-gradient(180deg, var(--card) 55%, rgba(255,199,0,0.13) 100%);
   box-shadow: 0 0 0 1px rgba(255,199,0,0.2), var(--shadow);
 }
 .podium-step.pos-2 {
-  min-height: 165px;
   border-color: #B0B8C1;
   background: linear-gradient(180deg, var(--card) 55%, rgba(176,184,193,0.12) 100%);
   box-shadow: 0 0 0 1px rgba(176,184,193,0.2), var(--shadow);
 }
 .podium-step.pos-3 {
-  min-height: 120px;
   border-color: #CD7F32;
   background: linear-gradient(180deg, var(--card) 55%, rgba(205,127,50,0.12) 100%);
   box-shadow: 0 0 0 1px rgba(205,127,50,0.2), var(--shadow);
 }
 .podium-step.pos-4 {
-  min-height: 82px;
   border-color: #555;
   background: linear-gradient(180deg, var(--card) 55%, rgba(100,100,100,0.08) 100%);
 }
 .podium-step.pos-5 {
-  min-height: 55px;
   border-color: #444;
   background: linear-gradient(180deg, var(--card) 55%, rgba(80,80,80,0.08) 100%);
 }
