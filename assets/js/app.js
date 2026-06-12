@@ -760,7 +760,8 @@ function renderRanking(players, results) {
   // nombres largos en móvil no inflan la barra y el alto siempre refleja puntos)
   const shownPts = rankGroups.slice(0, 5).map(g => g.pts);
   const maxPts = Math.max(...shownPts), minPts = Math.min(...shownPts);
-  const H_MAX = 170, H_MIN = 46;
+  // mínimo suficiente para medalla/posición + puntos dentro de la barra
+  const H_MAX = 200, H_MIN = 78;
   const heightFor = pts => maxPts === minPts
     ? H_MAX
     : Math.round(H_MIN + (pts - minPts) / (maxPts - minPts) * (H_MAX - H_MIN));
@@ -790,10 +791,10 @@ function renderRanking(players, results) {
 <div class="podium-col">
   <div class="podium-info">
     ${trophy}
-    ${icon}
     ${namesHTML}
   </div>
   <div class="podium-step pos-${i + 1}" style="height:${heightFor(pts)}px">
+    ${icon}
     <div class="podium-pts">${pts} pts</div>
   </div>
 </div>`;
