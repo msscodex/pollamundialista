@@ -1115,7 +1115,17 @@ footer {
 
 /* Modal nombres empatados en el podio */
 .pnm-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-.pnm-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+#podium-names-modal .modal-box {
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+  max-height: 85dvh;
+}
+.pnm-list {
+  display: flex; flex-direction: column; gap: 6px; margin-top: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
 .pnm-item {
   display: flex; align-items: center; justify-content: space-between;
   width: 100%; padding: 9px 12px;
