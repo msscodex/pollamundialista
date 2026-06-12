@@ -777,9 +777,6 @@ function renderRanking(players, results) {
       const icon = medalIcon
         ? `<div class="podium-medal">${medalIcon}</div>`
         : `<div class="podium-pos">${rank}°</div>`;
-      const trophy = rank === 1
-        ? `<img src="./assets/trophy_only.svg" alt="Trofeo" class="podium-trophy">`
-        : '';
       // 1er puesto siempre muestra nombres; los demás, si hay empate, ojo de detalle
       const namesHTML = (rank === 1 || players.length === 1)
         ? players.map(p => `<div class="podium-name">${p.name}</div>`).join('')
@@ -787,10 +784,22 @@ function renderRanking(players, results) {
            <button class="btn-eye-detail podium-eye" data-rank="${rank}" title="Ver nombres"><i class="fa-regular fa-eye"></i></button>`;
       // La clase visual va por orden del grupo (i+1), no por el rango real,
       // para que con empates (rangos 1,3,7…) siempre haya estilo definido
+      // 1er puesto: copa encima de la barra y nombres DENTRO de ella
+      // (min-height: es siempre la barra más alta, puede crecer si hay muchos empatados)
+      if (rank === 1) {
+        return `
+<div class="podium-col">
+  <div class="podium-step pos-1" style="min-height:${heightFor(pts)}px">
+    <img src="./assets/trophy_only.svg" alt="Trofeo" class="podium-trophy">
+    ${icon}
+    ${namesHTML}
+    <div class="podium-pts">${pts} pts</div>
+  </div>
+</div>`;
+      }
       return `
 <div class="podium-col">
   <div class="podium-info">
-    ${trophy}
     ${namesHTML}
   </div>
   <div class="podium-step pos-${i + 1}" style="height:${heightFor(pts)}px">
