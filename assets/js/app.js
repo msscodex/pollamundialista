@@ -1740,15 +1740,18 @@ const INAUGURAL_TEAMS = [
   { code: 'za', n: 'Sudáfrica' },
 ];
 
-// ⚠️ Actualizar con la nómina oficial convocada al Mundial 2026
+// Nómina Colombia Mundial 2026
 const COLOMBIA_SQUAD = [
-  'Álvaro Montero', 'Camilo Vargas', 'Kevin Mier',
+  'Álvaro Montero', 'Camilo Vargas', 'David Ospina', 'Kevin Mier',
   'Andrés Mora', 'Carlos Cuesta', 'Daniel Muñoz', 'Dávinson Sánchez',
-  'Johan Mojica', 'Jhon Lucumí', 'Nicolás Muñoz', 'Yerry Mina',
-  'James Rodríguez', 'Jefferson Lerma', 'Jhon Arias', 'Kevin Castaño',
-  'Mateus Uribe', 'Richard Ríos', 'Wilmar Barrios',
-  'Carlos Bacca', 'Cucho Hernández', 'Falcao García', 'Jhon Córdoba',
-  'John Jader Durán', 'Luis Díaz', 'Miguel Borja', 'Rafael Santos Borré',
+  'Déiver Machado', 'Johan Mojica', 'Jhon Lucumí', 'Nicolás Muñoz',
+  'Santiago Arias', 'Willer Ditta', 'Yerry Mina',
+  'Gustavo Puerta', 'James Rodríguez', 'Jaminton Campaz', 'Jefferson Lerma',
+  'Jhon Arias', 'Jorge Carrascal', 'Juan Fernando Quintero', 'Juan Portilla',
+  'Kevin Castaño', 'Mateus Uribe', 'Richard Ríos', 'Wilmar Barrios',
+  'Carlos Bacca', 'Carlos Gómez', 'Cucho Hernández', 'Falcao García',
+  'Jhon Córdoba', 'John Jader Durán', 'Luis Díaz', 'Luis Suárez',
+  'Miguel Borja', 'Rafael Santos Borré',
 ].sort((a, b) => a.localeCompare(b, 'es'));
 
 function _allTeamsSorted() {
@@ -2156,6 +2159,23 @@ function initPollaControls() {
   document.getElementById('btn-export-polla')?.addEventListener('click', exportJSON);
   document.getElementById('btn-export-pdf')?.addEventListener('click', exportGroupsPDF);
 
+  const importBtn = document.getElementById('btn-import-polla');
+  const importFile = document.getElementById('import-polla-file');
+  if (importBtn && importFile) {
+    importBtn.addEventListener('click', () => {
+      if (IS_GROUPS_LOCKED) {
+        showErrorModal('Tu polla ya está cerrada — no se puede importar.', 'Polla bloqueada');
+        return;
+      }
+      importFile.value = '';
+      importFile.click();
+    });
+    importFile.addEventListener('change', () => {
+      const file = importFile.files?.[0];
+      if (file) importPollaJSON(file);
+    });
+  }
+
   document.getElementById('btn-lock-polla')?.addEventListener('click', lockPolla);
 
 }
@@ -2316,6 +2336,77 @@ function exportJSON() {
   const slug = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
   a.href = url; a.download = `${slug}.json`; a.click();
   URL.revokeObjectURL(url);
+}
+
+/* ================================================================
+   IMPORT JSON — inverso de exportJSON
+================================================================ */
+const _SCORE_KEY_RE = /^[A-L]-[0-5]-[01]$/;
+
+function _validateImportedPolla(data) {
+  if (!data || typeof data !== 'object') return 'El archivo no es un JSON válido.';
+  if (!data.scores || typeof data.scores !== 'object') return 'El JSON no tiene la sección "scores".';
+
+  const badKey = Object.keys(data.scores).find(k => !_SCORE_KEY_RE.test(k));
+  if (badKey) return `Clave de marcador inválida: "${badKey}" (formato esperado "A-0-0").`;
+
+  const badVal = Object.entries(data.scores).find(([, v]) =>
+    typeof v !== 'number' || !Number.isInteger(v) || v < 0 || v > 99);
+  if (badVal) return `Marcador inválido en "${badVal[0]}": ${badVal[1]}.`;
+
+  if (data.bonuses && typeof data.bonuses === 'object') {
+    const badBonus = Object.keys(data.bonuses).find(k => !(k in BONUS_PTS));
+    if (badBonus) return `Bono desconocido: "${badBonus}".`;
+  }
+  return null;
+}
+
+function importPollaJSON(file) {
+  if (IS_GROUPS_LOCKED) {
+    showErrorModal('Tu polla ya está cerrada — no se puede importar.', 'Polla bloqueada');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onerror = () => showErrorModal('No se pudo leer el archivo.', 'Error al importar');
+  reader.onload = () => {
+    let data;
+    try {
+      data = JSON.parse(reader.result);
+    } catch (_) {
+      showErrorModal('El archivo no es un JSON válido.', 'Error al importar');
+      return;
+    }
+
+    const err = _validateImportedPolla(data);
+    if (err) { showErrorModal(err, 'Error al importar'); return; }
+
+    const nScores = Object.keys(data.scores).length;
+    const nBonuses = Object.keys(data.bonuses || {}).length;
+    const ok = window.confirm(
+      `Se importarán ${Math.floor(nScores / 2)} partidos y ${nBonuses} bonos` +
+      (data.name ? ` de "${data.name}"` : '') +
+      '.\n\nEsto REEMPLAZA tus predicciones actuales de grupos y bonos. ¿Continuar?'
+    );
+    if (!ok) return;
+
+    STATE.scores = { ...data.scores };
+    if (data.bonuses && typeof data.bonuses === 'object') STATE.bonuses = { ...data.bonuses };
+    if (data.bracket && typeof data.bracket === 'object' && Object.keys(data.bracket).length) {
+      STATE.bracket = { ...STATE.bracket, ...data.bracket };
+    }
+
+    saveDraft();
+    if (location.hash === '#polla') route(); // re-render grupos, tablas, bonos y pickers
+
+    const errEl = document.getElementById('polla-lock-errors');
+    if (errEl) {
+      errEl.innerHTML = `<strong>✓ Importado:</strong> ${Math.floor(nScores / 2)} partidos y ${nBonuses} bonos` +
+        (data.name ? ` de <em>${String(data.name).replace(/</g, '&lt;')}</em>` : '') +
+        '. Revisa y luego envía tu polla.';
+      errEl.classList.remove('hidden');
+    }
+  };
+  reader.readAsText(file);
 }
 
 /* ================================================================
