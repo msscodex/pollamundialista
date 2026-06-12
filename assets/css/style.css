@@ -186,8 +186,8 @@ header {
 }
 .side-nav-close:hover { background: rgba(255,255,255,.12); }
 
+.side-nav-bottom { margin-top: auto; }
 .side-nav-footer {
-  margin-top: auto;
   padding: 16px;
   border-top: 1px solid var(--border);
 }
@@ -195,6 +195,36 @@ header {
   width: 100%;
   justify-content: center;
 }
+
+/* Crédito de desarrollador en el menú lateral */
+.nav-credit {
+  display: block;
+  padding: 14px 16px;
+  text-align: center;
+  text-decoration: none;
+  border-top: 1px solid var(--border);
+  transition: background var(--transition);
+}
+.nav-credit:hover { background: rgba(255,255,255,.06); }
+.nav-credit-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.nav-credit-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+}
+.nav-credit-name .fa-whatsapp {
+  color: var(--green);
+  font-size: 13px;
+  margin-right: 2px;
+}
+.nav-credit:hover .nav-credit-name { color: var(--gold-light); }
 
 /* Overlay oscuro detrás del panel */
 .nav-overlay {
@@ -644,6 +674,18 @@ footer {
   font-size: 12px;
   background: var(--card);
 }
+.dev-credit-link {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--transition);
+}
+.dev-credit-link .fa-whatsapp {
+  color: var(--green);
+  font-size: 13px;
+  vertical-align: middle;
+}
+.dev-credit-link:hover,
+.dev-credit-link:hover strong { color: var(--gold-light); }
 
 /* ================================================================
    PRINT STYLES
