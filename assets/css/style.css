@@ -1004,7 +1004,9 @@ footer {
   gap: 8px;
   margin: 24px auto 32px;
   max-width: 700px;
-  padding-top: 70px; /* espacio para la copa sobre la barra del 1° */
+  /* espacio para la copa sobre la barra del 1°:
+     el SVG es 300x520 → a 70px de ancho mide ~121px de alto */
+  padding-top: 120px;
 }
 
 /* Columna = info (medalla/nombres) arriba + barra abajo.
@@ -1803,7 +1805,10 @@ footer {
 ================================================================ */
 @media (max-width: 680px) {
   /* Grids → 1 columna */
-  .podium { gap: 6px; }
+  /* copa más pequeña en móvil (52px ancho ≈ 90px alto) para que no
+     desborde columnas angostas ni pise el texto del encabezado */
+  .podium { gap: 6px; padding-top: 92px; }
+  .podium-trophy { width: 52px; }
   .podium-pts { font-size: 15px; }
   .bonuses-grid { grid-template-columns: 1fr; }
   .today-grid { grid-template-columns: 1fr; }
