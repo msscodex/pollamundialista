@@ -1093,12 +1093,13 @@ function renderBonosGanados(players, results) {
   <div class="bgc-players">
     ${aciertos.length === 0
         ? '<span class="bgc-none">Nadie acertó</span>'
-        : aciertos.map(p => `<span class="bgc-winner"><i class="fa-solid fa-medal"></i> ${p.name}</span>`).join('')
+        : inlineShowMoreHTML(aciertos.map(p => `<span class="bgc-winner"><i class="fa-solid fa-medal"></i> ${p.name}</span>`), 6)
       }
   </div>
 </div>`;
   }).join('');
 
+  wireInlineShowMore(grid);
   applyShowMore(grid, 10, `Ver los ${bonosConRespuesta.length} bonos`);
   section.classList.remove('hidden');
 }
@@ -1106,6 +1107,26 @@ function renderBonosGanados(players, results) {
 /* ================================================================
    VER MÁS — acordeón genérico para grids de tarjetas
 ================================================================ */
+// Versión inline para listas de nombres dentro de una tarjeta:
+// muestra `preview` items y esconde el resto tras un botón "+N más"
+function inlineShowMoreHTML(itemsHTML, preview) {
+  if (itemsHTML.length <= preview) return itemsHTML.join('');
+  const n = itemsHTML.length - preview;
+  return itemsHTML.slice(0, preview).join('') +
+    `<span class="smx-extra smx-off">${itemsHTML.slice(preview).join('')}</span>` +
+    `<button class="smx-btn" data-more="+${n} más">+${n} más</button>`;
+}
+
+function wireInlineShowMore(scope) {
+  scope.querySelectorAll('.smx-btn').forEach(btn => {
+    btn.onclick = () => {
+      const extra = btn.previousElementSibling;
+      const off = extra.classList.toggle('smx-off');
+      btn.textContent = off ? btn.dataset.more : 'ver menos';
+    };
+  });
+}
+
 function applyShowMore(grid, previewCount, allLabel) {
   grid.parentElement.querySelector('.btn-show-more')?.remove();
 
@@ -1201,11 +1222,12 @@ function renderMatchPoints(players, results) {
   <div class="mpc-earners">
     ${m.earners.length === 0
       ? '<span class="mpc-none">Sin acertadores</span>'
-      : m.earners.map(e => `<span class="mpc-earner">${e.name} <strong>+${e.pts}</strong></span>`).join('')
+      : inlineShowMoreHTML(m.earners.map(e => `<span class="mpc-earner">${e.name} <strong>+${e.pts}</strong></span>`), 6)
     }
   </div>
 </div>`).join('');
 
+  wireInlineShowMore(grid);
   applyShowMore(grid, 10, `Ver los ${completedMatches.length} partidos`);
   section.classList.remove('hidden');
 }

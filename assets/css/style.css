@@ -1132,6 +1132,23 @@ footer {
 .sm-collapsed > .sm-extra { display: none !important; }
 *:not(.sm-collapsed) > .sm-extra { animation: rankRowIn .25s ease both; }
 
+/* "+N más" inline dentro de tarjetas (listas de acertadores) */
+.smx-extra { display: contents; }
+.smx-extra.smx-off { display: none; }
+.smx-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: color var(--transition), border-color var(--transition);
+}
+.smx-btn:hover { color: var(--gold); border-color: var(--gold); }
+
 .ranking-table {
   width: 100%;
   border-collapse: collapse;
