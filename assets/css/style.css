@@ -1004,16 +1004,30 @@ footer {
   gap: 8px;
   margin: 24px auto 32px;
   max-width: 700px;
-  padding-top: 120px;
+}
+
+/* Columna = info (medalla/nombres) arriba + barra abajo.
+   La altura de la barra la fija el JS según los puntos. */
+.podium-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.podium-info {
+  text-align: center;
+  padding: 0 4px 8px;
 }
 
 .podium-step {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   border-radius: var(--radius) var(--radius) 0 0;
-  padding: 14px 8px 0;
+  padding: 10px 6px 0;
   background: var(--card);
   border: 1px solid var(--border);
   border-bottom: none;
@@ -1071,17 +1085,11 @@ footer {
 .pnm-item:hover { border-color: var(--gold); background: rgba(201,168,76,.08); }
 .pnm-item:hover i { color: var(--gold); }
 .podium-trophy {
-  width: 70px;
+  width: 56px;
   height: auto;
   display: block;
-  margin: 0 auto 4px;
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: -6px;
+  margin: 0 auto 2px;
 }
-.podium-step.pos-1 { position: relative; overflow: visible; }
 
 /* ================================================================
    RANKING TABLE

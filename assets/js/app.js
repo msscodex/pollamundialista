@@ -756,10 +756,11 @@ function renderRanking(players, results) {
     }
   });
 
-  // Altura proporcional a los puntos (entre 90px y 220px sobre los grupos visibles)
+  // Altura de la BARRA proporcional a los puntos (la info va aparte, así los
+  // nombres largos en móvil no inflan la barra y el alto siempre refleja puntos)
   const shownPts = rankGroups.slice(0, 5).map(g => g.pts);
   const maxPts = Math.max(...shownPts), minPts = Math.min(...shownPts);
-  const H_MAX = 220, H_MIN = 90;
+  const H_MAX = 170, H_MIN = 46;
   const heightFor = pts => maxPts === minPts
     ? H_MAX
     : Math.round(H_MIN + (pts - minPts) / (maxPts - minPts) * (H_MAX - H_MIN));
@@ -786,11 +787,15 @@ function renderRanking(players, results) {
       // La clase visual va por orden del grupo (i+1), no por el rango real,
       // para que con empates (rangos 1,3,7…) siempre haya estilo definido
       return `
-<div class="podium-step pos-${i + 1}" style="min-height:${heightFor(pts)}px">
-  ${trophy}
-  ${icon}
-  ${namesHTML}
-  <div class="podium-pts">${pts} pts</div>
+<div class="podium-col">
+  <div class="podium-info">
+    ${trophy}
+    ${icon}
+    ${namesHTML}
+  </div>
+  <div class="podium-step pos-${i + 1}" style="height:${heightFor(pts)}px">
+    <div class="podium-pts">${pts} pts</div>
+  </div>
 </div>`;
     }).join('');
 
