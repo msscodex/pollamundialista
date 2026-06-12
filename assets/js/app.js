@@ -331,6 +331,7 @@ let _verPlayerData = null;
 let _verResults = null;
 let _rankingPlayers = [];    // cache para modal de detalle en ranking
 let _rankingResults = null;
+let _rankingGroups = [];     // grupos de empate del podio (modal de nombres)
 
 /* ================================================================
    INIT
@@ -769,7 +770,11 @@ function renderRanking(players, results) {
       const trophy = rank === 1
         ? `<img src="./assets/trophy_only.svg" alt="Trofeo" class="podium-trophy">`
         : '';
-      const namesHTML = players.map(p => `<div class="podium-name">${p.name}</div>`).join('');
+      // 1er puesto siempre muestra nombres; los demás, si hay empate, ojo de detalle
+      const namesHTML = (rank === 1 || players.length === 1)
+        ? players.map(p => `<div class="podium-name">${p.name}</div>`).join('')
+        : `<div class="podium-name podium-name-grouped">${players.length} participantes</div>
+           <button class="btn-eye-detail podium-eye" data-rank="${rank}" title="Ver nombres"><i class="fa-regular fa-eye"></i></button>`;
       return `
 <div class="podium-step pos-${rank}">
   ${trophy}
@@ -781,6 +786,11 @@ function renderRanking(players, results) {
 
   _rankingPlayers = scored;
   _rankingResults = results;
+  _rankingGroups = rankGroups;
+
+  podiumWrap.querySelectorAll('.podium-eye').forEach(btn => {
+    btn.addEventListener('click', () => openPodiumNamesModal(parseInt(btn.dataset.rank, 10)));
+  });
 
   tableWrap.classList.remove('hidden');
   tbody.innerHTML = scored.map(p => {
@@ -808,6 +818,42 @@ function initPlayerDetailModal() {
   document.getElementById('player-detail-modal')?.addEventListener('click', e => {
     if (e.target === e.currentTarget) closePlayerDetailModal();
   });
+
+  document.getElementById('btn-pnm-close')?.addEventListener('click', closePodiumNamesModal);
+  document.getElementById('podium-names-modal')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) closePodiumNamesModal();
+  });
+}
+
+/* ================================================================
+   MODAL NOMBRES EMPATADOS (podio)
+================================================================ */
+function closePodiumNamesModal() {
+  document.getElementById('podium-names-modal')?.classList.add('hidden');
+}
+
+function openPodiumNamesModal(rank) {
+  const group = _rankingGroups.find(g => g.rank === rank);
+  if (!group) return;
+
+  const modal = document.getElementById('podium-names-modal');
+  document.getElementById('pnm-title').textContent = `${rank}° puesto — ${group.pts} pts`;
+  document.getElementById('pnm-sub').textContent = `${group.players.length} participantes empatados`;
+
+  const list = document.getElementById('pnm-list');
+  list.innerHTML = group.players
+    .map(p => `<button class="pnm-item" data-player="${p.name}">
+      <span>${p.name}</span><i class="fa-regular fa-eye"></i>
+    </button>`).join('');
+
+  list.querySelectorAll('.pnm-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      closePodiumNamesModal();
+      openPlayerDetailModal(btn.dataset.player);
+    });
+  });
+
+  modal.classList.remove('hidden');
 }
 
 function closePlayerDetailModal() {
