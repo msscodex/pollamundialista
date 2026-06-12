@@ -1099,7 +1099,35 @@ function renderBonosGanados(players, results) {
 </div>`;
   }).join('');
 
+  applyShowMore(grid, 10, `Ver los ${bonosConRespuesta.length} bonos`);
   section.classList.remove('hidden');
+}
+
+/* ================================================================
+   VER MÁS — acordeón genérico para grids de tarjetas
+================================================================ */
+function applyShowMore(grid, previewCount, allLabel) {
+  grid.parentElement.querySelector('.btn-show-more')?.remove();
+
+  const items = Array.from(grid.children);
+  items.forEach((el, idx) => el.classList.toggle('sm-extra', idx >= previewCount));
+
+  if (items.length <= previewCount) {
+    grid.classList.remove('sm-collapsed');
+    return;
+  }
+
+  grid.classList.add('sm-collapsed');
+  const btn = document.createElement('button');
+  btn.className = 'btn-ranking-more btn-show-more';
+  btn.innerHTML = `<span>${allLabel}</span> <i class="fa-solid fa-chevron-down"></i>`;
+  btn.onclick = () => {
+    const collapsed = grid.classList.toggle('sm-collapsed');
+    btn.classList.toggle('expanded', !collapsed);
+    btn.querySelector('span').textContent = collapsed ? allLabel : 'Ver menos';
+    if (collapsed) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  grid.after(btn);
 }
 
 /* ================================================================
@@ -1150,17 +1178,16 @@ function renderMatchPoints(players, results) {
     });
   });
 
-  // Más recientes primero, máximo 10
+  // Más recientes primero; se muestran 10 y el resto queda tras "Ver más"
   completedMatches.sort((a, b) => b.sortKey - a.sortKey || b.time.localeCompare(a.time));
-  const recent = completedMatches.slice(0, 10);
 
-  if (recent.length === 0) {
+  if (completedMatches.length === 0) {
     grid.innerHTML = '<p class="section-placeholder">No hay partidos con resultado oficial aún.</p>';
     section.classList.remove('hidden');
     return;
   }
 
-  grid.innerHTML = recent.map(m => `
+  grid.innerHTML = completedMatches.map(m => `
 <div class="mpc-card">
   <div class="mpc-header">
     <span class="mpc-group">Grupo ${m.group}</span>
@@ -1179,6 +1206,7 @@ function renderMatchPoints(players, results) {
   </div>
 </div>`).join('');
 
+  applyShowMore(grid, 10, `Ver los ${completedMatches.length} partidos`);
   section.classList.remove('hidden');
 }
 

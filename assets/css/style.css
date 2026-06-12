@@ -1128,6 +1128,10 @@ footer {
 .btn-ranking-more i { transition: transform .25s ease; }
 .btn-ranking-more.expanded i { transform: rotate(180deg); }
 
+/* Acordeón genérico para grids de tarjetas (bonos otorgados, puntos por partido) */
+.sm-collapsed > .sm-extra { display: none !important; }
+*:not(.sm-collapsed) > .sm-extra { animation: rankRowIn .25s ease both; }
+
 .ranking-table {
   width: 100%;
   border-collapse: collapse;
