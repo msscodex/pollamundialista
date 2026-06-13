@@ -1306,8 +1306,10 @@ function calcScore(player, results) {
 ================================================================ */
 async function loadPlayerView(nombre) {
   document.getElementById('ver-player-title').textContent = nombre;
-  document.getElementById('btn-back-home').addEventListener('click', () => {
-    location.hash = '#home';
+  const backBtn = document.getElementById('btn-back-home');
+  backBtn.textContent = CURRENT_USER?.is_admin ? '← Volver a participantes' : '← Volver al ranking';
+  backBtn.addEventListener('click', () => {
+    location.hash = CURRENT_USER?.is_admin ? '#polla' : '#home';
   }, { once: true });
 
   // Resetear a pestaña Grupos y ocultar tab Perfil (se mostrará si es admin)
