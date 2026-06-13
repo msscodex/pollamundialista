@@ -9,8 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Penalty Strike 2026 ⚽</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>⚽</text></svg>" />
-  <script type="module" crossorigin src="./assets/index-DL5aZ6MF.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-B-tKa0Xl.css">
+  <script type="module" crossorigin src="./assets/index-CNh40Q-x.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-ELglxTgh.css">
 </head>
 <body>
   <div id="app">
@@ -18,7 +18,18 @@
     <canvas id="ui-canvas"></canvas>
     <div id="hud"></div>
     <div id="menu-root"></div>
-    <div id="loading-screen">
+    <!-- Portada estática: se muestra al instante; el juego no se carga hasta pulsar INICIAR JUEGO -->
+    <div id="landing-screen">
+      <div class="menu-panel welcome-panel">
+        <div class="welcome-logo">⚽</div>
+        <div class="menu-title welcome-title">PENALTY STRIKE</div>
+        <div class="welcome-tagline">Conviértete en la leyenda de los penaltis</div>
+        <button class="menu-btn primary large-btn" data-action="start">
+          INICIAR JUEGO
+        </button>
+      </div>
+    </div>
+    <div id="loading-screen" class="hidden">
       <div class="loading-logo">⚽ PENALTY STRIKE</div>
       <div class="loading-bar"><div class="loading-fill" id="loading-fill"></div></div>
       <div class="loading-text" id="loading-text">Cargando estadio...</div>
