@@ -381,6 +381,7 @@ async function initApp() {
   initTeamPickers();   // reemplaza inputs de equipo con pickers antes de initBonusInputs
   initBonusInputs();
   initAdminPanel();
+  initEditPollaModal();
 }
 
 /* ================================================================
@@ -2654,6 +2655,7 @@ async function loadParticipantsView() {
       );
       return {
         name: p.name || 'Sin nombre',
+        userId: p.id,
         locked: polla?.is_groups_locked || false,
         hasPolla: !!polla,
         hasData: !!hasData,
@@ -2681,12 +2683,25 @@ async function loadParticipantsView() {
     listEl.innerHTML = filtered.map(p => {
       const [cls, label] = statusTag(p);
       return `
-<a class="participante-card" href="#ver/${encodeURIComponent(p.name)}">
-  <span class="pc-name">${p.name}</span>
-  <span class="pc-status ${cls}">${label}</span>
-  <span class="pc-arrow"><i class="fa-solid fa-chevron-right"></i></span>
-</a>`;
+<div class="participante-card-wrap">
+  <a class="participante-card" href="#ver/${encodeURIComponent(p.name)}">
+    <span class="pc-name">${p.name}</span>
+    <span class="pc-status ${cls}">${label}</span>
+    <span class="pc-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+  </a>
+  <button class="btn-edit-polla" data-uid="${p.userId}" data-name="${encodeURIComponent(p.name)}" title="Editar polla de ${p.name}">
+    <i class="fa-solid fa-pen-to-square"></i>
+  </button>
+</div>`;
     }).join('');
+
+    listEl.querySelectorAll('.btn-edit-polla').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        openEditPollaModal(btn.dataset.uid, decodeURIComponent(btn.dataset.name));
+      });
+    });
   }
 
   render('');
@@ -3247,6 +3262,142 @@ function updateBracketTabsVisibility(hasOfficialBracketInfo) {
       if (gruposVerTab) gruposVerTab.click();
     }
   }
+}
+
+/* ================================================================
+   ADMIN — EDITAR POLLA DE PARTICIPANTE
+================================================================ */
+let EDIT_POLLA_TARGET = null; // { userId, userName }
+const EDIT_POLLA_STATE = { scores: {}, bracket: {}, bonuses: {} };
+
+async function openEditPollaModal(userId, userName) {
+  if (!CURRENT_USER?.is_admin) return;
+  EDIT_POLLA_TARGET = { userId, userName };
+
+  document.getElementById('epm-player-name').textContent = userName;
+  const msgEl = document.getElementById('epm-msg');
+  msgEl.textContent = 'Cargando…';
+  msgEl.className = 'admin-msg';
+
+  // Reset al primer tab
+  document.querySelectorAll('#epm-tabs .inner-tab').forEach((btn, i) => btn.classList.toggle('active', i === 0));
+  ['scores', 'bracket', 'bonuses'].forEach((s, i) => {
+    document.getElementById(`epm-section-${s}`)?.classList.toggle('hidden', i !== 0);
+  });
+
+  document.getElementById('edit-polla-modal').classList.remove('hidden');
+
+  const { data, error } = await sb.from('pollas')
+    .select('scores, bracket, bonuses')
+    .eq('user_id', userId)
+    .single();
+
+  if (error || !data) {
+    msgEl.textContent = error?.message || 'No se encontró la polla de este participante.';
+    msgEl.className = 'admin-msg error';
+    return;
+  }
+
+  EDIT_POLLA_STATE.scores = data.scores || {};
+  EDIT_POLLA_STATE.bracket = data.bracket || {};
+  EDIT_POLLA_STATE.bonuses = data.bonuses || {};
+
+  document.getElementById('epm-scores-json').value = JSON.stringify(EDIT_POLLA_STATE.scores, null, 2);
+  document.getElementById('epm-bracket-json').value = JSON.stringify(EDIT_POLLA_STATE.bracket, null, 2);
+  renderEditPollaBonuses();
+  msgEl.textContent = '';
+}
+
+function closeEditPollaModal() {
+  document.getElementById('edit-polla-modal').classList.add('hidden');
+  EDIT_POLLA_TARGET = null;
+}
+
+function renderEditPollaBonuses() {
+  const container = document.getElementById('epm-bonuses-fields');
+  if (!container) return;
+  container.innerHTML = BONUS_GROUPS.map(group => {
+    const rows = group.keys.map(key => {
+      const val = EDIT_POLLA_STATE.bonuses[key] || '';
+      return `
+<div class="bonus-field">
+  <label>${BONUS_LABELS[key]} <span class="bonus-pts">+${BONUS_PTS[key]}pts</span></label>
+  <input type="text" class="epm-bonus-input" data-bonus-key="${key}"
+    value="${val}" placeholder="Sin completar" autocomplete="off">
+</div>`;
+    }).join('');
+    return `<div class="bonus-group"><h3 class="bonus-group-title">${group.label}</h3>${rows}</div>`;
+  }).join('');
+
+  container.querySelectorAll('.epm-bonus-input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const key = e.target.dataset.bonusKey;
+      const val = e.target.value.trim();
+      if (val) EDIT_POLLA_STATE.bonuses[key] = val;
+      else delete EDIT_POLLA_STATE.bonuses[key];
+    });
+  });
+}
+
+async function saveEditPolla() {
+  if (!EDIT_POLLA_TARGET) return;
+  const msgEl = document.getElementById('epm-msg');
+  msgEl.textContent = 'Guardando…';
+  msgEl.className = 'admin-msg';
+
+  let scores, bracket;
+  try {
+    scores = JSON.parse(document.getElementById('epm-scores-json').value || '{}');
+  } catch {
+    msgEl.textContent = 'JSON inválido en la pestaña Grupos.';
+    msgEl.className = 'admin-msg error';
+    return;
+  }
+  try {
+    bracket = JSON.parse(document.getElementById('epm-bracket-json').value || '{}');
+  } catch {
+    msgEl.textContent = 'JSON inválido en la pestaña Eliminatorias.';
+    msgEl.className = 'admin-msg error';
+    return;
+  }
+
+  const { error } = await sb.from('pollas').update({
+    scores,
+    bracket,
+    bonuses: EDIT_POLLA_STATE.bonuses,
+    updated_at: new Date().toISOString(),
+  }).eq('user_id', EDIT_POLLA_TARGET.userId);
+
+  if (error) {
+    msgEl.textContent = 'Error: ' + error.message;
+    msgEl.className = 'admin-msg error';
+  } else {
+    msgEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Guardado correctamente';
+    msgEl.className = 'admin-msg success';
+  }
+}
+
+function initEditPollaModal() {
+  document.getElementById('btn-epm-close')?.addEventListener('click', closeEditPollaModal);
+  document.getElementById('edit-polla-modal')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeEditPollaModal();
+  });
+  document.getElementById('btn-epm-save')?.addEventListener('click', saveEditPolla);
+  document.getElementById('btn-epm-format')?.addEventListener('click', () => {
+    const scoresEl = document.getElementById('epm-scores-json');
+    const bracketEl = document.getElementById('epm-bracket-json');
+    try { scoresEl.value = JSON.stringify(JSON.parse(scoresEl.value), null, 2); } catch { /* ignore */ }
+    try { bracketEl.value = JSON.stringify(JSON.parse(bracketEl.value), null, 2); } catch { /* ignore */ }
+  });
+  document.querySelectorAll('#epm-tabs .inner-tab[data-epm-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#epm-tabs .inner-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      ['scores', 'bracket', 'bonuses'].forEach(s => {
+        document.getElementById(`epm-section-${s}`)?.classList.toggle('hidden', s !== btn.dataset.epmTab);
+      });
+    });
+  });
 }
 
 /* ================================================================

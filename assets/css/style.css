@@ -2825,3 +2825,103 @@ h3 .fa-solid, h3 .fa-regular,
   display: block;
 }
 
+/* ================================================================
+   ADMIN — EDITAR POLLA DE PARTICIPANTE
+================================================================ */
+.participante-card-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.participante-card-wrap .participante-card {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-edit-polla {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
+}
+
+.btn-edit-polla:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(201, 168, 76, 0.08);
+}
+
+.modal-box-epm {
+  max-width: 680px;
+}
+
+.epm-body {
+  padding: 0 24px 24px;
+  overflow-y: auto;
+}
+
+.epm-section {
+  padding-top: 14px;
+}
+
+.epm-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+.epm-json-editor {
+  width: 100%;
+  min-height: 300px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  background: var(--card-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  resize: vertical;
+  box-sizing: border-box;
+  line-height: 1.5;
+}
+
+.epm-json-editor:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.epm-save-bar {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.epm-save-bar .admin-msg {
+  flex: 1;
+  min-width: 140px;
+  text-align: left;
+}
+
+@media (max-width: 680px) {
+  .modal-box-epm {
+    max-width: 100%;
+  }
+
+  .epm-body {
+    padding: 0 14px 18px;
+  }
+
+  .epm-json-editor {
+    min-height: 200px;
+  }
+}
+
