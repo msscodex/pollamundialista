@@ -416,6 +416,20 @@
         <h2 id="ver-player-title"></h2>
         <div class="ver-score-badge" id="ver-score-badge"></div>
       </div>
+      <div id="ver-admin-edit-bar" class="ver-admin-edit-bar hidden">
+        <button class="btn btn-outline ver-edit-toggle" id="btn-ver-edit-enable">
+          <i class="fa-solid fa-pen-to-square"></i> Editar polla
+        </button>
+        <div id="ver-admin-action-bar" class="ver-admin-action-bar hidden">
+          <p id="ver-edit-msg" class="admin-msg"></p>
+          <button class="btn btn-outline" id="btn-ver-edit-cancel">
+            <i class="fa-solid fa-xmark"></i> Cancelar
+          </button>
+          <button class="btn btn-gold" id="btn-ver-edit-save">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
+          </button>
+        </div>
+      </div>
 
       <nav class="inner-tabs" role="tablist">
         <button class="inner-tab active" data-inner-ver="grupos-ver"><i class="fa-solid fa-futbol"></i> Grupos</button>
@@ -754,42 +768,6 @@
     </section>
 
     <!-- MODAL: confirmar envío de polla -->
-    <!-- MODAL: editar polla de participante (solo admin) -->
-    <div id="edit-polla-modal" class="modal-overlay hidden">
-      <div class="modal-box modal-box-wide modal-box-epm">
-        <div class="pdm-modal-header">
-          <div>
-            <h3 id="epm-player-name"></h3>
-            <div class="pnm-sub">Edición directa — los cambios van a la base de datos</div>
-          </div>
-          <button class="modal-close-btn" id="btn-epm-close" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="epm-body">
-          <nav class="inner-tabs" id="epm-tabs">
-            <button class="inner-tab active" data-epm-tab="scores"><i class="fa-solid fa-futbol"></i> Grupos</button>
-            <button class="inner-tab" data-epm-tab="bracket"><i class="fa-solid fa-trophy"></i> Eliminatorias</button>
-            <button class="inner-tab" data-epm-tab="bonuses"><i class="fa-solid fa-star"></i> Bonos</button>
-          </nav>
-          <div class="epm-section" id="epm-section-scores">
-            <p class="epm-hint">Claves: <strong>"A-0-0"</strong> → grupo-partido-equipo (0 = local, 1 = visitante)</p>
-            <textarea id="epm-scores-json" class="epm-json-editor" spellcheck="false"></textarea>
-          </div>
-          <div class="epm-section hidden" id="epm-section-bracket">
-            <p class="epm-hint">Claves: <strong>"r32-0-t0"</strong> (equipo), <strong>"r32-0-s0"</strong> (goles). Rondas: r32, r16, qf, sf, fin. Tercer lugar: "3rd-t0/t1/s0/s1"</p>
-            <textarea id="epm-bracket-json" class="epm-json-editor" spellcheck="false"></textarea>
-          </div>
-          <div class="epm-section hidden" id="epm-section-bonuses">
-            <div id="epm-bonuses-fields" class="bonuses-grid"></div>
-          </div>
-          <div class="admin-save-bar epm-save-bar">
-            <p id="epm-msg" class="admin-msg"></p>
-            <button class="btn btn-outline" id="btn-epm-format"><i class="fa-solid fa-code"></i> Formatear JSON</button>
-            <button class="btn btn-gold" id="btn-epm-save"><i class="fa-solid fa-floppy-disk"></i> Guardar polla</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- MODAL DE ERROR GENÉRICO -->
     <div id="error-modal" class="modal-overlay hidden">
       <div class="modal-box">
