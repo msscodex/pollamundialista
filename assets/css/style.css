@@ -2826,6 +2826,34 @@ h3 .fa-solid, h3 .fa-regular,
 }
 
 /* ================================================================
+   VER — PERFIL (solo admin)
+================================================================ */
+.ver-perfil-card {
+  max-width: 480px;
+  margin-top: 16px;
+}
+
+.ver-perfil-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.ver-perfil-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.ver-perfil-actions .admin-msg {
+  flex: 1;
+  min-width: 140px;
+}
+
+/* ================================================================
    VER — BARRA DE EDICIÓN (solo admin)
 ================================================================ */
 .ver-admin-edit-bar {

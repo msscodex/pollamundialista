@@ -433,6 +433,7 @@
 
       <nav class="inner-tabs" role="tablist">
         <button class="inner-tab active" data-inner-ver="grupos-ver"><i class="fa-solid fa-futbol"></i> Grupos</button>
+        <button class="inner-tab hidden" data-inner-ver="perfil-ver" id="tab-btn-perfil-ver"><i class="fa-solid fa-user-pen"></i> Perfil</button>
         <button class="inner-tab" data-inner-ver="bracket-ver" id="tab-btn-bracket-ver"><i
             class="fa-solid fa-trophy"></i> Eliminatorias</button>
         <button class="inner-tab" data-inner-ver="bonos-ver"><i class="fa-solid fa-star"></i> Bonos</button>
@@ -440,6 +441,31 @@
 
       <div class="inner-section" id="inner-grupos-ver">
         <div class="groups-grid" id="groups-grid-ver"></div>
+      </div>
+
+      <div class="inner-section hidden" id="inner-perfil-ver">
+        <div class="admin-card ver-perfil-card">
+          <h3 class="admin-card-title"><i class="fa-solid fa-user-pen"></i> Datos del participante</h3>
+          <div class="admin-field">
+            <label>Nombre</label>
+            <input type="text" id="ver-perfil-name" autocomplete="off">
+          </div>
+          <div class="admin-field">
+            <label>Correo electrónico</label>
+            <input type="email" id="ver-perfil-email" placeholder="Vacío = sin cambio" autocomplete="off">
+            <small id="ver-perfil-email-current" class="ver-perfil-hint"></small>
+          </div>
+          <div class="admin-field">
+            <label>Contraseña</label>
+            <input type="password" id="ver-perfil-password" placeholder="Vacío = sin cambio" minlength="6" autocomplete="new-password">
+          </div>
+          <div class="ver-perfil-actions">
+            <p id="ver-perfil-msg" class="admin-msg"></p>
+            <button class="btn btn-gold" id="btn-ver-perfil-save">
+              <i class="fa-solid fa-floppy-disk"></i> Guardar datos
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="inner-section hidden" id="inner-bracket-ver">

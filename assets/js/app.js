@@ -1310,6 +1310,22 @@ async function loadPlayerView(nombre) {
     location.hash = '#home';
   }, { once: true });
 
+  // Resetear a pestaña Grupos y ocultar tab Perfil (se mostrará si es admin)
+  document.querySelectorAll('.inner-tab[data-inner-ver]').forEach(b => b.classList.remove('active'));
+  document.querySelector('.inner-tab[data-inner-ver="grupos-ver"]')?.classList.add('active');
+  document.querySelectorAll('#view-ver .inner-section').forEach(s => s.classList.add('hidden'));
+  document.getElementById('inner-grupos-ver')?.classList.remove('hidden');
+  document.getElementById('tab-btn-perfil-ver')?.classList.add('hidden');
+  // Limpiar formulario de perfil
+  ['ver-perfil-name', 'ver-perfil-email', 'ver-perfil-password'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const hintEl = document.getElementById('ver-perfil-email-current');
+  if (hintEl) hintEl.textContent = '';
+  const msgEl = document.getElementById('ver-perfil-msg');
+  if (msgEl) { msgEl.textContent = ''; msgEl.className = 'admin-msg'; }
+
   const { data: profile } = await sb
     .from('profiles').select('id').ilike('name', nombre).single();
 
@@ -1363,7 +1379,96 @@ async function loadPlayerView(nombre) {
     document.getElementById('btn-ver-edit-enable').onclick = _enableVerEditMode;
     document.getElementById('btn-ver-edit-cancel').onclick = _cancelVerEditMode;
     document.getElementById('btn-ver-edit-save').onclick = _saveVerEdits;
+
+    // Tab Perfil
+    document.getElementById('tab-btn-perfil-ver')?.classList.remove('hidden');
+    document.getElementById('ver-perfil-name').value = nombre;
+    document.getElementById('btn-ver-perfil-save').onclick = () => _saveUserProfile(profile.id);
+    _loadUserEmail(profile.id);
   }
+}
+
+/* ================================================================
+   VER — PERFIL DE PARTICIPANTE (solo admin)
+================================================================ */
+async function _loadUserEmail(userId) {
+  const session = (await sb.auth.getSession()).data?.session;
+  if (!session) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SUPABASE_ANON,
+      },
+      body: JSON.stringify({ userId, action: 'get' }),
+    });
+    const data = await res.json();
+    if (data.ok && data.email) {
+      const hint = document.getElementById('ver-perfil-email-current');
+      if (hint) hint.textContent = `Actual: ${data.email}`;
+    }
+  } catch { /* ignore — el campo placeholder ya indica que vacío = sin cambio */ }
+}
+
+async function _saveUserProfile(userId) {
+  const msgEl = document.getElementById('ver-perfil-msg');
+  const saveBtn = document.getElementById('btn-ver-perfil-save');
+  const name = document.getElementById('ver-perfil-name')?.value.trim();
+  const email = document.getElementById('ver-perfil-email')?.value.trim();
+  const password = document.getElementById('ver-perfil-password')?.value;
+
+  if (!name) {
+    msgEl.textContent = 'El nombre no puede estar vacío.';
+    msgEl.className = 'admin-msg error';
+    return;
+  }
+
+  msgEl.textContent = 'Guardando…';
+  msgEl.className = 'admin-msg';
+  saveBtn.disabled = true;
+
+  const session = (await sb.auth.getSession()).data?.session;
+  if (!session) {
+    msgEl.textContent = 'Sesión expirada. Vuelve a iniciar sesión.';
+    msgEl.className = 'admin-msg error';
+    saveBtn.disabled = false;
+    return;
+  }
+
+  try {
+    const body = { userId, action: 'update', name };
+    if (email) body.email = email;
+    if (password) body.password = password;
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SUPABASE_ANON,
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Error desconocido');
+
+    msgEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Datos guardados correctamente';
+    msgEl.className = 'admin-msg success';
+    document.getElementById('ver-player-title').textContent = name;
+    document.getElementById('ver-perfil-password').value = '';
+    if (email) {
+      const hint = document.getElementById('ver-perfil-email-current');
+      if (hint) hint.textContent = `Actual: ${email}`;
+      document.getElementById('ver-perfil-email').value = '';
+    }
+  } catch (err) {
+    msgEl.textContent = 'Error: ' + err.message;
+    msgEl.className = 'admin-msg error';
+  }
+
+  saveBtn.disabled = false;
 }
 
 /* ================================================================
