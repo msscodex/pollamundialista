@@ -165,7 +165,7 @@ const MATCH_INFO = {
   ],
   J: [
     { date: '16 jun', time: '20:00', venue: 'Arrowhead Stadium, Kansas City' },
-    { date: '15 jun', time: '23:00', venue: "Levi's Stadium, San Francisco" },
+    { date: '16 jun', time: '23:00', venue: "Levi's Stadium, San Francisco" },
     { date: '22 jun', time: '12:00', venue: 'AT&T Stadium, Dallas' },
     { date: '22 jun', time: '22:00', venue: "Levi's Stadium, San Francisco" },
     { date: '27 jun', time: '21:00', venue: 'AT&T Stadium, Dallas' },
