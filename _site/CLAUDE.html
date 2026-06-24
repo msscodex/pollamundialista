@@ -22,7 +22,7 @@
 {"@context":"https://schema.org","@type":"WebPage","description":"Quiniela y bracket interactivo del Mundial 2026 USA · Canadá · México","headline":"CLAUDE.md","url":"http://localhost:4001/CLAUDE.html"}</script>
 <!-- End Jekyll SEO tag -->
 
-    <link rel="stylesheet" href="/assets/css/style.css?v=3770b3633b000da9c4e64092c8e84c5d1df4dd8a">
+    <link rel="stylesheet" href="/assets/css/style.css?v=30ed53b23b235ce8170c8e7c857bcb3f6e47a60a">
     <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
 
 <!-- Setup Google Analytics -->
@@ -93,7 +93,7 @@ bundle <span class="nb">exec </span>jekyll build
     </tr>
     <tr>
       <td>CDNs</td>
-      <td>flag-icons@7.2.3, Font Awesome, Google Fonts, YouTube IFrame API</td>
+      <td>flag-icons@7.2.3, Font Awesome, Google Fonts, SheetJS (lazy)</td>
     </tr>
   </tbody>
 </table>
@@ -103,10 +103,11 @@ bundle <span class="nb">exec </span>jekyll build
 <h2 id="archivos-principales">Archivos principales</h2>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pollamundialista/
-├── index.html                     # Shell de la SPA (~825 líneas)
+├── index.html                     # Shell de la SPA (~870 líneas)
+├── mundial2026.MP3                # Audio de fondo local (empieza en segundo 11, loop)
 ├── assets/
-│   ├── js/app.js                  # Toda la lógica (~3600 líneas)
-│   └── css/style.css              # Todos los estilos (~3150 líneas)
+│   ├── js/app.js                  # Toda la lógica (~3700 líneas)
+│   └── css/style.css              # Todos los estilos (~3300 líneas)
 ├── supabase/
 │   ├── schema.sql                 # Esquema PostgreSQL completo + migraciones
 │   └── functions/create-user/    # Edge Function (Deno/TypeScript)
@@ -314,6 +315,11 @@ bundle <span class="nb">exec </span>jekyll build
       <td><code class="language-plaintext highlighter-rouge">#juego</code></td>
       <td><code class="language-plaintext highlighter-rouge">view-juego</code></td>
       <td>Link al subproyecto 3D en <code class="language-plaintext highlighter-rouge">game/</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">#marcadores</code></td>
+      <td><code class="language-plaintext highlighter-rouge">view-marcadores</code></td>
+      <td>Evidencias de marcadores — dos enlaces (Grupos / Eliminatoria)</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">#admin</code></td>
@@ -586,6 +592,51 @@ bundle <span class="nb">exec </span>jekyll build
 
 <hr />
 
+<h2 id="evidencias-de-marcadores-marcadores">Evidencias de Marcadores (<code class="language-plaintext highlighter-rouge">#marcadores</code>)</h2>
+
+<p>Vista pública (todos los usuarios). Menú: “Evidencias”, debajo de Reglamento.</p>
+
+<p>Contiene dos tarjetas de enlace:</p>
+<ul>
+  <li><strong>Fase de Grupos</strong> — Google Drive con evidencias fotográficas de los marcadores de grupos. Abre en pestaña nueva.</li>
+  <li><strong>Fase Eliminatoria</strong> — placeholder con badge “Próximamente” y clase <code class="language-plaintext highlighter-rouge">marcadores-card--soon</code> (deshabilitado). Para activarlo: reemplazar <code class="language-plaintext highlighter-rouge">href="#"</code> con la URL real y quitar la clase <code class="language-plaintext highlighter-rouge">--soon</code> y el <code class="language-plaintext highlighter-rouge">onclick="return false;"</code>.</li>
+</ul>
+
+<p>La sección incluye un texto descriptivo sobre transparencia y verificación independiente de resultados.</p>
+
+<hr />
+
+<h2 id="admin--lista-de-participantes-con-estado-de-rondas">Admin — lista de participantes con estado de rondas</h2>
+
+<p>En <code class="language-plaintext highlighter-rouge">loadParticipantsView()</code>, cuando el usuario es admin, cada tarjeta de participante muestra:</p>
+<ul>
+  <li><strong>Nombre</strong> del participante</li>
+  <li><strong>Fila de 7 badges</strong> (<code class="language-plaintext highlighter-rouge">pc-round-badge</code>): Grupos, R32, Oct, QF, Semi, Final, 3er
+    <ul>
+      <li>Dorado (<code class="language-plaintext highlighter-rouge">pc-round-sent</code>) si la fase fue enviada (bloqueada)</li>
+      <li>Gris apagado (<code class="language-plaintext highlighter-rouge">pc-round-pending</code>) si no</li>
+    </ul>
+  </li>
+</ul>
+
+<p>La consulta incluye <code class="language-plaintext highlighter-rouge">bracket_rounds_locked</code> en el SELECT de <code class="language-plaintext highlighter-rouge">pollas</code>. Los badges se generan en <code class="language-plaintext highlighter-rouge">roundsBadgesHTML(p)</code>. La constante local <code class="language-plaintext highlighter-rouge">ROUND_BADGES</code> define el orden y etiquetas cortas.</p>
+
+<hr />
+
+<h2 id="música">Música</h2>
+
+<p>Audio local <code class="language-plaintext highlighter-rouge">mundial2026.MP3</code> servido desde la raíz de <code class="language-plaintext highlighter-rouge">pollamundialista/</code>. Elemento: <code class="language-plaintext highlighter-rouge">&lt;audio id="bg-audio" loop preload="none"&gt;</code>.</p>
+
+<ul>
+  <li>Empieza siempre en <code class="language-plaintext highlighter-rouge">MUSIC_START = 11</code> segundos</li>
+  <li>Volumen: 0.5</li>
+  <li>El navegador bloquea autoplay — el primer clic del usuario en cualquier parte activa la música (<code class="language-plaintext highlighter-rouge">_handleFirstInteraction</code>)</li>
+  <li>El botón <code class="language-plaintext highlighter-rouge">#btn-music</code> permite pausar/reanudar manualmente</li>
+  <li>No existe <code class="language-plaintext highlighter-rouge">onYouTubeIframeAPIReady</code> ni <code class="language-plaintext highlighter-rouge">YT.Player</code> — la YouTube IFrame API fue eliminada completamente</li>
+</ul>
+
+<hr />
+
 <h2 id="reglas-de-desarrollo">Reglas de desarrollo</h2>
 
 <ol>
@@ -599,6 +650,7 @@ bundle <span class="nb">exec </span>jekyll build
   <li><strong><code class="language-plaintext highlighter-rouge">game/</code></strong> — subproyecto Vite compilado, no modificar sin contexto del subproyecto.</li>
   <li><strong><code class="language-plaintext highlighter-rouge">players/</code> y <code class="language-plaintext highlighter-rouge">results/official.json</code></strong> — archivos legacy; los datos reales viven en Supabase.</li>
   <li><strong>Validación de rondas</strong> — <code class="language-plaintext highlighter-rouge">validateBracketRoundComplete(roundId)</code> siempre revisa <code class="language-plaintext highlighter-rouge">STATE.bracket</code>, nunca Supabase directamente; los errores van inline en <code class="language-plaintext highlighter-rouge">.brl-error</code>, nunca en <code class="language-plaintext highlighter-rouge">showErrorModal</code> para este caso.</li>
+  <li><strong>Audio</strong> — se usa <code class="language-plaintext highlighter-rouge">&lt;audio id="bg-audio"&gt;</code> con el MP3 local <code class="language-plaintext highlighter-rouge">mundial2026.MP3</code>. No hay YouTube IFrame API. El audio arranca en <code class="language-plaintext highlighter-rouge">currentTime = MUSIC_START</code> (segundo 11) y tiene el atributo <code class="language-plaintext highlighter-rouge">loop</code>. <code class="language-plaintext highlighter-rouge">initMusicBtn()</code> gestiona play/pause con la restricción de autoplay (primer clic del usuario desbloquea).</li>
 </ol>
 
 

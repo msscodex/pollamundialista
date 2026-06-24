@@ -29,7 +29,7 @@ bundle exec jekyll build
 | Servidor dev | Jekyll (solo para servir archivos; no genera JS/CSS) |
 | Backend | Supabase — Auth, PostgreSQL con RLS, Edge Functions |
 | Hosting | GitHub Pages (compatible con Jekyll static output) |
-| CDNs | flag-icons@7.2.3, Font Awesome, Google Fonts, YouTube IFrame API |
+| CDNs | flag-icons@7.2.3, Font Awesome, Google Fonts, SheetJS (lazy) |
 
 ---
 
@@ -37,10 +37,11 @@ bundle exec jekyll build
 
 ```
 pollamundialista/
-├── index.html                     # Shell de la SPA (~825 líneas)
+├── index.html                     # Shell de la SPA (~870 líneas)
+├── mundial2026.MP3                # Audio de fondo local (empieza en segundo 11, loop)
 ├── assets/
-│   ├── js/app.js                  # Toda la lógica (~3600 líneas)
-│   └── css/style.css              # Todos los estilos (~3150 líneas)
+│   ├── js/app.js                  # Toda la lógica (~3700 líneas)
+│   └── css/style.css              # Todos los estilos (~3300 líneas)
 ├── supabase/
 │   ├── schema.sql                 # Esquema PostgreSQL completo + migraciones
 │   └── functions/create-user/    # Edge Function (Deno/TypeScript)
@@ -169,6 +170,7 @@ El enrutador usa hash-based routing. Vistas principales en `index.html`:
 | `#ver/:nombre` | `view-ver` | Quiniela de otro participante en modo readonly |
 | `#reglamento` | `view-reglamento` | Reglas del torneo (texto estático) |
 | `#juego` | `view-juego` | Link al subproyecto 3D en `game/` |
+| `#marcadores` | `view-marcadores` | Evidencias de marcadores — dos enlaces (Grupos / Eliminatoria) |
 | `#admin` | `view-admin` | Panel admin (solo is_admin) |
 | `#reportes` | `view-reportes` | Generación de XLSX (solo is_admin) |
 
@@ -302,6 +304,42 @@ Usado en `#ver/:nombre` y como base del PDF. Renderiza equipos con `flagByName()
 
 ---
 
+## Evidencias de Marcadores (`#marcadores`)
+
+Vista pública (todos los usuarios). Menú: "Evidencias", debajo de Reglamento.
+
+Contiene dos tarjetas de enlace:
+- **Fase de Grupos** — Google Drive con evidencias fotográficas de los marcadores de grupos. Abre en pestaña nueva.
+- **Fase Eliminatoria** — placeholder con badge "Próximamente" y clase `marcadores-card--soon` (deshabilitado). Para activarlo: reemplazar `href="#"` con la URL real y quitar la clase `--soon` y el `onclick="return false;"`.
+
+La sección incluye un texto descriptivo sobre transparencia y verificación independiente de resultados.
+
+---
+
+## Admin — lista de participantes con estado de rondas
+
+En `loadParticipantsView()`, cuando el usuario es admin, cada tarjeta de participante muestra:
+- **Nombre** del participante
+- **Fila de 7 badges** (`pc-round-badge`): Grupos, R32, Oct, QF, Semi, Final, 3er
+  - Dorado (`pc-round-sent`) si la fase fue enviada (bloqueada)
+  - Gris apagado (`pc-round-pending`) si no
+
+La consulta incluye `bracket_rounds_locked` en el SELECT de `pollas`. Los badges se generan en `roundsBadgesHTML(p)`. La constante local `ROUND_BADGES` define el orden y etiquetas cortas.
+
+---
+
+## Música
+
+Audio local `mundial2026.MP3` servido desde la raíz de `pollamundialista/`. Elemento: `<audio id="bg-audio" loop preload="none">`.
+
+- Empieza siempre en `MUSIC_START = 11` segundos
+- Volumen: 0.5
+- El navegador bloquea autoplay — el primer clic del usuario en cualquier parte activa la música (`_handleFirstInteraction`)
+- El botón `#btn-music` permite pausar/reanudar manualmente
+- No existe `onYouTubeIframeAPIReady` ni `YT.Player` — la YouTube IFrame API fue eliminada completamente
+
+---
+
 ## Reglas de desarrollo
 
 1. **Vanilla JS puro** — no introducir React, Vue, frameworks ni dependencias npm.
@@ -314,3 +352,4 @@ Usado en `#ver/:nombre` y como base del PDF. Renderiza equipos con `flagByName()
 8. **`game/`** — subproyecto Vite compilado, no modificar sin contexto del subproyecto.
 9. **`players/` y `results/official.json`** — archivos legacy; los datos reales viven en Supabase.
 10. **Validación de rondas** — `validateBracketRoundComplete(roundId)` siempre revisa `STATE.bracket`, nunca Supabase directamente; los errores van inline en `.brl-error`, nunca en `showErrorModal` para este caso.
+11. **Audio** — se usa `<audio id="bg-audio">` con el MP3 local `mundial2026.MP3`. No hay YouTube IFrame API. El audio arranca en `currentTime = MUSIC_START` (segundo 11) y tiene el atributo `loop`. `initMusicBtn()` gestiona play/pause con la restricción de autoplay (primer clic del usuario desbloquea).

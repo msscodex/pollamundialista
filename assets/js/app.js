@@ -3085,7 +3085,7 @@ async function loadParticipantsView() {
 
   const [{ data: profilesData }, { data: pollasData }] = await Promise.all([
     sb.from('profiles').select('id, name, is_admin'),
-    sb.from('pollas').select('user_id, is_groups_locked, scores, bonuses'),
+    sb.from('pollas').select('user_id, is_groups_locked, bracket_rounds_locked, scores, bonuses'),
   ]);
 
   const pollasMap = {};
@@ -3103,14 +3103,32 @@ async function loadParticipantsView() {
         name: p.name || 'Sin nombre',
         userId: p.id,
         locked: polla?.is_groups_locked || false,
+        roundsLocked: polla?.bracket_rounds_locked || {},
         hasPolla: !!polla,
         hasData: !!hasData,
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
+  const ROUND_BADGES = [
+    { id: 'grupos',  label: 'Grupos' },
+    { id: 'r32',     label: 'R32'   },
+    { id: 'r16',     label: 'Oct'   },
+    { id: 'qf',      label: 'QF'    },
+    { id: 'sf',      label: 'Semi'  },
+    { id: 'fin',     label: 'Final' },
+    { id: 'third',   label: '3er'   },
+  ];
+
+  function roundsBadgesHTML(p) {
+    return ROUND_BADGES.map(r => {
+      const sent = r.id === 'grupos' ? p.locked : !!p.roundsLocked[r.id];
+      return `<span class="pc-round-badge ${sent ? 'pc-round-sent' : 'pc-round-pending'}">${r.label}</span>`;
+    }).join('');
+  }
+
   function statusTag(p) {
-    if (p.locked) return ['pc-locked', '<i class="fa-solid fa-lock"></i> Enviada'];
+    if (p.locked) return ['pc-locked', '<i class="fa-solid fa-lock"></i> Grupos enviados'];
     if (p.hasData) return ['pc-open', '<i class="fa-solid fa-pen"></i> En progreso'];
     if (p.hasPolla) return ['pc-nodata', '<i class="fa-solid fa-circle-minus"></i> Sin datos'];
     return ['pc-nopolla', '<i class="fa-solid fa-circle-xmark"></i> Sin polla'];
@@ -3129,9 +3147,11 @@ async function loadParticipantsView() {
     listEl.innerHTML = filtered.map(p => {
       const [cls, label] = statusTag(p);
       return `
-<a class="participante-card" href="#ver/${encodeURIComponent(p.name)}">
-  <span class="pc-name">${p.name}</span>
-  <span class="pc-status ${cls}">${label}</span>
+<a class="participante-card participante-card--admin" href="#ver/${encodeURIComponent(p.name)}">
+  <div class="pc-info">
+    <span class="pc-name">${p.name}</span>
+    <div class="pc-rounds">${roundsBadgesHTML(p)}</div>
+  </div>
   <span class="pc-arrow"><i class="fa-solid fa-chevron-right"></i></span>
 </a>`;
     }).join('');

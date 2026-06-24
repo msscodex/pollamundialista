@@ -2565,6 +2565,47 @@ footer {
   opacity: 0.7;
 }
 
+.participante-card--admin {
+  align-items: center;
+}
+
+.pc-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pc-info .pc-name {
+  flex: none;
+}
+
+.pc-rounds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.pc-round-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+.pc-round-sent {
+  background: rgba(201, 168, 76, 0.18);
+  color: var(--gold);
+}
+
+.pc-round-pending {
+  background: rgba(255, 255, 255, 0.05);
+  color: #555;
+  border: 1px solid #333;
+}
+
 .loading-msg {
   color: #aaa;
   font-size: 14px;
