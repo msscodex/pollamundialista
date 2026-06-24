@@ -3932,55 +3932,14 @@ function initInnerTabsVer() {
 }
 
 /* ================================================================
-   MÚSICA — YouTube IFrame API (segmento 0:10 – 0:42 en loop)
+   MÚSICA — Audio local (mundial2026.MP3)
 ================================================================ */
-const MUSIC_VIDEO_ID = 'fcnDmrtj6Sk';
 const MUSIC_START = 11;
-const MUSIC_END = 52;
 
-let _ytPlayer = null;
 let _musicOn = false;
-let _ytReady = false;
 let _unmutedOnce = false;
 
-// Llamado automáticamente por la YouTube IFrame API cuando carga
-window.onYouTubeIframeAPIReady = function () {
-  _ytPlayer = new YT.Player('yt-player', {
-    height: '1', width: '1',
-    videoId: MUSIC_VIDEO_ID,
-    playerVars: {
-      autoplay: 1, mute: 1, controls: 0, disablekb: 1,
-      fs: 0, modestbranding: 1, rel: 0,
-      start: MUSIC_START, end: MUSIC_END,
-    },
-    events: {
-      onReady: (e) => {
-        _ytReady = true;
-        _musicOn = true;
-        e.target.mute();
-        e.target.playVideo();
-      },
-      onStateChange: (e) => {
-        // Loop: cuando termina el segmento, vuelve al segundo 10
-        if (e.data === YT.PlayerState.ENDED && _musicOn) {
-          _ytPlayer.seekTo(MUSIC_START, true);
-          _ytPlayer.playVideo();
-        }
-      },
-    },
-  });
-};
-
-// Al primer clic en cualquier parte de la página → desmutear
-function _handleFirstInteraction() {
-  if (_unmutedOnce) return;
-  _unmutedOnce = true;
-  document.removeEventListener('click', _handleFirstInteraction);
-  if (_ytReady && _musicOn) {
-    _ytPlayer.unMute();
-    _setMusicIcon(true);
-  }
-}
+function _getAudio() { return document.getElementById('bg-audio'); }
 
 function _setMusicIcon(on) {
   const btn = document.getElementById('btn-music');
@@ -3990,27 +3949,41 @@ function _setMusicIcon(on) {
   btn.title = on ? 'Silenciar música' : 'Activar música';
 }
 
+function _handleFirstInteraction() {
+  if (_unmutedOnce) return;
+  _unmutedOnce = true;
+  document.removeEventListener('click', _handleFirstInteraction);
+  if (_musicOn) {
+    const audio = _getAudio();
+    audio.currentTime = MUSIC_START;
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+    _setMusicIcon(true);
+  }
+}
+
 function initMusicBtn() {
   document.addEventListener('click', _handleFirstInteraction);
 
   const btn = document.getElementById('btn-music');
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation(); // no contar este clic como "primera interacción" dos veces
-    if (!_ytReady) return;
+  if (!btn) return;
+  _musicOn = true;
 
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const audio = _getAudio();
     _musicOn = !_musicOn;
-    _setMusicIcon(_musicOn && _unmutedOnce);
 
     if (_musicOn) {
-      _ytPlayer.unMute();
-      _ytPlayer.seekTo(MUSIC_START, true);
-      _ytPlayer.playVideo();
       _unmutedOnce = true;
       document.removeEventListener('click', _handleFirstInteraction);
+      audio.currentTime = MUSIC_START;
+      audio.volume = 0.5;
+      audio.play().catch(() => {});
     } else {
-      _ytPlayer.mute();
-      _ytPlayer.pauseVideo();
+      audio.pause();
     }
+    _setMusicIcon(_musicOn);
   });
 }
 

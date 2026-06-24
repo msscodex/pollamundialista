@@ -143,10 +143,8 @@
       </svg>
     </div>
 
-    <!-- YouTube audio player oculto -->
-    <div id="yt-player-wrap" style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;">
-      <div id="yt-player"></div>
-    </div>
+    <!-- Audio local oculto -->
+    <audio id="bg-audio" src="./mundial2026.MP3" loop preload="none" style="display:none;"></audio>
 
     <!-- NAV LATERAL -->
     <div class="nav-overlay" id="nav-overlay"></div>
@@ -966,7 +964,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./assets/js/app.js"></script>
-  <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 
 </html>
