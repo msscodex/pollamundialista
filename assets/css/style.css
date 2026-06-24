@@ -2352,8 +2352,10 @@ footer {
   margin: 0 0 16px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   color: var(--gold);
+  text-align: center;
 }
 
 .marcadores-desc {
