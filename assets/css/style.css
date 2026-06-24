@@ -776,39 +776,74 @@ footer {
     color: #555;
   }
 
-  /* ---- PDF Grupos: mostrar solo la grilla de grupos ---- */
-  body.printing-grupos .page-section,
-  body.printing-grupos .page-section.hidden { display: none !important; }
+  /* ---- PDF Completo: grupos + eliminatorias + bonos ---- */
+  body.printing-full .page-section,
+  body.printing-full .page-section.hidden { display: none !important; }
 
-  body.printing-grupos #view-polla { display: block !important; }
+  body.printing-full #view-polla { display: block !important; }
 
-  body.printing-grupos .inner-tabs,
-  body.printing-grupos .player-name-bar { display: none !important; }
+  body.printing-full .side-nav,
+  body.printing-full .nav-overlay,
+  body.printing-full .header-user-bar,
+  body.printing-full .inner-tabs,
+  body.printing-full .polla-submit-bar,
+  body.printing-full .brl-bar,
+  body.printing-full #view-polla .section-sub { display: none !important; }
 
-  body.printing-grupos .inner-section,
-  body.printing-grupos .inner-section.hidden { display: none !important; }
+  body.printing-full .player-name-bar {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0 14px;
+    border-bottom: 2px solid #C9A84C !important;
+    margin-bottom: 14px;
+  }
+  body.printing-full .player-name-bar .btn,
+  body.printing-full .player-name-bar input[type="file"] { display: none !important; }
+  body.printing-full .player-name-bar label { display: none !important; }
+  body.printing-full #q-player-name {
+    background: transparent !important;
+    border: none !important;
+    color: #FFD87A !important;
+    font-size: 20px !important;
+    font-weight: 900 !important;
+    font-family: 'Bebas Neue', sans-serif !important;
+    pointer-events: none;
+    padding: 0;
+    width: auto;
+    flex: 1;
+  }
 
-  body.printing-grupos #inner-grupos {
+  body.printing-full .inner-section,
+  body.printing-full .inner-section.hidden { display: none !important; }
+
+  body.printing-full #inner-grupos {
     display: block !important;
     padding: 0;
   }
 
-  body.printing-grupos #inner-bonos {
+  body.printing-full #inner-bracket {
     display: block !important;
     padding: 0;
     page-break-before: always;
   }
 
-  body.printing-grupos .section-header { display: block !important; }
-  body.printing-grupos .legend { display: flex !important; }
+  body.printing-full #inner-bonos {
+    display: block !important;
+    padding: 0;
+    page-break-before: always;
+  }
 
-  body.printing-grupos .groups-grid {
+  body.printing-full .section-header { display: block !important; }
+  body.printing-full .legend { display: flex !important; }
+
+  body.printing-full .groups-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
   }
 
-  /* ---- Restaurar tema oscuro para el PDF de grupos ---- */
-  body.printing-grupos {
+  /* Tema oscuro para PDF completo */
+  body.printing-full {
     --dark:       #0D1B2A;
     --card:       #1C2B3D;
     --card-alt:   #243347;
@@ -826,65 +861,98 @@ footer {
     color: #EEF2F7 !important;
   }
 
-  body.printing-grupos .section-header h2 { color: #C9A84C !important; }
+  body.printing-full .section-header h2 { color: #C9A84C !important; }
 
-  body.printing-grupos .group-card {
+  /* Grupos */
+  body.printing-full .group-card {
     border-color: #2E4060 !important;
     background: #1C2B3D !important;
   }
-  body.printing-grupos .group-head {
+  body.printing-full .group-head {
     background: linear-gradient(135deg, #003087, #001A5C) !important;
   }
-
-  body.printing-grupos .m-score {
+  body.printing-full .m-score {
     background: #243347 !important;
     border-color: #2E4060 !important;
     color: #FFD87A !important;
   }
-  body.printing-grupos .m-score.filled { border-color: #C9A84C !important; }
-  body.printing-grupos .m-name  { color: #EEF2F7 !important; }
-  body.printing-grupos .mm-date { color: #C9A84C !important; }
-  body.printing-grupos .mm-time,
-  body.printing-grupos .mm-venue { color: #7A8FA6 !important; }
-  body.printing-grupos .matchday-header { color: #7A8FA6 !important; border-color: #2E4060 !important; }
-  body.printing-grupos .match-meta { border-color: rgba(46,64,96,.5) !important; }
+  body.printing-full .m-score.filled { border-color: #C9A84C !important; }
+  body.printing-full .m-name  { color: #EEF2F7 !important; }
+  body.printing-full .mm-date { color: #C9A84C !important; }
+  body.printing-full .mm-time,
+  body.printing-full .mm-venue { color: #7A8FA6 !important; }
+  body.printing-full .matchday-header { color: #7A8FA6 !important; border-color: #2E4060 !important; }
+  body.printing-full .match-meta { border-color: rgba(46,64,96,.5) !important; }
 
-  body.printing-grupos .standings-wrap { border-color: #2E4060 !important; }
-  body.printing-grupos .standings-table thead th {
+  body.printing-full .standings-wrap { border-color: #2E4060 !important; }
+  body.printing-full .standings-table thead th {
     background: #243347 !important;
     color: #7A8FA6 !important;
   }
-  body.printing-grupos .standings-table tbody td {
+  body.printing-full .standings-table tbody td {
     color: #EEF2F7 !important;
     border-color: rgba(46,64,96,.5) !important;
   }
-  body.printing-grupos .standings-table tr.st-advances {
-    background: rgba(39,174,96,.12) !important;
-  }
-  body.printing-grupos .standings-table tr.st-maybe {
-    background: rgba(243,156,18,.1) !important;
-  }
-  body.printing-grupos .st-pts  { color: #FFD87A !important; }
-  body.printing-grupos .st-gd.pos { color: #27AE60 !important; }
-  body.printing-grupos .st-gd.neg { color: #C41E3A !important; }
-  body.printing-grupos .legend-item.advances { color: #27AE60 !important; }
-  body.printing-grupos .legend-item.maybe    { color: #F39C12 !important; }
+  body.printing-full .standings-table tr.st-advances { background: rgba(39,174,96,.12) !important; }
+  body.printing-full .standings-table tr.st-maybe    { background: rgba(243,156,18,.1) !important; }
+  body.printing-full .st-pts  { color: #FFD87A !important; }
+  body.printing-full .st-gd.pos { color: #27AE60 !important; }
+  body.printing-full .st-gd.neg { color: #C41E3A !important; }
+  body.printing-full .legend-item.advances { color: #27AE60 !important; }
+  body.printing-full .legend-item.maybe    { color: #F39C12 !important; }
 
-  body.printing-grupos .bonuses-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  body.printing-grupos .bonus-group {
+  /* Bracket / eliminatorias */
+  body.printing-full .bracket-wrapper { overflow: visible; }
+  body.printing-full .bracket { min-width: auto; flex-wrap: wrap; gap: 16px; }
+  body.printing-full .bracket-round { break-inside: avoid; page-break-inside: avoid; }
+  body.printing-full .bracket-match {
+    border-color: #2E4060 !important;
+    background: #1C2B3D !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  body.printing-full .bm-team,
+  body.printing-full .bm-team-fixed { color: #EEF2F7 !important; }
+  body.printing-full .bm-team-fixed { background: rgba(39,174,96,.12) !important; }
+  body.printing-full .bm-score {
+    background: #243347 !important;
+    border-color: #2E4060 !important;
+    color: #FFD87A !important;
+  }
+  body.printing-full .bm-score.filled { border-color: #C9A84C !important; }
+  body.printing-full .bm-divider { border-color: #2E4060 !important; }
+  body.printing-full .bm-meta-num,
+  body.printing-full .bm-meta-date { color: #C9A84C !important; }
+  body.printing-full .bm-meta-venue { color: #7A8FA6 !important; }
+  body.printing-full .round-header { color: #C9A84C !important; border-color: #2E4060 !important; }
+  body.printing-full .bm-pending { opacity: 1 !important; pointer-events: auto !important; }
+
+  body.printing-full .champion-box {
+    background: #1C2B3D !important;
+    border-color: #C9A84C !important;
+  }
+  body.printing-full .champion-name { color: #FFD87A !important; }
+  body.printing-full .champion-label { color: #7A8FA6 !important; }
+
+  body.printing-full .third-place-section { break-inside: avoid; page-break-inside: avoid; }
+  body.printing-full .third-title { color: #C9A84C !important; }
+
+  /* Bonos */
+  body.printing-full .bonuses-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  body.printing-full .bonus-group {
     background: #1C2B3D !important;
     border-color: #2E4060 !important;
   }
-  body.printing-grupos .bonus-group-title {
+  body.printing-full .bonus-group-title {
     color: #C9A84C !important;
     border-color: #2E4060 !important;
   }
-  body.printing-grupos .bonus-field label { color: #7A8FA6 !important; }
-  body.printing-grupos .bonus-pts {
+  body.printing-full .bonus-field label { color: #7A8FA6 !important; }
+  body.printing-full .bonus-pts {
     background: rgba(201,168,76,.15) !important;
     color: #C9A84C !important;
   }
-  body.printing-grupos .bonus-field input[type="text"] {
+  body.printing-full .bonus-field input[type="text"] {
     background: #243347 !important;
     border-color: #2E4060 !important;
     color: #EEF2F7 !important;
@@ -2115,6 +2183,54 @@ footer {
   text-align: center;
 }
 
+.modal-delete-icon {
+  font-size: 36px;
+  color: #e05252;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.btn-danger {
+  background: #C41E3A;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-danger:hover { background: #a01830; }
+
+/* ---- Panel colapsable (art-rows) ---- */
+.art-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.art-collapse-btn {
+  background: none;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 6px;
+  color: var(--muted, #888);
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: color .15s, border-color .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.art-collapse-btn:hover { color: var(--gold, #c9a84c); border-color: var(--gold, #c9a84c); }
+.art-collapse-btn .chev { transition: transform .2s; display: inline-block; }
+.art-collapse-btn.open .chev { transform: rotate(180deg); }
+
+.art-rows.collapsed { display: none; }
+
 /* ================================================================
    TEAM PICKER — dropdown con banderas para bonos
 ================================================================ */
@@ -2216,6 +2332,81 @@ footer {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* ================================================================
+   REPORTES
+================================================================ */
+.reportes-container {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.reporte-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.reporte-card-icon {
+  font-size: 38px;
+  color: #1D6F42;
+  margin-bottom: 14px;
+}
+
+.reporte-card-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+
+.reporte-card-desc {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.reporte-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reporte-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.reporte-features li i {
+  color: var(--gold);
+  margin-top: 2px;
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.reporte-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.reporte-actions .btn {
+  gap: 8px;
+}
+
+.reporte-actions .admin-msg {
+  margin: 0;
+  font-size: 13px;
 }
 
 .participante-card {
@@ -2912,5 +3103,122 @@ h3 .fa-solid, h3 .fa-regular,
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* ================================================================
+   BARRA DE ESTADO POR RONDA — eliminatorias usuario
+================================================================ */
+.brl-bar {
+  margin-top: 14px;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.brl-pending {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-muted, #888);
+}
+
+.brl-done {
+  background: rgba(60, 180, 100, 0.12);
+  border: 1px solid rgba(60, 180, 100, 0.35);
+  color: #6ddc9a;
+}
+
+.brl-done i { font-size: 15px; }
+
+.brl-open {
+  background: rgba(201, 168, 76, 0.08);
+  border: 1px dashed rgba(201, 168, 76, 0.4);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.brl-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted, #aaa);
+}
+
+.brl-error {
+  margin: 0;
+  font-size: 13px;
+  color: #e05252;
+  font-weight: 600;
+}
+
+/* ================================================================
+   PANEL DE CONTROL DE RONDAS — admin eliminatorias
+================================================================ */
+.admin-round-toggles-wrap {
+  margin-bottom: 24px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.art-header { margin-bottom: 14px; }
+
+.art-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: var(--gold, #c9a84c);
+}
+
+.art-sub {
+  font-size: 13px;
+  color: var(--text-muted, #999);
+  margin: 0;
+}
+
+.art-rows { display: flex; flex-direction: column; gap: 10px; }
+
+.art-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.art-label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.art-status {
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.art-open {
+  background: rgba(60, 180, 100, 0.15);
+  color: #6ddc9a;
+  border: 1px solid rgba(60, 180, 100, 0.3);
+}
+
+.art-closed {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-muted, #888);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+@media (max-width: 500px) {
+  .art-row { flex-wrap: wrap; }
+  .art-label { flex-basis: 100%; }
 }
 

@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>CLAUDE.md | Copa Mundial FIFA 2026 - Bracket Interactivo</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="CLAUDE.md" />
+<meta property="og:locale" content="es" />
+<meta name="description" content="Quiniela y bracket interactivo del Mundial 2026 USA · Canadá · México" />
+<meta property="og:description" content="Quiniela y bracket interactivo del Mundial 2026 USA · Canadá · México" />
+<link rel="canonical" href="http://localhost:4001/CLAUDE.html" />
+<meta property="og:url" content="http://localhost:4001/CLAUDE.html" />
+<meta property="og:site_name" content="Copa Mundial FIFA 2026 - Bracket Interactivo" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="CLAUDE.md" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Quiniela y bracket interactivo del Mundial 2026 USA · Canadá · México","headline":"CLAUDE.md","url":"http://localhost:4001/CLAUDE.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=52dcb8953a248c23124900957dec05c8da742546">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      
+      <h1><a href="http://localhost:4001/">Copa Mundial FIFA 2026 - Bracket Interactivo</a></h1>
+      
+
+      <h1 id="claudemd">CLAUDE.md</h1>
+
+<p>Guía de arquitectura para Claude Code al trabajar en este proyecto.</p>
+
+<h2 id="comandos">Comandos</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Primera vez: instalar dependencias Ruby/Jekyll</span>
+bundle <span class="nb">install</span>
+
+<span class="c"># Servidor local (usar puerto 4001 para no chocar con otros proyectos Jekyll)</span>
+bundle <span class="nb">exec </span>jekyll serve <span class="nt">--port</span> 4001
+
+<span class="c"># Build estático a _site/</span>
+bundle <span class="nb">exec </span>jekyll build
+</code></pre></div></div>
+
+<p><strong>No hay build step para JS ni CSS</strong> — son archivos estáticos servidos directamente. No introducir npm/bundler/transpiladores.</p>
+
+<blockquote>
+  <p>⚠️ <strong>Problema conocido en Windows</strong>: Si hay otro servidor Jekyll corriendo en el mismo puerto, el navegador servirá CSS del proyecto incorrecto. Siempre matar todos los procesos <code class="language-plaintext highlighter-rouge">ruby</code> antes de levantar: <code class="language-plaintext highlighter-rouge">Get-Process ruby | Stop-Process -Force</code></p>
+</blockquote>
+
+<hr />
+
+<h2 id="stack">Stack</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Capa</th>
+      <th>Tecnología</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Frontend</td>
+      <td>Vanilla JS (sin frameworks), CSS puro</td>
+    </tr>
+    <tr>
+      <td>Servidor dev</td>
+      <td>Jekyll (solo para servir archivos; no genera JS/CSS)</td>
+    </tr>
+    <tr>
+      <td>Backend</td>
+      <td>Supabase — Auth, PostgreSQL con RLS, Edge Functions</td>
+    </tr>
+    <tr>
+      <td>Hosting</td>
+      <td>GitHub Pages (compatible con Jekyll static output)</td>
+    </tr>
+    <tr>
+      <td>CDNs</td>
+      <td>flag-icons@7.2.3, Font Awesome, Google Fonts, YouTube IFrame API</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="archivos-principales">Archivos principales</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pollamundialista/
+├── index.html                     # Shell de la SPA (~825 líneas)
+├── assets/
+│   ├── js/app.js                  # Toda la lógica (~3600 líneas)
+│   └── css/style.css              # Todos los estilos (~3150 líneas)
+├── supabase/
+│   ├── schema.sql                 # Esquema PostgreSQL completo + migraciones
+│   └── functions/create-user/    # Edge Function (Deno/TypeScript)
+│       └── index.ts
+├── game/                          # Subproyecto 3D (Vite build, NO tocar)
+├── players/                       # Legacy (manifest.json, juan.json, maycol.json)
+├── results/official.json          # Legacy (datos reales viven en Supabase)
+├── _config.yml                    # Config Jekyll
+└── Gemfile                        # Dependencias Ruby
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="arquitectura-de-appjs">Arquitectura de app.js</h2>
+
+<h3 id="fuente-de-verdad-y-persistencia">Fuente de verdad y persistencia</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>localStorage (borrador)  ←→  STATE (objeto global en memoria)  ←→  Supabase PostgreSQL
+</code></pre></div></div>
+
+<ul>
+  <li><strong><code class="language-plaintext highlighter-rouge">STATE</code></strong> — objeto global central: <code class="language-plaintext highlighter-rouge">{ player, scores, bracket, bonuses }</code></li>
+  <li><strong>localStorage</strong> — borrador en tiempo real mientras el usuario edita (sin guardar en BD)</li>
+  <li><strong>Supabase</strong> — fuente de verdad persistente; se sincroniza al “Enviar polla” y al cargar la app</li>
+</ul>
+
+<h3 id="variables-globales-de-control">Variables globales de control</h3>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">IS_GROUPS_LOCKED</span>      <span class="c1">// bool — usuario bloqueó grupos+bonos</span>
+<span class="nx">IMPORT_ENABLED</span>        <span class="c1">// bool — admin habilita/deshabilita el botón "Importar JSON" (cargado de official_results)</span>
+<span class="nx">BRACKET_ROUNDS_OPEN</span>   <span class="c1">// {r32, r16, qf, sf, fin, third: bool} — admin abre/cierra rondas</span>
+<span class="nx">BRACKET_ROUNDS_LOCKED</span> <span class="c1">// {r32, r16, qf, sf, fin, third: bool} — usuario bloquea predicciones por ronda</span>
+<span class="nx">_bracketRoundsMigrated</span> <span class="c1">// bool — true si las columnas nuevas existen en Supabase</span>
+</code></pre></div></div>
+
+<h3 id="claves-de-datos">Claves de datos</h3>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">STATE</span><span class="p">.</span><span class="nx">scores</span>   <span class="err">→</span> <span class="dl">"</span><span class="s2">${group}-${matchIdx}-${side}</span><span class="dl">"</span>    <span class="c1">// Ej: "A-0-0"  (grupos)</span>
+<span class="nx">STATE</span><span class="p">.</span><span class="nx">bracket</span>  <span class="err">→</span> <span class="dl">"</span><span class="s2">${rondaId}-${matchIdx}-${lado}</span><span class="dl">"</span>  <span class="c1">// Ej: "r32-0-t0" (bracket)</span>
+<span class="nx">STATE</span><span class="p">.</span><span class="nx">bonuses</span>  <span class="err">→</span> <span class="nx">objeto</span> <span class="nx">con</span> <span class="nx">claves</span> <span class="nx">de</span> <span class="nx">BONUS_LABELS</span>
+</code></pre></div></div>
+
+<p>Tercer lugar usa claves especiales: <code class="language-plaintext highlighter-rouge">3rd-t0</code>, <code class="language-plaintext highlighter-rouge">3rd-t1</code>, <code class="language-plaintext highlighter-rouge">3rd-s0</code>, <code class="language-plaintext highlighter-rouge">3rd-s1</code>.</p>
+
+<h3 id="constantes-de-datos-top-de-appjs-líneas-1330">Constantes de datos (top de app.js ~líneas 1–330)</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Constante</th>
+      <th>Contenido</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GROUPS</code></td>
+      <td>12 grupos (A–L), 4 equipos c/u, código ISO + nombre</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MATCH_INFO</code></td>
+      <td>Fechas, horarios COT y estadios de 72 partidos de grupos</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ELIM_MATCH_INFO</code></td>
+      <td>Info de partidos eliminatorios</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">JORNADAS</code></td>
+      <td>Índices de emparejamiento por jornada (reutilizados por todos los grupos)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">RONDAS</code></td>
+      <td>Estructura del bracket: R32, R16, QF, SF, Final (3er lugar es sección aparte)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">_ALL_ROUNDS</code></td>
+      <td>Array con todas las rondas incluyendo <code class="language-plaintext highlighter-rouge">third</code> — usado por admin para toggles y reset</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ROUND_PTS</code></td>
+      <td>Puntos por ronda (exacto / resultado)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">BONUS_PTS</code> / <code class="language-plaintext highlighter-rouge">BONUS_LABELS</code> / <code class="language-plaintext highlighter-rouge">BONUS_GROUPS</code></td>
+      <td>Sistema de bonos</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="módulos-funcionales-orden-aproximado-en-appjs">Módulos funcionales (orden aproximado en app.js)</h3>
+
+<ol>
+  <li><strong>Auth e init</strong> — <code class="language-plaintext highlighter-rouge">initApp()</code>, <code class="language-plaintext highlighter-rouge">showLogin()</code>, <code class="language-plaintext highlighter-rouge">showApp()</code>, <code class="language-plaintext highlighter-rouge">loadCurrentUser()</code>, <code class="language-plaintext highlighter-rouge">initRouter()</code>, <code class="language-plaintext highlighter-rouge">route()</code></li>
+  <li><strong>Home</strong> — <code class="language-plaintext highlighter-rouge">loadAndRenderHome()</code>, <code class="language-plaintext highlighter-rouge">renderTodayMatches()</code>, <code class="language-plaintext highlighter-rouge">renderRanking()</code>, <code class="language-plaintext highlighter-rouge">renderUpcomingMatches()</code>, <code class="language-plaintext highlighter-rouge">renderBonosGanados()</code>, <code class="language-plaintext highlighter-rouge">renderMatchPoints()</code>, <code class="language-plaintext highlighter-rouge">calcScore()</code></li>
+  <li><strong>Ver (readonly)</strong> — <code class="language-plaintext highlighter-rouge">loadPlayerView()</code>, <code class="language-plaintext highlighter-rouge">renderGroupsReadonly()</code>, <code class="language-plaintext highlighter-rouge">renderBracketReadonly()</code>, <code class="language-plaintext highlighter-rouge">renderBonusesReadonly()</code></li>
+  <li><strong>Polla (edición)</strong> — <code class="language-plaintext highlighter-rouge">renderGroups()</code>, <code class="language-plaintext highlighter-rouge">buildGroupCard()</code>, <code class="language-plaintext highlighter-rouge">onScoreInput()</code>, <code class="language-plaintext highlighter-rouge">recalcGroup()</code>, <code class="language-plaintext highlighter-rouge">renderBracket()</code>, <code class="language-plaintext highlighter-rouge">buildRoundHTML()</code>, <code class="language-plaintext highlighter-rouge">onBracketInput()</code>, <code class="language-plaintext highlighter-rouge">detectWinner()</code>, <code class="language-plaintext highlighter-rouge">initThirdPlace()</code></li>
+  <li><strong>Cierre de polla</strong> — <code class="language-plaintext highlighter-rouge">lockPolla()</code> (grupos+bonos), <code class="language-plaintext highlighter-rouge">lockBracketRound(roundId)</code> (por ronda), <code class="language-plaintext highlighter-rouge">showConfirmModal()</code>, <code class="language-plaintext highlighter-rouge">showBracketLockModal()</code></li>
+  <li><strong>Bonos</strong> — <code class="language-plaintext highlighter-rouge">initTeamPickers()</code>, <code class="language-plaintext highlighter-rouge">initBonusInputs()</code>, <code class="language-plaintext highlighter-rouge">loadBonusInputs()</code>, <code class="language-plaintext highlighter-rouge">toggleManualBonus()</code></li>
+  <li><strong>Persistencia</strong> — <code class="language-plaintext highlighter-rouge">saveDraft()</code>, <code class="language-plaintext highlighter-rouge">syncToSupabase()</code>, <code class="language-plaintext highlighter-rouge">loadDraft()</code>, <code class="language-plaintext highlighter-rouge">exportFullPDF()</code>, <code class="language-plaintext highlighter-rouge">exportJSON()</code>, <code class="language-plaintext highlighter-rouge">importPollaJSON()</code></li>
+  <li><strong>Participantes/ranking</strong> — <code class="language-plaintext highlighter-rouge">loadParticipantsView()</code>, <code class="language-plaintext highlighter-rouge">openPlayerDetailModal()</code></li>
+  <li><strong>Admin</strong> — <code class="language-plaintext highlighter-rouge">initAdminPanel()</code>, <code class="language-plaintext highlighter-rouge">loadAdminResultsEditor()</code>, <code class="language-plaintext highlighter-rouge">saveAdminSection()</code>, <code class="language-plaintext highlighter-rouge">renderAdminRoundToggles()</code>, <code class="language-plaintext highlighter-rouge">toggleBracketRound()</code>, <code class="language-plaintext highlighter-rouge">renderAdminImportToggle()</code>, <code class="language-plaintext highlighter-rouge">toggleImportEnabled()</code>, <code class="language-plaintext highlighter-rouge">renderAdminBracketRoundReset()</code>, <code class="language-plaintext highlighter-rouge">clearUserBracketRound()</code></li>
+  <li><strong>Modales</strong> — <code class="language-plaintext highlighter-rouge">showConfirmModal()</code>, <code class="language-plaintext highlighter-rouge">showBracketLockModal()</code>, <code class="language-plaintext highlighter-rouge">showDeleteConfirmModal()</code>, <code class="language-plaintext highlighter-rouge">showErrorModal()</code></li>
+  <li><strong>Reportes</strong> — <code class="language-plaintext highlighter-rouge">loadReportesView()</code>, <code class="language-plaintext highlighter-rouge">loadSheetJS()</code>, <code class="language-plaintext highlighter-rouge">generateReportXLSX()</code>, <code class="language-plaintext highlighter-rouge">_appendSheet()</code>, <code class="language-plaintext highlighter-rouge">_xlsxSafeSheetName()</code>, <code class="language-plaintext highlighter-rouge">_matchEstado()</code></li>
+  <li><strong>Utilidades</strong> — <code class="language-plaintext highlighter-rouge">flag()</code>, <code class="language-plaintext highlighter-rouge">flagByName()</code>, <code class="language-plaintext highlighter-rouge">parseMatchDate()</code>, <code class="language-plaintext highlighter-rouge">isMatchLive()</code>, <code class="language-plaintext highlighter-rouge">isMatchFinished()</code>, <code class="language-plaintext highlighter-rouge">applyImportVisibility()</code>, <code class="language-plaintext highlighter-rouge">initMusicBtn()</code>, <code class="language-plaintext highlighter-rouge">initHamburger()</code></li>
+</ol>
+
+<hr />
+
+<h2 id="base-de-datos-supabase">Base de datos (Supabase)</h2>
+
+<h3 id="tablas">Tablas</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Tabla</th>
+      <th>Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">profiles</code></td>
+      <td>Vinculada a <code class="language-plaintext highlighter-rouge">auth.users</code> (id, name, is_admin). Auto-creada por trigger <code class="language-plaintext highlighter-rouge">on_auth_user_created</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">pollas</code></td>
+      <td>Una fila por usuario (scores, bracket, bonuses, manual_bonus_pts, is_groups_locked, <strong>bracket_rounds_locked</strong>)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">official_results</code></td>
+      <td>Fila única id=1; solo admin puede escribir (scores, bracket, bonuses, <strong>bracket_rounds_open</strong>, <strong>import_enabled</strong>)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="columnas-nuevas--requieren-migración">Columnas nuevas — requieren migración</h3>
+
+<p>Ejecutar en Supabase SQL Editor (todas son retrocompatibles — si no existen, el código las ignora):</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- Rondas de eliminatorias (control por ronda)</span>
+<span class="k">alter</span> <span class="k">table</span> <span class="k">public</span><span class="p">.</span><span class="n">official_results</span>
+  <span class="k">add</span> <span class="k">column</span> <span class="n">if</span> <span class="k">not</span> <span class="k">exists</span> <span class="n">bracket_rounds_open</span> <span class="n">jsonb</span> <span class="k">not</span> <span class="k">null</span> <span class="k">default</span> <span class="s1">'{}'</span><span class="p">;</span>
+
+<span class="k">alter</span> <span class="k">table</span> <span class="k">public</span><span class="p">.</span><span class="n">pollas</span>
+  <span class="k">add</span> <span class="k">column</span> <span class="n">if</span> <span class="k">not</span> <span class="k">exists</span> <span class="n">bracket_rounds_locked</span> <span class="n">jsonb</span> <span class="k">not</span> <span class="k">null</span> <span class="k">default</span> <span class="s1">'{}'</span><span class="p">;</span>
+
+<span class="c1">-- Control de importación JSON (admin habilita/deshabilita el botón para participantes)</span>
+<span class="k">alter</span> <span class="k">table</span> <span class="k">public</span><span class="p">.</span><span class="n">official_results</span>
+  <span class="k">add</span> <span class="k">column</span> <span class="n">if</span> <span class="k">not</span> <span class="k">exists</span> <span class="n">import_enabled</span> <span class="nb">boolean</span> <span class="k">not</span> <span class="k">null</span> <span class="k">default</span> <span class="k">true</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>El código es <strong>retrocompatible</strong>: cada columna nueva se consulta en un SELECT separado; si falla silenciosamente, la funcionalidad queda desactivada sin romper el resto. La flag <code class="language-plaintext highlighter-rouge">_bracketRoundsMigrated</code> controla si <code class="language-plaintext highlighter-rouge">bracket_rounds_locked</code> se incluye en los upserts.</p>
+
+<h3 id="rls">RLS</h3>
+
+<ul>
+  <li>Usuarios solo pueden leer/escribir su propia <code class="language-plaintext highlighter-rouge">polla</code></li>
+  <li>Cuando <code class="language-plaintext highlighter-rouge">is_groups_locked = true</code>, solo puede modificar <code class="language-plaintext highlighter-rouge">bracket</code> y <code class="language-plaintext highlighter-rouge">bracket_rounds_locked</code></li>
+  <li>Solo <code class="language-plaintext highlighter-rouge">is_admin = true</code> puede actualizar <code class="language-plaintext highlighter-rouge">official_results</code> y <code class="language-plaintext highlighter-rouge">manual_bonus_pts</code></li>
+  <li><code class="language-plaintext highlighter-rouge">polla_update_admin</code>: el admin puede hacer <code class="language-plaintext highlighter-rouge">.update()</code> en cualquier fila de <code class="language-plaintext highlighter-rouge">pollas</code> — <strong>usar siempre <code class="language-plaintext highlighter-rouge">.update().eq('user_id', id)</code>, nunca <code class="language-plaintext highlighter-rouge">.upsert()</code> para filas ajenas</strong> (upsert intenta INSERT primero, que RLS bloquea)</li>
+</ul>
+
+<h3 id="edge-function">Edge Function</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">supabase/functions/create-user/index.ts</code> — crea usuarios desde el panel admin</li>
+</ul>
+
+<hr />
+
+<h2 id="vistas-de-la-spa">Vistas de la SPA</h2>
+
+<p>El enrutador usa hash-based routing. Vistas principales en <code class="language-plaintext highlighter-rouge">index.html</code>:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Hash</th>
+      <th>Vista</th>
+      <th>Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">#home</code></td>
+      <td><code class="language-plaintext highlighter-rouge">view-home</code></td>
+      <td>Dashboard: partidos hoy, ranking, próximos, bonos ganados</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">#polla</code></td>
+      <td><code class="language-plaintext highlighter-rouge">view-polla</code></td>
+      <td>Edición de quiniela (grupos, bracket, bonos)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">#ver/:nombre</code></td>
+      <td><code class="language-plaintext highlighter-rouge">view-ver</code></td>
+      <td>Quiniela de otro participante en modo readonly</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">#reglamento</code></td>
+      <td><code class="language-plaintext highlighter-rouge">view-reglamento</code></td>
+      <td>Reglas del torneo (texto estático)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">#juego</code></td>
+      <td><code class="language-plaintext highlighter-rouge">view-juego</code></td>
+      <td>Link al subproyecto 3D en <code class="language-plaintext highlighter-rouge">game/</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">#admin</code></td>
+      <td><code class="language-plaintext highlighter-rouge">view-admin</code></td>
+      <td>Panel admin (solo is_admin)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">#reportes</code></td>
+      <td><code class="language-plaintext highlighter-rouge">view-reportes</code></td>
+      <td>Generación de XLSX (solo is_admin)</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="sistema-de-puntuación">Sistema de puntuación</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Fase</th>
+      <th>Exacto</th>
+      <th>Solo resultado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Grupos</td>
+      <td>3 pts</td>
+      <td>1 pt</td>
+    </tr>
+    <tr>
+      <td>R32</td>
+      <td>4 pts</td>
+      <td>2 pts</td>
+    </tr>
+    <tr>
+      <td>Octavos</td>
+      <td>5 pts</td>
+      <td>3 pts</td>
+    </tr>
+    <tr>
+      <td>Cuartos</td>
+      <td>6 pts</td>
+      <td>4 pts</td>
+    </tr>
+    <tr>
+      <td>Semis</td>
+      <td>7 pts</td>
+      <td>5 pts</td>
+    </tr>
+    <tr>
+      <td>3er lugar</td>
+      <td>8 pts</td>
+      <td>6 pts</td>
+    </tr>
+    <tr>
+      <td>Final</td>
+      <td>9 pts</td>
+      <td>7 pts</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Bonos principales:</strong> Campeón 6pts, Subcampeón 5pts, 3er lugar 4pts, 4to 3pts.</p>
+
+<hr />
+
+<h2 id="flujo-de-eliminatorias--control-por-ronda">Flujo de eliminatorias — control por ronda</h2>
+
+<h3 id="admin-panel-admin--pestaña-eliminatorias">Admin (panel <code class="language-plaintext highlighter-rouge">#admin</code> → pestaña Eliminatorias)</h3>
+<ol>
+  <li>Panel <strong>“Apertura de rondas”</strong> arriba del bracket editor con 6 filas (r32, r16, qf, sf, fin, third)</li>
+  <li>Cada fila tiene badge de estado (Abierta/Cerrada) + botón toggle</li>
+  <li><code class="language-plaintext highlighter-rouge">toggleBracketRound(roundId)</code> → guarda <code class="language-plaintext highlighter-rouge">bracket_rounds_open</code> en <code class="language-plaintext highlighter-rouge">official_results</code></li>
+  <li>Al guardar grupos/bracket/bonos desde admin (<code class="language-plaintext highlighter-rouge">saveAdminSection</code>), también persiste <code class="language-plaintext highlighter-rouge">bracket_rounds_open</code></li>
+</ol>
+
+<h3 id="admin-vista-vernombre--pestaña-eliminatorias">Admin (vista <code class="language-plaintext highlighter-rouge">#ver/:nombre</code> → pestaña Eliminatorias)</h3>
+<ul>
+  <li>Panel colapsable <strong>“Borrar predicciones por ronda”</strong> — una fila por cada ronda</li>
+  <li><code class="language-plaintext highlighter-rouge">clearUserBracketRound(roundId, userId, btn)</code> → borra las claves de esa ronda del <code class="language-plaintext highlighter-rouge">bracket</code> del usuario + desbloquea <code class="language-plaintext highlighter-rouge">bracket_rounds_locked[roundId]</code></li>
+  <li>Usa <code class="language-plaintext highlighter-rouge">.update().eq('user_id', id)</code> (no upsert) para respetar RLS</li>
+  <li>El participante puede volver a ingresar predicciones siempre que la ronda esté abierta</li>
+  <li>Muestra modal de confirmación estilizado (<code class="language-plaintext highlighter-rouge">showDeleteConfirmModal</code>) antes de borrar</li>
+</ul>
+
+<h3 id="usuario-normal-pestaña-eliminatorias-en-polla">Usuario normal (pestaña Eliminatorias en <code class="language-plaintext highlighter-rouge">#polla</code>)</h3>
+<ul>
+  <li><strong>Ronda cerrada</strong>: badge gris “El administrador abrirá esta ronda cuando corresponda”</li>
+  <li><strong>Ronda abierta</strong>: inputs de marcador editables + botón “Enviar [Ronda]”</li>
+  <li><strong>Ronda enviada</strong>: badge verde, inputs readonly — no se puede reabrir</li>
+  <li>Equipos: si el admin los cargó en <code class="language-plaintext highlighter-rouge">official_results.bracket</code>, se muestran con bandera; si no, se muestra el placeholder (“1° Grp A”, etc.)</li>
+  <li>El <code class="language-plaintext highlighter-rouge">bm-pending</code> (opacidad + pointer-events: none) solo se aplica cuando la ronda está <strong>cerrada</strong> y no hay equipos</li>
+</ul>
+
+<h3 id="validación-antes-de-enviar-una-ronda">Validación antes de enviar una ronda</h3>
+
+<p><code class="language-plaintext highlighter-rouge">validateBracketRoundComplete(roundId)</code> recorre todas las llaves <code class="language-plaintext highlighter-rouge">s0</code>/<code class="language-plaintext highlighter-rouge">s1</code> de esa ronda en <code class="language-plaintext highlighter-rouge">STATE.bracket</code> y devuelve el número de valores vacíos/undefined. Si devuelve &gt; 0, <code class="language-plaintext highlighter-rouge">lockBracketRound()</code> muestra un mensaje de error inline (<code class="language-plaintext highlighter-rouge">#brl-error-{roundId}</code>) en rojo justo encima del botón “Enviar” y no abre el modal de confirmación. Aplica a rondas normales (R32–Final) y a <code class="language-plaintext highlighter-rouge">third</code>.</p>
+
+<h3 id="lógica-de-canedit-en-buildroundhtml">Lógica de <code class="language-plaintext highlighter-rouge">canEdit</code> en <code class="language-plaintext highlighter-rouge">buildRoundHTML</code></h3>
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">roundOpen</span>   <span class="o">=</span> <span class="nx">BRACKET_ROUNDS_OPEN</span><span class="p">[</span><span class="nx">ronda</span><span class="p">.</span><span class="nx">id</span><span class="p">]</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
+<span class="kd">const</span> <span class="nx">roundLocked</span> <span class="o">=</span> <span class="nx">BRACKET_ROUNDS_LOCKED</span><span class="p">[</span><span class="nx">ronda</span><span class="p">.</span><span class="nx">id</span><span class="p">]</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
+<span class="kd">const</span> <span class="nx">canEdit</span>     <span class="o">=</span> <span class="nx">roundOpen</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">roundLocked</span><span class="p">;</span>  <span class="c1">// no depende de matchReady</span>
+<span class="kd">const</span> <span class="nx">isPending</span>   <span class="o">=</span> <span class="o">!</span><span class="nx">matchReady</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">roundOpen</span><span class="p">;</span>  <span class="c1">// bm-pending solo si cerrada y sin equipos</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="reportes-admin">Reportes (admin)</h2>
+
+<p>Vista <code class="language-plaintext highlighter-rouge">#reportes</code> — solo visible para admins. Botón “Generar Excel” lanza <code class="language-plaintext highlighter-rouge">generateReportXLSX()</code>.</p>
+
+<h3 id="funciones">Funciones</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Función</th>
+      <th>Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">loadReportesView()</code></td>
+      <td>Conecta el botón “Generar Excel” (idempotente con <code class="language-plaintext highlighter-rouge">_wired</code>)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">loadSheetJS()</code></td>
+      <td>Lazy-load de SheetJS desde CDN (solo si <code class="language-plaintext highlighter-rouge">window.XLSX</code> no existe)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">generateReportXLSX()</code></td>
+      <td>Consulta <code class="language-plaintext highlighter-rouge">pollas</code> + <code class="language-plaintext highlighter-rouge">profiles</code> + <code class="language-plaintext highlighter-rouge">official_results</code>, construye el workbook y llama <code class="language-plaintext highlighter-rouge">XLSX.writeFile()</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">_appendSheet(wb, data, name)</code></td>
+      <td>Atajo: <code class="language-plaintext highlighter-rouge">aoa_to_sheet</code> + <code class="language-plaintext highlighter-rouge">book_append_sheet</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">_xlsxSafeSheetName(name, used)</code></td>
+      <td>Limpia caracteres inválidos, trunca a 28 chars, desambigua con sufijo numérico</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">_matchEstado(p0, p1, r0, r1, ptsE, ptsR)</code></td>
+      <td>Retorna <code class="language-plaintext highlighter-rouge">{ estado, pts }</code> según exacto / resultado / fallo</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="estructura-del-xlsx-generado">Estructura del XLSX generado</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Hoja</th>
+      <th>Contenido</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Ranking</strong></td>
+      <td>Posición, nombre, total, exactos, resultado, bonos (ordenado por puntos)</td>
+    </tr>
+    <tr>
+      <td><strong>Grupos</strong></td>
+      <td>Matriz: 72 partidos × todos los participantes — col Local, Visitante, Res L/V por participante</td>
+    </tr>
+    <tr>
+      <td><strong>Eliminatorias</strong></td>
+      <td>Matriz: partidos bracket (incluyendo 3er lugar) × todos los participantes</td>
+    </tr>
+    <tr>
+      <td><strong>Bonos</strong></td>
+      <td>Cada bono con predicción, ✓/✗ y pts de cada participante</td>
+    </tr>
+    <tr>
+      <td><strong>[Nombre]</strong></td>
+      <td>Una hoja por participante con grupos + eliminatorias + bonos detallados con estado textual</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Nombre de archivo: <code class="language-plaintext highlighter-rouge">polla-mundialista-2026-YYYY-MM-DD.xlsx</code></p>
+
+<p>SheetJS CDN: <code class="language-plaintext highlighter-rouge">https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js</code></p>
+
+<hr />
+
+<h2 id="exportación-pdf">Exportación PDF</h2>
+
+<p>Un solo botón <strong>“PDF Completo”</strong> (<code class="language-plaintext highlighter-rouge">#btn-export-pdf-full</code>) — exporta grupos + eliminatorias + bonos en una sola impresión.</p>
+
+<ul>
+  <li>Función: <code class="language-plaintext highlighter-rouge">exportFullPDF()</code> — añade clase <code class="language-plaintext highlighter-rouge">printing-full</code> al body, llama <code class="language-plaintext highlighter-rouge">window.print()</code>, limpia en <code class="language-plaintext highlighter-rouge">afterprint</code></li>
+  <li>CSS: bloque <code class="language-plaintext highlighter-rouge">body.printing-full</code> en <code class="language-plaintext highlighter-rouge">@media print</code> de <code class="language-plaintext highlighter-rouge">style.css</code></li>
+  <li>Muestra: header (logo + “Polla Mundialista 2026”) → nombre del participante en dorado (Bebas Neue) → grupos → eliminatorias (nueva página) → bonos (nueva página)</li>
+  <li>Oculta: menú hamburger, user bar del header, tabs de navegación, barra de envío, mensajes de estado de rondas (<code class="language-plaintext highlighter-rouge">.brl-bar</code>), subtítulo “Llena tus predicciones…”</li>
+  <li>El bracket en el PDF muestra banderas via <code class="language-plaintext highlighter-rouge">flagByName()</code> igual que en pantalla</li>
+  <li><strong>No existe</strong> <code class="language-plaintext highlighter-rouge">exportGroupsPDF()</code> ni el botón “PDF Grupos” — fueron eliminados</li>
+</ul>
+
+<hr />
+
+<h2 id="control-de-importación-json-admin">Control de importación JSON (admin)</h2>
+
+<ul>
+  <li>El admin puede habilitar/deshabilitar el botón <strong>“Importar JSON”</strong> para todos los participantes</li>
+  <li>Toggle en panel <code class="language-plaintext highlighter-rouge">#admin</code> → pestaña Grupos → sección “Controles de participantes”</li>
+  <li><code class="language-plaintext highlighter-rouge">IMPORT_ENABLED</code> (global bool) se carga desde <code class="language-plaintext highlighter-rouge">official_results.import_enabled</code> en <code class="language-plaintext highlighter-rouge">loadDraft()</code></li>
+  <li><code class="language-plaintext highlighter-rouge">applyImportVisibility()</code> muestra/oculta <code class="language-plaintext highlighter-rouge">#btn-import-polla</code> según el valor</li>
+  <li><code class="language-plaintext highlighter-rouge">toggleImportEnabled()</code> → upsert en <code class="language-plaintext highlighter-rouge">official_results</code> + re-render toggle + aplica visibilidad</li>
+  <li>Requiere migración SQL: <code class="language-plaintext highlighter-rouge">alter table public.official_results add column if not exists import_enabled boolean not null default true;</code></li>
+</ul>
+
+<hr />
+
+<h2 id="bracket-readonly-renderbracketreadonly">Bracket readonly (<code class="language-plaintext highlighter-rouge">renderBracketReadonly</code>)</h2>
+
+<p>Usado en <code class="language-plaintext highlighter-rouge">#ver/:nombre</code> y como base del PDF. Renderiza equipos con <code class="language-plaintext highlighter-rouge">flagByName()</code> + <code class="language-plaintext highlighter-rouge">&lt;span class="bm-team bm-team-fixed"&gt;</code> cuando el nombre está disponible, o <code class="language-plaintext highlighter-rouge">&lt;span class="bm-team bm-team-locked"&gt;</code> con placeholder si no. Los scores son <code class="language-plaintext highlighter-rouge">&lt;input disabled&gt;</code>.</p>
+
+<hr />
+
+<h2 id="modales">Modales</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Función JS</th>
+      <th>Uso</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">error-modal</code></td>
+      <td><code class="language-plaintext highlighter-rouge">showErrorModal(msg, title)</code></td>
+      <td>Errores genéricos</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">lock-confirm-modal</code></td>
+      <td><code class="language-plaintext highlighter-rouge">showConfirmModal()</code></td>
+      <td>Confirmar envío de polla (grupos+bonos)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">bracket-lock-modal</code></td>
+      <td><code class="language-plaintext highlighter-rouge">showBracketLockModal()</code></td>
+      <td>Confirmar envío de ronda eliminatoria</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">delete-confirm-modal</code></td>
+      <td><code class="language-plaintext highlighter-rouge">showDeleteConfirmModal(title, msg)</code></td>
+      <td>Confirmar borrado destructivo (admin) — botón rojo</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">player-detail-modal</code></td>
+      <td><code class="language-plaintext highlighter-rouge">openPlayerDetailModal()</code></td>
+      <td>Detalle de participante desde ranking</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">podium-names-modal</code></td>
+      <td><code class="language-plaintext highlighter-rouge">openPodiumNamesModal()</code></td>
+      <td>Nombres empatados en el podio</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><code class="language-plaintext highlighter-rouge">showDeleteConfirmModal</code> retorna una Promise (igual que <code class="language-plaintext highlighter-rouge">showConfirmModal</code>). Cierra también al hacer clic en el overlay.</p>
+
+<hr />
+
+<h2 id="reglas-de-desarrollo">Reglas de desarrollo</h2>
+
+<ol>
+  <li><strong>Vanilla JS puro</strong> — no introducir React, Vue, frameworks ni dependencias npm.</li>
+  <li><strong>Sin bundler</strong> — el JS se sirve directamente; no usar <code class="language-plaintext highlighter-rouge">import</code>/<code class="language-plaintext highlighter-rouge">export</code> de módulos ES (todo vive en un solo <code class="language-plaintext highlighter-rouge">app.js</code> con scope global).</li>
+  <li><strong>No auto-propagar ganadores</strong> — el bracket no avanza ganadores automáticamente entre rondas; el usuario los selecciona.</li>
+  <li><strong>Persistencia dual</strong> — los drafts van a localStorage; los datos confirmados van a Supabase. No mezclar.</li>
+  <li><strong>Retrocompatibilidad de migraciones</strong> — al agregar columnas nuevas a Supabase, hacer el SELECT en una query separada y verificar <code class="language-plaintext highlighter-rouge">error</code> antes de usar el dato. Nunca agregar columnas nuevas al SELECT principal que siempre existió.</li>
+  <li><strong>Admin updates sobre pollas ajenas</strong> — usar siempre <code class="language-plaintext highlighter-rouge">.update().eq('user_id', id)</code>, nunca <code class="language-plaintext highlighter-rouge">.upsert()</code>. El upsert intenta INSERT primero, que la política <code class="language-plaintext highlighter-rouge">polla_insert_propia</code> bloquea para filas de otros usuarios.</li>
+  <li><strong>Flags</strong> — usar <code class="language-plaintext highlighter-rouge">flagByName(name)</code> para nombre de equipo → código ISO → <code class="language-plaintext highlighter-rouge">&lt;span class="fi fi-XX"&gt;</code>. Usar <code class="language-plaintext highlighter-rouge">flag(team)</code> solo cuando se tiene el objeto <code class="language-plaintext highlighter-rouge">{code}</code> directamente.</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">game/</code></strong> — subproyecto Vite compilado, no modificar sin contexto del subproyecto.</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">players/</code> y <code class="language-plaintext highlighter-rouge">results/official.json</code></strong> — archivos legacy; los datos reales viven en Supabase.</li>
+  <li><strong>Validación de rondas</strong> — <code class="language-plaintext highlighter-rouge">validateBracketRoundComplete(roundId)</code> siempre revisa <code class="language-plaintext highlighter-rouge">STATE.bracket</code>, nunca Supabase directamente; los errores van inline en <code class="language-plaintext highlighter-rouge">.brl-error</code>, nunca en <code class="language-plaintext highlighter-rouge">showErrorModal</code> para este caso.</li>
+</ol>
+
+
+      
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+  </body>
+</html>
