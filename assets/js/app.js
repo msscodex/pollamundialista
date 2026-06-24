@@ -506,6 +506,9 @@ function route() {
       initThirdPlace();
       applyLockedState();
     }
+  } else if (hash === '#marcadores') {
+    showView('view-marcadores');
+    setActiveTab('#marcadores');
   } else if (hash === '#reglamento') {
     showView('view-reglamento');
     setActiveTab('#reglamento');

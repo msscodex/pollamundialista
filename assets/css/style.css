@@ -2335,6 +2335,107 @@ footer {
 }
 
 /* ================================================================
+   MARCADORES
+================================================================ */
+.marcadores-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.marcadores-intro {
+  margin-bottom: 28px;
+}
+
+.marcadores-title {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--gold);
+}
+
+.marcadores-desc {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.marcadores-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.marcadores-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 22px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.marcadores-card:hover:not(.marcadores-card--soon) {
+  border-color: var(--gold);
+  background: var(--card-alt);
+}
+
+.marcadores-card--soon {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.marcadores-card-icon {
+  font-size: 28px;
+  color: var(--gold);
+  width: 36px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.marcadores-card-body {
+  flex: 1;
+}
+
+.marcadores-card-body h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.marcadores-card-body p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.marcadores-card-arrow {
+  color: var(--muted);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.marcadores-card-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  flex-shrink: 0;
+}
+
+/* ================================================================
    REPORTES
 ================================================================ */
 .reportes-container {

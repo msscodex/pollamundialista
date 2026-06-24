@@ -161,6 +161,7 @@
       <button class="tab-btn hidden" data-hash="#polla"><i class="fa-solid fa-futbol"></i> Mi Polla</button>
       <button class="tab-btn hidden" data-hash="#reportes"><i class="fa-solid fa-file-excel"></i> Reportes</button>
       <button class="tab-btn" data-hash="#reglamento"><i class="fa-solid fa-clipboard-list"></i> Reglamento</button>
+      <button class="tab-btn" data-hash="#marcadores"><i class="fa-solid fa-table-list"></i> Evidencias</button>
       <button class="tab-btn" data-hash="#juego"><i class="fa-solid fa-gamepad"></i> Juego</button>
       <div class="side-nav-bottom">
         <div class="side-nav-footer hidden" id="nav-logout-wrap">
@@ -643,6 +644,48 @@
     <!-- ================================================
          VIEW: JUEGO
     ================================================ -->
+    <!-- ================================================
+         VIEW: MARCADORES
+    ================================================ -->
+    <!-- ================================================
+         VIEW: MARCADORES / EVIDENCIAS
+    ================================================ -->
+    <section class="page-section hidden" id="view-marcadores">
+      <div class="marcadores-container">
+        <div class="marcadores-intro">
+          <h2 class="marcadores-title"><i class="fa-solid fa-table-list"></i> Evidencias de Marcadores</h2>
+          <p class="marcadores-desc">
+            En esta sección encontrarás los enlaces a las evidencias de los marcadores reportados por los participantes al cierre de cada fase del torneo. El objetivo es garantizar total transparencia en el registro de resultados: cualquier jugador puede consultar, comparar y verificar los marcadores de forma independiente, asegurando que los puntos asignados en la polla correspondan fielmente a los resultados reales del Mundial 2026.
+          </p>
+          <p class="marcadores-desc">
+            Los documentos son de acceso abierto para todos los participantes. Si tienes alguna observación sobre un marcador, puedes reportarla al administrador.
+          </p>
+        </div>
+
+        <div class="marcadores-grid">
+
+          <a class="marcadores-card" href="https://drive.google.com/drive/folders/1GoqBN6p6KR9r-ndWu6T_J-VYgfbYP71D?usp=sharing" target="_blank" rel="noopener noreferrer">
+            <div class="marcadores-card-icon"><i class="fa-solid fa-futbol"></i></div>
+            <div class="marcadores-card-body">
+              <h3>Fase de Grupos</h3>
+              <p>Evidencias de los marcadores de los 72 partidos de la fase de grupos</p>
+            </div>
+            <div class="marcadores-card-arrow"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
+          </a>
+
+          <a class="marcadores-card marcadores-card--soon" href="#" onclick="return false;">
+            <div class="marcadores-card-icon"><i class="fa-solid fa-sitemap"></i></div>
+            <div class="marcadores-card-body">
+              <h3>Fase Eliminatoria</h3>
+              <p>Evidencias del bracket eliminatorio — disponibles cuando inicie esta fase</p>
+            </div>
+            <div class="marcadores-card-badge">Próximamente</div>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
     <section class="page-section hidden" id="view-juego">
       <div class="section-header">
         <h2><i class="fa-solid fa-gamepad"></i> Penalty Strike 2026</h2>
