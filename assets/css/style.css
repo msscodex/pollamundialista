@@ -2129,6 +2129,17 @@ footer {
 .pdm-match-miss   { background: rgba(255,255,255,.03); border-color: var(--border); }
 
 .pdm-match-teams { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.pdm-match-badge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(255,255,255,.08);
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: var(--muted);
+  margin-right: 4px;
+  border: 1px solid rgba(255,255,255,.05);
+}
 .pdm-vs { color: var(--muted); font-size: 11px; }
 
 .pdm-match-scores { display: flex; align-items: center; gap: 6px; white-space: nowrap; }

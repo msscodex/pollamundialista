@@ -234,6 +234,9 @@ const ELIM_MATCH_INFO = {
   ],
   fin: [
     { num: 104, date: '19 jul', time: '14:00', venue: 'MetLife Stadium (NY/NJ)' }
+  ],
+  '3rd': [
+    { num: 103, date: '18 jul', time: '14:00', venue: 'Hard Rock Stadium, Miami' }
   ]
 };
 
@@ -275,6 +278,28 @@ const RONDAS = [
   { id: 'sf', label: 'Semifinales', partidos: 2, placeholders: [] },
   { id: 'fin', label: 'FINAL 🏆', partidos: 1, placeholders: [] }
 ];
+
+const ELIM_PHASES = [
+  ...RONDAS,
+  { id: '3rd', label: 'Tercer Puesto', partidos: 1, placeholders: ['Perdedor Semifinal 1', 'Perdedor Semifinal 2'] }
+];
+
+function getElimKeys(rondaId, matchIdx) {
+  if (rondaId === '3rd') {
+    return {
+      t0: '3rd-t0',
+      t1: '3rd-t1',
+      s0: '3rd-s0',
+      s1: '3rd-s1'
+    };
+  }
+  return {
+    t0: `${rondaId}-${matchIdx}-t0`,
+    t1: `${rondaId}-${matchIdx}-t1`,
+    s0: `${rondaId}-${matchIdx}-s0`,
+    s1: `${rondaId}-${matchIdx}-s1`
+  };
+}
 
 function getMatchPair(letter, matchIdx) {
   const mi = (MATCH_INFO[letter] || [])[matchIdx];
@@ -556,8 +581,8 @@ async function loadAndRenderHome() {
   homeEl.classList.add('loading');
   const { players, results } = await fetchData();
   homeEl.classList.remove('loading');
-  renderTodayMatches();
-  renderUpcomingMatches();
+  renderTodayMatches(results);
+  renderUpcomingMatches(results);
   renderRanking(players, results);
   renderBonosGanados(players, results);
   renderMatchPoints(players, results);
@@ -625,12 +650,13 @@ function isMatchFinished(dateStr, timeStr) {
   } catch (_) { return false; }
 }
 
-function renderTodayMatches() {
+function renderTodayMatches(results) {
   const today = new Date();
   const todayDay = today.getDate();
   const todayMonth = today.getMonth() + 1;
   const todayMatches = [];
 
+  // 1. Fase de Grupos
   Object.entries(MATCH_INFO).forEach(([group, matches]) => {
     matches.forEach((mi, matchIdx) => {
       const { day, month } = parseMatchDate(mi.date);
@@ -641,6 +667,28 @@ function renderTodayMatches() {
         todayMatches.push({
           group, matchIdx,
           t0: teams[par[0]], t1: teams[par[1]],
+          time: mi.time, venue: mi.venue,
+          live: isMatchLive(mi.date, mi.time),
+          finished: isMatchFinished(mi.date, mi.time)
+        });
+      }
+    });
+  });
+
+  // 2. Fases de Eliminatorias
+  ELIM_PHASES.forEach(ronda => {
+    const matches = ELIM_MATCH_INFO[ronda.id] || [];
+    matches.forEach((mi, matchIdx) => {
+      const { day, month } = parseMatchDate(mi.date);
+      if (day === todayDay && month === todayMonth) {
+        const keys = getElimKeys(ronda.id, matchIdx);
+        const t0Name = results?.bracket?.[keys.t0] || ronda.placeholders[matchIdx * 2] || `Eq. ${matchIdx * 2 + 1}`;
+        const t1Name = results?.bracket?.[keys.t1] || ronda.placeholders[matchIdx * 2 + 1] || `Eq. ${matchIdx * 2 + 2}`;
+        const t0 = { n: t0Name, code: _teamCodeMap[t0Name] || '' };
+        const t1 = { n: t1Name, code: _teamCodeMap[t1Name] || '' };
+        todayMatches.push({
+          group: ronda.label, matchIdx,
+          t0, t1,
           time: mi.time, venue: mi.venue,
           live: isMatchLive(mi.date, mi.time),
           finished: isMatchFinished(mi.date, mi.time)
@@ -674,10 +722,11 @@ function renderTodayMatches() {
         ? '<span class="finished-badge"><i class="fa-solid fa-flag-checkered"></i> Finalizado</span>'
         : `<span class="today-time"><i class="fa-regular fa-clock"></i> ${m.time} COT</span>`;
     const vs = m.live ? '●' : m.finished ? '-' : 'VS';
+    const groupLabel = m.group.length === 1 ? `Grupo ${m.group}` : m.group;
     return `
 <div class="today-card${cardClass}">
   <div class="today-card-top">
-    <span class="today-group-badge">Grupo ${m.group}</span>
+    <span class="today-group-badge">${groupLabel}</span>
     ${badge}
   </div>
   <div class="today-teams">
@@ -946,6 +995,8 @@ function openPlayerDetailModal(playerName) {
 
   // Recoger todos los partidos con resultado oficial
   const matchRows = [];
+
+  // 1. Fase de Grupos
   JORNADAS.forEach((jornada, jIdx) => {
     jornada.pares.forEach((_, pIdx) => {
       const matchIdx = jIdx * 2 + pIdx;
@@ -970,6 +1021,39 @@ function openPlayerDetailModal(playerName) {
     });
   });
 
+  // 2. Fases de Eliminatorias
+  ELIM_PHASES.forEach(ronda => {
+    const matches = ELIM_MATCH_INFO[ronda.id] || [];
+    matches.forEach((mi, matchIdx) => {
+      const keys = getElimKeys(ronda.id, matchIdx);
+      if (!(keys.s0 in (results.bracket || {})) || !(keys.s1 in (results.bracket || {}))) return;
+
+      const r0 = Number(results.bracket[keys.s0]);
+      const r1 = Number(results.bracket[keys.s1]);
+      const hasPlayer = keys.s0 in (player.bracket || {}) && keys.s1 in (player.bracket || {});
+      const p0 = hasPlayer ? Number(player.bracket[keys.s0]) : null;
+      const p1 = hasPlayer ? Number(player.bracket[keys.s1]) : null;
+
+      const t0Name = results.bracket[keys.t0] || ronda.placeholders[matchIdx * 2] || `Eq. ${matchIdx * 2 + 1}`;
+      const t1Name = results.bracket[keys.t1] || ronda.placeholders[matchIdx * 2 + 1] || `Eq. ${matchIdx * 2 + 2}`;
+      const t0 = { n: t0Name, code: _teamCodeMap[t0Name] || '' };
+      const t1 = { n: t1Name, code: _teamCodeMap[t1Name] || '' };
+
+      const ptsRonda = ROUND_PTS[ROUND_KEY[ronda.id]];
+      let pts = 0, tipo = 'miss';
+      if (hasPlayer && ptsRonda) {
+        if (p0 === r0 && p1 === r1) { pts = ptsRonda.exact; tipo = 'exact'; }
+        else if (Math.sign(p0 - p1) === Math.sign(r0 - r1)) { pts = ptsRonda.result; tipo = 'result'; }
+      }
+
+      matchRows.push({
+        group: ronda.label,
+        t0, t1, r0, r1, p0, p1, pts, tipo, hasPlayer,
+        date: mi.date || '', time: mi.time || ''
+      });
+    });
+  });
+
   matchRows.sort((a, b) => {
     const dA = parseMatchDate(a.date || '1 ene');
     const dB = parseMatchDate(b.date || '1 ene');
@@ -980,14 +1064,19 @@ function openPlayerDetailModal(playerName) {
   const TIPO_LABEL = { exact: 'Exacto', result: 'Resultado', miss: 'Fallido' };
 
   const matchesHTML = matchRows.length === 0
-    ? '<p class="pdm-empty">Aún no hay resultados oficiales de grupos.</p>'
+    ? '<p class="pdm-empty">Aún no hay resultados oficiales.</p>'
     : matchRows.map(m => {
       const pred = m.hasPlayer ? `${m.p0} — ${m.p1}` : '—';
+      const groupLabel = m.group.length === 1 ? `Grupo ${m.group}` : m.group;
+      const badgeHTML = `<span class="pdm-match-badge">${groupLabel}</span>`;
       return `
 <div class="pdm-match pdm-match-${m.tipo}">
-  <div class="pdm-match-teams">${flag(m.t0)} ${m.t0.n} <span class="pdm-vs">vs</span> ${m.t1.n} ${flag(m.t1)}</div>
+  <div class="pdm-match-teams">
+    ${badgeHTML}
+    ${flag(m.t0)} ${m.t0.n} <span class="pdm-vs">vs</span> ${m.t1.n} ${flag(m.t1)}
+  </div>
   <div class="pdm-match-scores">
-    <span class="pdm-pred" title="Tu predicción"><i class="fa-regular fa-user"></i> ${pred}</span>
+    <span class="pdm-pred" title="Predicción del usuario"><i class="fa-regular fa-user"></i> ${pred}</span>
     <span class="pdm-arrow">→</span>
     <span class="pdm-real" title="Resultado real"><i class="fa-solid fa-flag-checkered"></i> ${m.r0} — ${m.r1}</span>
   </div>
@@ -998,7 +1087,7 @@ function openPlayerDetailModal(playerName) {
     }).join('');
 
   document.getElementById('pdm-content').innerHTML = `
-<div class="pdm-section-title"><i class="fa-solid fa-futbol"></i> Partidos de Grupos</div>
+<div class="pdm-section-title"><i class="fa-solid fa-futbol"></i> Partidos con Resultado Oficial</div>
 ${matchesHTML}`;
 
   document.getElementById('player-detail-modal').classList.remove('hidden');
@@ -1007,7 +1096,7 @@ ${matchesHTML}`;
 /* ================================================================
    PRÓXIMOS PARTIDOS
 ================================================================ */
-function renderUpcomingMatches() {
+function renderUpcomingMatches(results) {
   const grid = document.getElementById('upcoming-grid');
   if (!grid) return;
 
@@ -1017,6 +1106,7 @@ function renderUpcomingMatches() {
 
   const all = [];
 
+  // 1. Fase de Grupos
   Object.entries(MATCH_INFO).forEach(([group, matches]) => {
     matches.forEach((mi, matchIdx) => {
       const { day, month } = parseMatchDate(mi.date);
@@ -1031,6 +1121,30 @@ function renderUpcomingMatches() {
       const teams = GROUPS[group].teams;
 
       all.push({ group, t0: teams[par[0]], t1: teams[par[1]], date: mi.date, time: mi.time, venue: mi.venue, month, day });
+    });
+  });
+
+  // 2. Fases de Eliminatorias
+  ELIM_PHASES.forEach(ronda => {
+    const matches = ELIM_MATCH_INFO[ronda.id] || [];
+    matches.forEach((mi, matchIdx) => {
+      const { day, month } = parseMatchDate(mi.date);
+      const isToday = day === todayDay && month === todayMon;
+      const isPast = month < todayMon || (month === todayMon && day < todayDay);
+      if (isPast || isToday) return;
+
+      const keys = getElimKeys(ronda.id, matchIdx);
+      const t0Name = results?.bracket?.[keys.t0] || ronda.placeholders[matchIdx * 2] || `Eq. ${matchIdx * 2 + 1}`;
+      const t1Name = results?.bracket?.[keys.t1] || ronda.placeholders[matchIdx * 2 + 1] || `Eq. ${matchIdx * 2 + 2}`;
+      const t0 = { n: t0Name, code: _teamCodeMap[t0Name] || '' };
+      const t1 = { n: t1Name, code: _teamCodeMap[t1Name] || '' };
+
+      all.push({
+        group: ronda.label,
+        t0, t1,
+        date: mi.date, time: mi.time, venue: mi.venue,
+        month, day
+      });
     });
   });
 
@@ -1055,9 +1169,10 @@ function renderUpcomingMatches() {
       const label = d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
       dateHeader = `<div class="upcoming-date-header">${label}</div>`;
     }
+    const groupLabel = m.group.length === 1 ? `Grupo ${m.group}` : m.group;
     return `${dateHeader}
 <div class="upcoming-card">
-  <span class="upcoming-group">Grupo ${m.group}</span>
+  <span class="upcoming-group">${groupLabel}</span>
   <div class="upcoming-teams">
     <div class="upcoming-team">${flag(m.t0)}<span>${m.t0.n}</span></div>
     <div class="upcoming-vs">VS</div>
@@ -1191,6 +1306,7 @@ function renderMatchPoints(players, results) {
 
   const completedMatches = [];
 
+  // 1. Fase de Grupos
   JORNADAS.forEach((jornada, jIdx) => {
     jornada.pares.forEach((_, pIdx) => {
       const matchIdx = jIdx * 2 + pIdx;
@@ -1227,6 +1343,45 @@ function renderMatchPoints(players, results) {
     });
   });
 
+  // 2. Fases de Eliminatorias
+  ELIM_PHASES.forEach(ronda => {
+    const matches = ELIM_MATCH_INFO[ronda.id] || [];
+    matches.forEach((mi, matchIdx) => {
+      const keys = getElimKeys(ronda.id, matchIdx);
+      if (!(keys.s0 in (results.bracket || {})) || !(keys.s1 in (results.bracket || {}))) return;
+
+      const r0 = Number(results.bracket[keys.s0]);
+      const r1 = Number(results.bracket[keys.s1]);
+      const t0Name = results.bracket[keys.t0] || ronda.placeholders[matchIdx * 2] || `Eq. ${matchIdx * 2 + 1}`;
+      const t1Name = results.bracket[keys.t1] || ronda.placeholders[matchIdx * 2 + 1] || `Eq. ${matchIdx * 2 + 2}`;
+      const t0 = { n: t0Name, code: _teamCodeMap[t0Name] || '' };
+      const t1 = { n: t1Name, code: _teamCodeMap[t1Name] || '' };
+
+      const ptsRonda = ROUND_PTS[ROUND_KEY[ronda.id]];
+      if (!ptsRonda) return;
+
+      const { day, month } = parseMatchDate(mi.date || '1 ene');
+
+      const earners = [];
+      scored.forEach(p => {
+        if (!(keys.s0 in (p.bracket || {})) || !(keys.s1 in (p.bracket || {}))) return;
+        const p0 = Number(p.bracket[keys.s0]);
+        const p1 = Number(p.bracket[keys.s1]);
+        let pts = 0;
+        if (p0 === r0 && p1 === r1) pts = ptsRonda.exact;
+        else if (Math.sign(p0 - p1) === Math.sign(r0 - r1)) pts = ptsRonda.result;
+        if (pts > 0) earners.push({ name: p.name, pts });
+      });
+
+      completedMatches.push({
+        group: ronda.label, matchIdx,
+        t0, t1, r0, r1, earners,
+        date: mi.date, time: mi.time,
+        sortKey: month * 100 + day
+      });
+    });
+  });
+
   // Más recientes primero; se muestran 10 y el resto queda tras "Ver más"
   completedMatches.sort((a, b) => b.sortKey - a.sortKey || b.time.localeCompare(a.time));
 
@@ -1236,10 +1391,12 @@ function renderMatchPoints(players, results) {
     return;
   }
 
-  grid.innerHTML = completedMatches.map(m => `
+  grid.innerHTML = completedMatches.map(m => {
+    const groupLabel = m.group.length === 1 ? `Grupo ${m.group}` : m.group;
+    return `
 <div class="mpc-card">
   <div class="mpc-header">
-    <span class="mpc-group">Grupo ${m.group}</span>
+    <span class="mpc-group">${groupLabel}</span>
     <span class="mpc-date">${m.date} ${m.time}</span>
   </div>
   <div class="mpc-score-row">
@@ -1253,7 +1410,8 @@ function renderMatchPoints(players, results) {
       : inlineShowMoreHTML(m.earners.map(e => `<span class="mpc-earner">${e.name} <strong>+${e.pts}</strong></span>`), 6)
     }
   </div>
-</div>`).join('');
+</div>`;
+  }).join('');
 
   wireInlineShowMore(grid);
   applyShowMore(grid, 10, `Ver los ${completedMatches.length} partidos`);
