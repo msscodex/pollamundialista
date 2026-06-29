@@ -2317,6 +2317,12 @@ footer {
 }
 .tp-option-clear:hover { background: rgba(248, 113, 113, .1) !important; }
 
+.tp-option-active {
+  background: rgba(201, 168, 76, 0.18) !important;
+  color: var(--gold) !important;
+  font-weight: 700;
+}
+
 /* ================================================================
    PARTICIPANTES — Vista admin
 ================================================================ */

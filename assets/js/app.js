@@ -1223,7 +1223,7 @@ function renderBonosGanados(players, results) {
       const manualOverride = (p.manual_bonus_pts || {})[key] === true;
       if (oficial) {
         const pVal = (p.bonuses || {})[key];
-        const textHit = pVal != null && String(pVal).toLowerCase() === String(oficial).toLowerCase();
+        const textHit = pVal != null && checkBonusMatch(pVal, oficial);
         return textHit || manualOverride;
       }
       return manualOverride;
@@ -1464,7 +1464,7 @@ function calcScore(player, results) {
 
   const pb = player.bonuses || {}, rb = results.bonuses || {}, mb = player.manual_bonus_pts || {};
   Object.keys(BONUS_PTS).forEach(key => {
-    const textMatch = rb[key] && pb[key] && rb[key].trim().toLowerCase() === pb[key].trim().toLowerCase();
+    const textMatch = checkBonusMatch(pb[key], rb[key]);
     const manualOverride = mb[key] === true;
     if (textMatch || manualOverride) bonusTotal += BONUS_PTS[key];
   });
@@ -1904,7 +1904,7 @@ function renderBonusesReadonly(playerBonuses, resultBonuses, manualBonusPts, par
     const rows = group.keys.map(key => {
       const pVal = playerBonuses[key] || '—';
       const rVal = resultBonuses[key] || '';
-      const textHit = rVal && pVal !== '—' && rVal.trim().toLowerCase() === pVal.trim().toLowerCase();
+      const textHit = rVal && pVal !== '—' && checkBonusMatch(pVal, rVal);
       const manualOverride = mb[key] === true;
       const hit = textHit || manualOverride;
       const canToggle = isAdmin && MANUAL_BONUS_KEYS.has(key) && !textHit;
@@ -2386,6 +2386,16 @@ const INAUG_PICKER_KEYS = new Set(['primerGolInaugural']);
 // Bonos que usan selector de jugador colombiano
 const PLAYER_PICKER_KEYS = new Set(['colPrimerGolUzb', 'colPrimerAmarillaUzb']);
 
+// Bonos de primera ronda que admiten múltiples respuestas en caso de empate
+const MULTI_BONUS_KEYS = new Set(['vallaMin', 'vallaMax', 'masPuntosGrupos', 'menosPuntosGrupos']);
+
+function checkBonusMatch(userAnswer, officialAnswer) {
+  if (!userAnswer || !officialAnswer) return false;
+  const u = userAnswer.trim().toLowerCase();
+  const correctOnes = officialAnswer.split(/[,/;]|\s+o\s+/).map(v => v.trim().toLowerCase());
+  return correctOnes.includes(u);
+}
+
 const INAUGURAL_TEAMS = [
   { code: 'mx', n: 'México' },
   { code: 'za', n: 'Sudáfrica' },
@@ -2417,6 +2427,29 @@ function _setTeamPickerValue(picker, name, teams) {
   const flagEl = picker.querySelector('.tp-flag');
   if (nameEl) { nameEl.textContent = name; nameEl.classList.remove('tp-placeholder'); }
   if (flagEl) flagEl.innerHTML = `<span class="fi fi-${team.code}"></span>`;
+}
+
+function _setMultiTeamPickerValue(picker, namesArray, teams) {
+  const nameEl = picker.querySelector('.tp-name');
+  const flagEl = picker.querySelector('.tp-flag');
+  if (namesArray.length === 0) {
+    if (nameEl) {
+      nameEl.textContent = picker.dataset.bonus ? BONUS_LABELS[picker.dataset.bonus] || 'Seleccionar…' : 'Seleccionar…';
+      nameEl.classList.add('tp-placeholder');
+    }
+    if (flagEl) flagEl.innerHTML = '';
+    return;
+  }
+  if (nameEl) {
+    nameEl.textContent = namesArray.join(' / ');
+    nameEl.classList.remove('tp-placeholder');
+  }
+  if (flagEl) {
+    flagEl.innerHTML = namesArray.map(name => {
+      const team = teams.find(t => t.n === name);
+      return team ? `<span class="fi fi-${team.code}" style="margin-right:2px"></span>` : '';
+    }).join('');
+  }
 }
 
 function _setPlayerPickerValue(picker, name) {
@@ -2625,7 +2658,9 @@ function _wirePicker_admin(picker, renderFn) {
 
 function _wireAdminTeamPicker(picker, teams, bonusKey) {
   const list = picker.querySelector('.tp-list');
+  const searchInput = picker.querySelector('.tp-search');
   const origPlaceholder = picker.querySelector('.tp-name')?.textContent || 'Seleccionar';
+  const isMulti = MULTI_BONUS_KEYS.has(bonusKey);
 
   const clearPicker = () => {
     const nameEl = picker.querySelector('.tp-name');
@@ -2646,24 +2681,54 @@ function _wireAdminTeamPicker(picker, teams, bonusKey) {
       ? `<div class="tp-option tp-option-clear">✕ Limpiar selección</div>`
       : '';
 
-    list.innerHTML = clearHTML + filtered.map(t =>
-      `<div class="tp-option" data-name="${t.n}" data-code="${t.code}">
-         <span class="fi fi-${t.code}"></span> ${t.n}
-       </div>`
-    ).join('');
+    const currentSelection = isMulti
+      ? (ADMIN_RESULTS.bonuses[bonusKey] ? ADMIN_RESULTS.bonuses[bonusKey].split(' / ') : [])
+      : [];
+
+    list.innerHTML = clearHTML + filtered.map(t => {
+      const active = isMulti && currentSelection.includes(t.n);
+      return `<div class="tp-option ${active ? 'tp-option-active' : ''}" data-name="${t.n}" data-code="${t.code}">
+         <span class="fi fi-${t.code}"></span> ${t.n}${active ? ' ✓' : ''}
+       </div>`;
+    }).join('');
 
     const clearBtn = list.querySelector('.tp-option-clear');
-    if (clearBtn) clearBtn.addEventListener('click', clearPicker);
+    if (clearBtn) {
+      clearBtn.addEventListener('click', (e) => {
+        if (isMulti) e.stopPropagation();
+        clearPicker();
+      });
+    }
 
-    list.querySelectorAll('.tp-option:not(.tp-option-clear)').forEach(opt =>
-      opt.addEventListener('click', () => {
-        _setTeamPickerValue(picker, opt.dataset.name, teams);
-        picker.querySelector('.team-picker-dropdown').classList.add('hidden');
-        picker.classList.remove('open');
-        ADMIN_RESULTS.bonuses[bonusKey] = opt.dataset.name;
-      })
-    );
+    list.querySelectorAll('.tp-option:not(.tp-option-clear)').forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        const teamName = opt.dataset.name;
+        if (isMulti) {
+          e.stopPropagation();
+          let current = ADMIN_RESULTS.bonuses[bonusKey] ? ADMIN_RESULTS.bonuses[bonusKey].split(' / ') : [];
+          const idx = current.indexOf(teamName);
+          if (idx >= 0) {
+            current.splice(idx, 1);
+          } else {
+            current.push(teamName);
+          }
+          if (current.length === 0) {
+            delete ADMIN_RESULTS.bonuses[bonusKey];
+          } else {
+            ADMIN_RESULTS.bonuses[bonusKey] = current.join(' / ');
+          }
+          _setMultiTeamPickerValue(picker, current, teams);
+          renderList(searchInput?.value || '');
+        } else {
+          _setTeamPickerValue(picker, teamName, teams);
+          picker.querySelector('.team-picker-dropdown').classList.add('hidden');
+          picker.classList.remove('open');
+          ADMIN_RESULTS.bonuses[bonusKey] = teamName;
+        }
+      });
+    });
   };
+
   _wirePicker_admin(picker, renderList);
   renderList();
 }
@@ -2686,7 +2751,13 @@ function _buildAdminTeamPicker(key, teams) {
     </div>`;
   inp.replaceWith(picker);
   const val = ADMIN_RESULTS.bonuses[key];
-  if (val) _setTeamPickerValue(picker, val, teams);
+  if (val) {
+    if (MULTI_BONUS_KEYS.has(key)) {
+      _setMultiTeamPickerValue(picker, val.split(' / '), teams);
+    } else {
+      _setTeamPickerValue(picker, val, teams);
+    }
+  }
   _wireAdminTeamPicker(picker, teams, key);
 }
 
