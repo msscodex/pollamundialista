@@ -1552,6 +1552,13 @@ async function loadPlayerView(nombre) {
     document.getElementById('btn-ver-edit-enable').onclick = _enableVerEditMode;
     document.getElementById('btn-ver-edit-cancel').onclick = _cancelVerEditMode;
     document.getElementById('btn-ver-edit-save').onclick = _saveVerEdits;
+    const btnVerPdf = document.getElementById('btn-ver-export-pdf');
+    if (btnVerPdf) {
+      btnVerPdf.onclick = () => {
+        const pName = profile.name || nombre || 'Participante';
+        exportParticipantPDF(pName);
+      };
+    }
 
     // Tab Perfil
     document.getElementById('tab-btn-perfil-ver')?.classList.remove('hidden');
@@ -1894,8 +1901,8 @@ function renderBracketReadonly(bracket, containerId, championId) {
   if (champEl) champEl.textContent = bracket['champion'] || ' ';
 }
 
-function renderBonusesReadonly(playerBonuses, resultBonuses, manualBonusPts, participantUserId) {
-  const grid = document.getElementById('bonuses-grid-ver');
+function renderBonusesReadonly(playerBonuses, resultBonuses, manualBonusPts, participantUserId, containerId) {
+  const grid = document.getElementById(containerId || 'bonuses-grid-ver');
   if (!grid) return;
   const isAdmin = !!CURRENT_USER?.is_admin;
   const mb = manualBonusPts || {};
@@ -3123,10 +3130,29 @@ function applyLockedState() {
    EXPORT PDF
 ================================================================ */
 function exportFullPDF() {
+  const name = STATE.player.trim() || 'mi-polla';
+  const originalTitle = document.title;
+  const cleanName = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  document.title = `polla-mundialista-2026-${cleanName}`;
+
   document.body.classList.add('printing-full');
   window.print();
   window.addEventListener('afterprint', () => {
     document.body.classList.remove('printing-full');
+    document.title = originalTitle;
+  }, { once: true });
+}
+
+function exportParticipantPDF(name) {
+  const originalTitle = document.title;
+  const cleanName = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  document.title = `polla-mundialista-2026-${cleanName}`;
+
+  document.body.classList.add('printing-full', 'printing-ver');
+  window.print();
+  window.addEventListener('afterprint', () => {
+    document.body.classList.remove('printing-full', 'printing-ver');
+    document.title = originalTitle;
   }, { once: true });
 }
 
@@ -3146,7 +3172,7 @@ function exportJSON() {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const slug = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
   a.href = url; a.download = `${slug}.json`; a.click();
   URL.revokeObjectURL(url);
 }
@@ -4294,10 +4320,16 @@ document.addEventListener('DOMContentLoaded', initMusicBtn);
    REPORTES — generación de XLSX
 ================================================================ */
 function loadReportesView() {
-  const btn = document.getElementById('btn-generar-xlsx');
-  if (!btn || btn._wired) return;
-  btn._wired = true;
-  btn.addEventListener('click', generateReportXLSX);
+  const btnExcel = document.getElementById('btn-generar-xlsx');
+  if (btnExcel && !btnExcel._wired) {
+    btnExcel._wired = true;
+    btnExcel.addEventListener('click', generateReportXLSX);
+  }
+  const btnZip = document.getElementById('btn-generar-zip');
+  if (btnZip && !btnZip._wired) {
+    btnZip._wired = true;
+    btnZip.addEventListener('click', generateAllPDFsZip);
+  }
 }
 
 function loadSheetJS() {
@@ -4435,7 +4467,7 @@ async function generateReportXLSX() {
       players.forEach(p => {
         const pred = p.bonuses?.[key] || '';
         const mb   = p.manual_bonus_pts?.[key] === true;
-        const hit  = mb || (resVal && pred && resVal.trim().toLowerCase() === pred.trim().toLowerCase());
+        const hit  = mb || checkBonusMatch(pred, resVal);
         row.push(pred, hit ? '✓' : (resVal ? '✗' : '—'), hit ? BONUS_PTS[key] : 0);
       });
       bonosRows.push(row);
@@ -4520,7 +4552,7 @@ async function generateReportXLSX() {
         const pred   = p.bonuses?.[key] || '—';
         const resVal = results.bonuses?.[key] || '—';
         const mb     = p.manual_bonus_pts?.[key] === true;
-        const hit    = mb || (resVal !== '—' && pred !== '—' && resVal.trim().toLowerCase() === pred.trim().toLowerCase());
+        const hit    = mb || (resVal !== '—' && pred !== '—' && checkBonusMatch(pred, resVal));
         const estado = resVal === '—' ? 'Pendiente' : (hit ? '✓ Acertó' : '✗ Falló');
         data.push([BONUS_LABELS[key], BONUS_PTS[key], pred, resVal, estado, hit ? BONUS_PTS[key] : 0]);
       });
@@ -4601,4 +4633,199 @@ const _teamCodeMap = (() => {
 function flagByName(name) {
   const code = _teamCodeMap[name];
   return code ? `<span class="fi fi-${code}"></span>` : '';
+}
+
+/* ================================================================
+   BATCH PDF GENERATION AND COMPRESSION (ZIP)
+================================================================ */
+function loadPdfZipLibraries() {
+  return new Promise((resolve, reject) => {
+    if (window.JSZip && window.html2pdf) { resolve(); return; }
+    let count = 0;
+    const checkDone = () => {
+      count++;
+      if (count === 2) resolve();
+    };
+    
+    if (!window.JSZip) {
+      const s1 = document.createElement('script');
+      s1.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      s1.onload = checkDone;
+      s1.onerror = () => reject(new Error('No se pudo cargar JSZip.'));
+      document.head.appendChild(s1);
+    } else {
+      checkDone();
+    }
+    
+    if (!window.html2pdf) {
+      const s2 = document.createElement('script');
+      s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      s2.onload = checkDone;
+      s2.onerror = () => reject(new Error('No se pudo cargar html2pdf.'));
+      document.head.appendChild(s2);
+    } else {
+      checkDone();
+    }
+  });
+}
+
+async function generateAllPDFsZip() {
+  const btn = document.getElementById('btn-generar-zip');
+  const msgEl = document.getElementById('reportes-zip-msg');
+  const modal = document.getElementById('pdf-progress-modal');
+  const pText = document.getElementById('pdf-progress-text');
+  const pBar = document.getElementById('pdf-progress-bar');
+  
+  if (!btn || !msgEl || !modal || !pText || !pBar) return;
+  
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando ZIP...';
+  msgEl.textContent = '';
+  msgEl.className = 'admin-msg';
+  
+  // Mostrar modal de progreso
+  modal.classList.remove('hidden');
+  pText.textContent = 'Cargando librerías necesarias...';
+  pBar.style.width = '0%';
+  
+  let originalFlag, originalFlagByName;
+  
+  try {
+    // 1. Cargar librerías
+    await loadPdfZipLibraries();
+    
+    // Redefinir dinámicamente para usar FlagCDN (CORS abierto y compatible con html2canvas)
+    originalFlag = flag;
+    originalFlagByName = flagByName;
+    
+    flag = function(t) {
+      return `<img src="https://flagcdn.com/w40/${t.code}.png" style="width: 20px; height: 15px; vertical-align: middle; margin-right: 6px; border-radius: 2px; display: inline-block;">`;
+    };
+    flagByName = function(name) {
+      const code = _teamCodeMap[name];
+      return code ? `<img src="https://flagcdn.com/w40/${code}.png" style="width: 20px; height: 15px; vertical-align: middle; margin-right: 6px; border-radius: 2px; display: inline-block;">` : '';
+    };
+    
+    pText.textContent = 'Consultando base de datos de participantes...';
+    pBar.style.width = '5%';
+    
+    // 2. Obtener resultados oficiales para comparar bonos
+    const offRes = await sb.from('official_results').select('*').eq('id', 1).single();
+    if (offRes.error) throw offRes.error;
+    const results = offRes.data || {};
+    
+    // 3. Obtener perfiles de usuarios
+    const profilesRes = await sb.from('profiles').select('id, name').order('name', { ascending: true });
+    if (profilesRes.error) throw profilesRes.error;
+    const users = profilesRes.data || [];
+    
+    // 4. Obtener todas las pollas
+    const pollasRes = await sb.from('pollas').select('*');
+    if (pollasRes.error) throw pollasRes.error;
+    const pollas = pollasRes.data || [];
+    
+    if (users.length === 0) {
+      throw new Error('No hay participantes registrados.');
+    }
+    
+    const zip = new JSZip();
+    const tempContainer = document.getElementById('pdf-temp-container');
+    if (!tempContainer) throw new Error('No se encontró el contenedor de plantilla PDF.');
+    
+    // Hacer visible temporalmente para que html2pdf y el DOM computen la geometría y alturas
+    tempContainer.style.display = 'block';
+    
+    // 5. Generar PDF para cada participante
+    // TEMPORAL: Limitado a 2 participantes para realizar pruebas rápidas
+    for (let i = 0; i < 2; i++) {
+      const u = users[i];
+      const p = pollas.find(x => x.user_id === u.id) || {};
+      const nombre = u.name || u.player || 'Participante sin nombre';
+      
+      const pct = Math.floor(5 + (i / users.length) * 90);
+      pText.textContent = `Procesando polla ${i + 1} de ${users.length}: ${nombre}`;
+      pBar.style.width = `${pct}%`;
+      
+      // Limpiar contenedor e inyectar datos del participante
+      document.getElementById('pdf-temp-subtitle').textContent = nombre;
+      
+      // Mostrar resumen de puntos si los tiene
+      const ptsRes = calcScore(p, results);
+      document.getElementById('pdf-temp-scores-summary').textContent = `Puntos Totales: ${ptsRes.total}`;
+      
+      // Renderizar secciones
+      renderGroupsReadonly(p.scores || {}, 'pdf-temp-grupos');
+      renderBracketReadonly(p.bracket || {}, 'pdf-temp-bracket', 'pdf-temp-champion');
+      renderBonusesReadonly(p.bonuses || {}, results.bonuses || {}, p.manual_bonus_pts || {}, u.id, 'pdf-temp-bonos');
+      
+      // Esperar 100ms para asegurar que el navegador actualice los nodos del DOM
+      await new Promise(r => setTimeout(r, 100));
+
+      // Generar PDF en memoria
+      const opt = {
+        margin:       [6, 6],
+        filename:     `${nombre}.pdf`,
+        image:        { type: 'jpeg', quality: 0.95 },
+        html2canvas:  { 
+          scale: 1.5, 
+          useCORS: true, 
+          backgroundColor: '#0D1B2A',
+          width: 1024
+        },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { 
+          mode: ['avoid-all', 'css'], 
+          avoid: ['.group-card', '.bonus-group', '.round-header', '.champion-box']
+        }
+      };
+      
+      const pdfBuffer = await html2pdf().from(tempContainer).set(opt).outputPdf('arraybuffer');
+
+      // Sanitizar el nombre del archivo
+      const cleanName = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      zip.file(`polla-mundialista-2026-${cleanName}.pdf`, pdfBuffer);
+      
+      // Espera corta para no congelar el UI del navegador
+      await new Promise(r => setTimeout(r, 60));
+    }
+    
+    pText.textContent = 'Comprimiendo todos los PDFs en archivo ZIP...';
+    pBar.style.width = '96%';
+    await new Promise(r => setTimeout(r, 200));
+    
+    // 6. Generar ZIP y descargar
+    const content = await zip.generateAsync({ type: 'blob' });
+    const fecha = new Date().toISOString().slice(0, 10);
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(content);
+    link.download = `pollas-completas-mundial2026-${fecha}.zip`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    
+    pBar.style.width = '100%';
+    pText.textContent = '¡ZIP completado!';
+    
+    msgEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Archivo ZIP descargado correctamente';
+    msgEl.className = 'admin-msg success';
+    
+    setTimeout(() => { modal.classList.add('hidden'); }, 1500);
+    
+  } catch (err) {
+    console.error(err);
+    msgEl.textContent = 'Error: ' + err.message;
+    msgEl.className = 'admin-msg error';
+    modal.classList.add('hidden');
+  } finally {
+    // Restaurar funciones de banderas originales
+    if (typeof originalFlag !== 'undefined') flag = originalFlag;
+    if (typeof originalFlagByName !== 'undefined') flagByName = originalFlagByName;
+
+    // Ocultar de nuevo la plantilla temporal
+    const tempContainer = document.getElementById('pdf-temp-container');
+    if (tempContainer) tempContainer.style.display = 'none';
+
+    // Vaciar contenedores temporales y habilitar botón
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-file-zipper"></i> Generar ZIP de PDFs';
+  }
 }
