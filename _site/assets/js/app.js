@@ -4365,28 +4365,27 @@ async function generateReportXLSX() {
     /* ── HOJA 2: Grupos (matriz: un partido por fila, columnas por participante) ── */
     const pHeaders = players.flatMap(p => [`${p.name} L`, `${p.name} V`, `${p.name} Pts`]);
     const gruposRows = [['Grupo', 'Fecha', 'Hora', 'Jornada', 'Local', 'Visitante', 'Res L', 'Res V', ...pHeaders]];
-    JORNADAS.forEach((jornada, jIdx) => {
-      jornada.pares.forEach((_, pIdx) => {
-        const matchIdx = jIdx * 2 + pIdx;
-        Object.keys(GROUPS).sort().forEach(group => {
-          const pair   = getMatchPair(group, matchIdx);
-          const teamA  = GROUPS[group].teams[pair[0]].n;
-          const teamB  = GROUPS[group].teams[pair[1]].n;
-          const mi     = MATCH_INFO[group]?.[matchIdx];
-          const k0 = `${group}-${matchIdx}-0`, k1 = `${group}-${matchIdx}-1`;
-          const hasRes = k0 in results.scores && k1 in results.scores;
-          const r0 = results.scores[k0] ?? '', r1 = results.scores[k1] ?? '';
-          const pCols = players.flatMap(p => {
-            const hasPred = k0 in (p.scores || {}) && k1 in (p.scores || {});
-            if (!hasPred) return ['', '', ''];
-            const p0 = p.scores[k0], p1 = p.scores[k1];
-            if (!hasRes) return [p0, p1, ''];
-            const { pts } = _matchEstado(p0, p1, results.scores[k0], results.scores[k1], ROUND_PTS.groups.exact, ROUND_PTS.groups.result);
-            return [p0, p1, pts];
-          });
-          gruposRows.push([group, mi?.date || '', mi?.time || '', jornada.label, teamA, teamB, r0, r1, ...pCols]);
+    Object.keys(GROUPS).sort().forEach(group => {
+      for (let matchIdx = 0; matchIdx < 6; matchIdx++) {
+        const jIdx = Math.floor(matchIdx / 2);
+        const jornada = JORNADAS[jIdx];
+        const pair   = getMatchPair(group, matchIdx);
+        const teamA  = GROUPS[group].teams[pair[0]].n;
+        const teamB  = GROUPS[group].teams[pair[1]].n;
+        const mi     = MATCH_INFO[group]?.[matchIdx];
+        const k0 = `${group}-${matchIdx}-0`, k1 = `${group}-${matchIdx}-1`;
+        const hasRes = k0 in results.scores && k1 in results.scores;
+        const r0 = results.scores[k0] ?? '', r1 = results.scores[k1] ?? '';
+        const pCols = players.flatMap(p => {
+          const hasPred = k0 in (p.scores || {}) && k1 in (p.scores || {});
+          if (!hasPred) return ['', '', ''];
+          const p0 = p.scores[k0], p1 = p.scores[k1];
+          if (!hasRes) return [p0, p1, ''];
+          const { pts } = _matchEstado(p0, p1, results.scores[k0], results.scores[k1], ROUND_PTS.groups.exact, ROUND_PTS.groups.result);
+          return [p0, p1, pts];
         });
-      });
+        gruposRows.push([group, mi?.date || '', mi?.time || '', jornada.label, teamA, teamB, r0, r1, ...pCols]);
+      }
     });
     _appendSheet(wb, gruposRows, _xlsxSafeSheetName('Grupos', usedNames));
 
@@ -4453,27 +4452,26 @@ async function generateReportXLSX() {
       // Grupos
       data.push(['FASE DE GRUPOS']);
       data.push(['Grupo', 'Fecha', 'Hora', 'Jornada', 'Local', 'Pred L', 'Pred V', 'Visitante', 'Res L', 'Res V', 'Estado', 'Pts']);
-      JORNADAS.forEach((jornada, jIdx) => {
-        jornada.pares.forEach((_, pIdx) => {
-          const matchIdx = jIdx * 2 + pIdx;
-          Object.keys(GROUPS).sort().forEach(group => {
-            const pair  = getMatchPair(group, matchIdx);
-            const teamA = GROUPS[group].teams[pair[0]].n;
-            const teamB = GROUPS[group].teams[pair[1]].n;
-            const mi    = MATCH_INFO[group]?.[matchIdx];
-            const k0 = `${group}-${matchIdx}-0`, k1 = `${group}-${matchIdx}-1`;
-            const hasRes  = k0 in results.scores && k1 in results.scores;
-            const hasPred = k0 in (p.scores || {}) && k1 in (p.scores || {});
-            const p0 = hasPred ? p.scores[k0] : '';
-            const p1 = hasPred ? p.scores[k1] : '';
-            const r0 = hasRes  ? results.scores[k0] : '';
-            const r1 = hasRes  ? results.scores[k1] : '';
-            let estado = 'Sin predicción', pts = 0;
-            if (hasPred && hasRes) ({ estado, pts } = _matchEstado(p.scores[k0], p.scores[k1], results.scores[k0], results.scores[k1], ROUND_PTS.groups.exact, ROUND_PTS.groups.result));
-            else if (hasPred) estado = 'Pendiente';
-            data.push([group, mi?.date || '', mi?.time || '', jornada.label, teamA, p0, p1, teamB, r0, r1, estado, pts]);
-          });
-        });
+      Object.keys(GROUPS).sort().forEach(group => {
+        for (let matchIdx = 0; matchIdx < 6; matchIdx++) {
+          const jIdx = Math.floor(matchIdx / 2);
+          const jornadaLabel = JORNADAS[jIdx].label;
+          const pair  = getMatchPair(group, matchIdx);
+          const teamA = GROUPS[group].teams[pair[0]].n;
+          const teamB = GROUPS[group].teams[pair[1]].n;
+          const mi    = MATCH_INFO[group]?.[matchIdx];
+          const k0 = `${group}-${matchIdx}-0`, k1 = `${group}-${matchIdx}-1`;
+          const hasRes  = k0 in results.scores && k1 in results.scores;
+          const hasPred = k0 in (p.scores || {}) && k1 in (p.scores || {});
+          const p0 = hasPred ? p.scores[k0] : '';
+          const p1 = hasPred ? p.scores[k1] : '';
+          const r0 = hasRes  ? results.scores[k0] : '';
+          const r1 = hasRes  ? results.scores[k1] : '';
+          let estado = 'Sin predicción', pts = 0;
+          if (hasPred && hasRes) ({ estado, pts } = _matchEstado(p.scores[k0], p.scores[k1], results.scores[k0], results.scores[k1], ROUND_PTS.groups.exact, ROUND_PTS.groups.result));
+          else if (hasPred) estado = 'Pendiente';
+          data.push([group, mi?.date || '', mi?.time || '', jornadaLabel, teamA, p0, p1, teamB, r0, r1, estado, pts]);
+        }
       });
 
       // Eliminatorias
