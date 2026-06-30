@@ -1741,7 +1741,7 @@ async function _saveVerEdits() {
   });
 
   // Recolectar bracket
-  const bracket = {};
+  const bracket = { ...(_verPlayerData?.bracket || {}) };
   document.querySelectorAll('#bracket-render-ver [data-ver-key]').forEach(inp => {
     const val = inp.value;
     if (val !== '') {
@@ -1875,11 +1875,11 @@ function renderBracketReadonly(bracket, containerId, championId) {
   ${metaHTML}
   <div class="bm-row${winner === 't0' ? ' winner' : ''}">
     ${teamHTML0}
-    <input type="number" class="bm-score" value="${bracket[ks0] || ''}" disabled placeholder="-">
+    <input type="number" class="bm-score" data-ver-key="${ks0}" value="${bracket[ks0] || ''}" disabled placeholder="-">
   </div>
   <div class="bm-row${winner === 't1' ? ' winner' : ''}">
     ${teamHTML1}
-    <input type="number" class="bm-score" value="${bracket[ks1] || ''}" disabled placeholder="-">
+    <input type="number" class="bm-score" data-ver-key="${ks1}" value="${bracket[ks1] || ''}" disabled placeholder="-">
   </div>
 </div>`;
     }).join('');
