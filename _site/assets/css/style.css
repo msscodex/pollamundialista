@@ -849,8 +849,8 @@ footer {
 
   body.printing-full .groups-grid,
   body.printing-full.printing-ver .groups-grid {
-    display: block !important;
-    gap: 0 !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
   }
 
   /* Tema oscuro para PDF completo */
@@ -879,19 +879,10 @@ footer {
     display: none !important;
   }
 
-  /* Grupos */
   body.printing-full .group-card,
   body.printing-full.printing-ver .group-card {
-    display: inline-block !important;
-    vertical-align: top !important;
-    width: 31% !important;
-    margin: 1% !important;
     border-color: #2E4060 !important;
     background: #1C2B3D !important;
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-    overflow: visible !important;
-    box-sizing: border-box !important;
   }
   body.printing-full .group-head {
     background: linear-gradient(135deg, #003087, #001A5C) !important;
@@ -985,10 +976,6 @@ footer {
     color: #EEF2F7 !important;
   }
 
-  /* Ocultar botones de otorgar en el PDF temporal */
-  #pdf-temp-container .bonus-toggle-btn {
-    display: none !important;
-  }
 }
 
 /* ================================================================
@@ -3416,89 +3403,5 @@ h3 .fa-solid, h3 .fa-regular,
 @media (max-width: 500px) {
   .art-row { flex-wrap: wrap; }
   .art-label { flex-basis: 100%; }
-}
-
-/* ================================================================
-   ESTILOS DE RENDERIZADO EXCLUSIVOS PARA PDF EN SEGUNDO PLANO
-================================================================ */
-#pdf-temp-container {
-  background-color: #0D1B2A !important;
-  color: #EEF2F7 !important;
-}
-#pdf-temp-container .groups-grid {
-  display: block !important;
-  gap: 0 !important;
-}
-#pdf-temp-container .group-card {
-  display: inline-block !important;
-  vertical-align: top !important;
-  width: 31% !important;
-  margin: 1% !important;
-  border: 1px solid #2E4060 !important;
-  background: #1C2B3D !important;
-  break-inside: avoid !important;
-  page-break-inside: avoid !important;
-  overflow: visible !important;
-  box-sizing: border-box !important;
-}
-#pdf-temp-container .group-head {
-  background: linear-gradient(135deg, #003087, #001A5C) !important;
-}
-#pdf-temp-container .m-score {
-  background: #243347 !important;
-  border-color: #2E4060 !important;
-  color: #FFD87A !important;
-}
-#pdf-temp-container .m-score.filled { border-color: #C9A84C !important; }
-#pdf-temp-container .m-name  { color: #EEF2F7 !important; }
-#pdf-temp-container .mm-date { color: #C9A84C !important; }
-#pdf-temp-container .mm-time,
-#pdf-temp-container .mm-venue { color: #7A8FA6 !important; }
-#pdf-temp-container .matchday-header { color: #7A8FA6 !important; border-color: #2E4060 !important; }
-#pdf-temp-container .match-meta { border-color: rgba(46,64,96,.5) !important; }
-
-#pdf-temp-container .standings-wrap { border-color: #2E4060 !important; }
-#pdf-temp-container .standings-table thead th {
-  background: #243347 !important;
-  color: #7A8FA6 !important;
-}
-#pdf-temp-container .standings-table tbody td { color: #EEF2F7 !important; border-color: #2E4060 !important; }
-#pdf-temp-container .standings-table tr.st-advances { background: rgba(39, 174, 96, 0.12) !important; }
-#pdf-temp-container .standings-table tr.st-maybe    { background: rgba(243, 156, 18, 0.1) !important; }
-#pdf-temp-container .st-pts { color: #C9A84C !important; }
-
-#pdf-temp-container .bracket-wrapper { overflow: visible !important; }
-#pdf-temp-container .bracket { min-width: auto !important; }
-#pdf-temp-container .bm-team { color: #EEF2F7 !important; }
-#pdf-temp-container .bm-team-fixed { color: #27AE60 !important; background: rgba(39,174,96,.12) !important; }
-#pdf-temp-container .bm-score { color: #FFD87A !important; background: #243347 !important; }
-#pdf-temp-container .bracket-match { border-color: #2E4060 !important; background: #1C2B3D !important; }
-
-#pdf-temp-container .champion-box { background: rgba(201,168,76,.1) !important; border-color: #C9A84C !important; }
-#pdf-temp-container .champion-name { color: #FFD87A !important; }
-
-#pdf-temp-container .bonuses-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
-#pdf-temp-container .bonus-group {
-  background: #1C2B3D !important;
-  border-color: #2E4060 !important;
-  break-inside: avoid !important;
-  page-break-inside: avoid !important;
-}
-#pdf-temp-container .bonus-group-title {
-  color: #C9A84C !important;
-  border-color: #2E4060 !important;
-}
-#pdf-temp-container .bonus-field label { color: #7A8FA6 !important; }
-#pdf-temp-container .bonus-pts {
-  background: rgba(201,168,76,.15) !important;
-  color: #C9A84C !important;
-}
-#pdf-temp-container .bonus-field input[type="text"] {
-  background: #243347 !important;
-  border-color: #2E4060 !important;
-  color: #EEF2F7 !important;
-}
-#pdf-temp-container .bonus-toggle-btn {
-  display: none !important;
 }
 

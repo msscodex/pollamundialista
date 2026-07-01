@@ -869,23 +869,6 @@
             <p id="reportes-msg" class="admin-msg"></p>
           </div>
         </div>
-
-        <div class="reporte-card" style="border-color: #C9A84C !important;">
-          <div class="reporte-card-icon" style="color: #C9A84C !important;"><i class="fa-solid fa-file-zipper"></i></div>
-          <h3 class="reporte-card-title">Todos los PDFs (ZIP)</h3>
-          <p class="reporte-card-desc">Genera y descarga un archivo comprimido .ZIP con las pollas completas de todos los participantes en formato PDF listos para imprimir.</p>
-          <ul class="reporte-features">
-            <li><i class="fa-solid fa-file-pdf"></i> <strong>Un PDF por participante</strong> — archivo estructurado e individual</li>
-            <li><i class="fa-solid fa-moon"></i> <strong>Diseño Oscuro Premium</strong> — idéntico a la visualización de la app</li>
-            <li><i class="fa-solid fa-box-archive"></i> <strong>Descarga en lote</strong> — compresión en cliente de una sola vez</li>
-          </ul>
-          <div class="reporte-actions">
-            <button class="btn btn-gold" id="btn-generar-zip">
-              <i class="fa-solid fa-file-zipper"></i> Generar ZIP de PDFs
-            </button>
-            <p id="reportes-zip-msg" class="admin-msg"></p>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -981,50 +964,6 @@
     </footer>
 
   </div><!-- /app-shell -->
-
-  <!-- CONTENEDOR TEMPORAL PARA RENDERIZAR PDF EN LOTE (OCULTO POR DEFECTO PARA EVITAR INTERFERENCIAS VISUALES) -->
-  <div id="pdf-temp-container" style="display: none; position: fixed; left: 0; top: 0; z-index: -10000; pointer-events: none; width: 1024px; padding: 24px; background-color: #0D1B2A; color: #FFFFFF; font-family: sans-serif; box-sizing: border-box;">
-    <div style="border-bottom: 2px solid #C9A84C; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
-      <div>
-        <h1 style="color: #FFD87A; font-family: 'Bebas Neue', sans-serif; font-size: 32px; margin: 0; line-height: 1;">Polla Mundialista 2026</h1>
-        <h2 id="pdf-temp-subtitle" style="color: #EEF2F7; font-size: 20px; margin: 5px 0 0; font-weight: bold;">Participante</h2>
-      </div>
-      <div id="pdf-temp-scores-summary" style="color: #FFD87A; font-size: 16px; font-weight: bold; text-align: right;"></div>
-    </div>
-    
-    <div style="margin-bottom: 30px;">
-      <h3 style="color: #C9A84C; border-bottom: 1px solid #2E4060; padding-bottom: 5px; margin-bottom: 15px; font-size: 18px; font-weight: 800;">FASE DE GRUPOS</h3>
-      <div id="pdf-temp-grupos" class="groups-grid" style="grid-template-columns: repeat(3, 1fr); gap: 8px;"></div>
-    </div>
-    
-    <div style="margin-bottom: 30px; page-break-before: always;">
-      <h3 style="color: #C9A84C; border-bottom: 1px solid #2E4060; padding-bottom: 5px; margin-bottom: 15px; font-size: 18px; font-weight: 800;">ELIMINATORIAS</h3>
-      <div id="pdf-temp-bracket" class="bracket" style="min-width: auto; flex-wrap: wrap; gap: 16px;"></div>
-      <div style="margin-top: 25px; text-align: center; border: 1px solid #2E4060; padding: 15px; background: #1C2B3D; border-radius: 8px; max-width: 320px; margin-left: auto; margin-right: auto;">
-        <span style="color: #7A8FA6; font-size: 12px; display: block; margin-bottom: 5px;">CAMPEÓN MUNDIAL PREDICHO</span>
-        <span id="pdf-temp-champion" style="color: #FFD87A; font-weight: bold; font-size: 24px; font-family: 'Bebas Neue', sans-serif; display: block; line-height: 1;"></span>
-      </div>
-    </div>
-    
-    <div style="margin-bottom: 30px; page-break-before: always;">
-      <h3 style="color: #C9A84C; border-bottom: 1px solid #2E4060; padding-bottom: 5px; margin-bottom: 15px; font-size: 18px; font-weight: 800;">BONOS</h3>
-      <div id="pdf-temp-bonos" class="bonuses-grid" style="grid-template-columns: repeat(2, 1fr); gap: 16px;"></div>
-    </div>
-  </div>
-
-  <!-- MODAL: Progreso de generación de PDFs -->
-  <div id="pdf-progress-modal" class="modal-overlay hidden">
-    <div class="modal-box" style="text-align: center; max-width: 400px; padding: 30px; background: #1C2B3D; border: 1px solid #2E4060; border-radius: 16px;">
-      <h3 style="color: #FFD87A; margin-top: 0; font-size: 20px; font-weight: 800;"><i class="fa-solid fa-file-zip"></i> Generando ZIP de PDFs</h3>
-      <div style="margin: 24px 0;">
-        <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 44px; color: #C9A84C;"></i>
-      </div>
-      <p id="pdf-progress-text" style="color: #EEF2F7; margin-bottom: 5px; font-size: 15px;">Cargando librerías...</p>
-      <div style="background-color: #2E4060; border-radius: 10px; height: 10px; overflow: hidden; margin-top: 20px;">
-        <div id="pdf-progress-bar" style="background-color: #C9A84C; width: 0%; height: 100%; transition: width 0.15s ease;"></div>
-      </div>
-    </div>
-  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./assets/js/app.js?v=12"></script>
