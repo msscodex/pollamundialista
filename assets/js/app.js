@@ -1531,7 +1531,7 @@ async function loadPlayerView(nombre) {
   const thirdVer = document.getElementById('third-match-ver');
   if (thirdVer) {
     thirdVer.querySelectorAll('[data-key]').forEach(inp => {
-      inp.value = _verPlayerData.bracket?.[inp.dataset.key] || '';
+      inp.value = _verPlayerData.bracket?.[inp.dataset.key] ?? '';
     });
   }
 
@@ -1753,12 +1753,16 @@ async function _saveVerEdits() {
     const val = inp.value;
     if (val !== '') {
       bracket[inp.dataset.verKey] = inp.type === 'number' ? parseFloat(val) : val;
+    } else if (inp.type === 'number') {
+      delete bracket[inp.dataset.verKey];
     }
   });
   document.querySelectorAll('#third-match-ver [data-key]').forEach(inp => {
     const val = inp.value;
     if (val !== '') {
       bracket[inp.dataset.key] = inp.type === 'number' ? parseFloat(val) : val;
+    } else if (inp.type === 'number') {
+      delete bracket[inp.dataset.key];
     }
   });
 
@@ -1882,11 +1886,11 @@ function renderBracketReadonly(bracket, containerId, championId) {
   ${metaHTML}
   <div class="bm-row${winner === 't0' ? ' winner' : ''}">
     ${teamHTML0}
-    <input type="number" class="bm-score" data-ver-key="${ks0}" value="${bracket[ks0] || ''}" disabled placeholder="-">
+    <input type="number" class="bm-score" data-ver-key="${ks0}" value="${bracket[ks0] ?? ''}" disabled placeholder="-">
   </div>
   <div class="bm-row${winner === 't1' ? ' winner' : ''}">
     ${teamHTML1}
-    <input type="number" class="bm-score" data-ver-key="${ks1}" value="${bracket[ks1] || ''}" disabled placeholder="-">
+    <input type="number" class="bm-score" data-ver-key="${ks1}" value="${bracket[ks1] ?? ''}" disabled placeholder="-">
   </div>
 </div>`;
     }).join('');
