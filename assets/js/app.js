@@ -369,6 +369,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initLoginUI();
   initRouter();        // hashchange listener + render initial public view
   initPlayerDetailModal();
+  initPromoDevModal();
 
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
@@ -924,6 +925,98 @@ function renderRanking(players, results) {
       tableWrap.classList.remove('rank-collapsed');
       moreBtn.classList.add('hidden');
     }
+  }
+}
+
+/* ================================================================
+   MODAL PROMOCIONAL — MAYCOL SÁNCHEZ SALAZAR
+================================================================ */
+function initPromoDevModal() {
+  const modal = document.getElementById('promo-dev-modal');
+  if (!modal) return;
+
+  const closeBtn = document.getElementById('btn-promo-close');
+  const continueBtn = document.getElementById('btn-promo-continue');
+
+  const dismissModal = () => {
+    modal.classList.add('hidden');
+    try {
+      // Guardar expiración en 10 minutos (10 * 60 * 1000 milisegundos)
+      const hideUntil = Date.now() + 10 * 60 * 1000;
+      localStorage.setItem('promo_dev_hide_until', hideUntil.toString());
+    } catch (_) {}
+  };
+
+  if (closeBtn) closeBtn.addEventListener('click', dismissModal);
+  if (continueBtn) continueBtn.addEventListener('click', dismissModal);
+  modal.addEventListener('click', e => {
+    if (e.target === modal) dismissModal();
+  });
+
+  let shouldShow = true;
+  try {
+    const hideUntil = parseInt(localStorage.getItem('promo_dev_hide_until'), 10);
+    if (hideUntil && !isNaN(hideUntil) && Date.now() < hideUntil) {
+      shouldShow = false;
+    }
+  } catch (_) {}
+
+  if (shouldShow) {
+    // Alternancia 1 a 1 entre Maycol y ANKOLTURE
+    let lastShown = '';
+    try { lastShown = localStorage.getItem('promo_last_shown') || 'ankolture'; } catch (_) {}
+
+    const nextPromo = (lastShown === 'maycol') ? 'ankolture' : 'maycol';
+
+    const tagEl = document.getElementById('promo-tag');
+    const titleEl = document.getElementById('promo-title');
+    const descEl = document.getElementById('promo-desc');
+    const avatarEl = document.getElementById('promo-avatar');
+    const nameEl = document.getElementById('promo-name');
+    const roleEl = document.getElementById('promo-role');
+    const btnPrimary = document.getElementById('promo-btn-primary');
+    const btnIg = document.getElementById('promo-btn-ig');
+    const btnSecondary = document.getElementById('promo-btn-secondary');
+
+    if (nextPromo === 'ankolture') {
+      if (tagEl) tagEl.innerHTML = '<i class="fa-solid fa-shirt"></i> MODA & ESTILO · ANKOLTURE';
+      if (titleEl) titleEl.innerHTML = 'Expresa tu esencia <br><span class="text-gold">con cada outfit.</span>';
+      if (descEl) descEl.textContent = 'Descubre la colección de prendas exclusivas diseñadas para destacar tu estilo auténtico y elevar tu presencia en cualquier lugar.';
+      if (avatarEl) avatarEl.innerHTML = '<i class="fa-solid fa-shirt"></i>';
+      if (nameEl) nameEl.innerHTML = 'ANKOLTURE <i class="fa-solid fa-shirt" style="color: var(--gold); margin-left: 5px;" title="Moda & Outfits"></i>';
+      if (roleEl) roleEl.textContent = 'Tienda Oficial de Moda & Outfits';
+      if (btnPrimary) {
+        btnPrimary.href = 'https://ankolture.com/#/';
+        btnPrimary.innerHTML = '<i class="fa-solid fa-bag-shopping"></i> Explorar Tienda ANKOLTURE';
+      }
+      if (btnIg) btnIg.style.display = 'flex';
+      if (btnSecondary) {
+        btnSecondary.href = 'https://wa.me/573194100343?text=Hola!%20Vi%20su%20marca%20ANKOLTURE%20y%20quiero%20conocer%20la%20colecci%C3%B3n%20de%20outfits';
+        btnSecondary.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Comprar por WhatsApp';
+      }
+    } else {
+      if (tagEl) tagEl.innerHTML = '<i class="fa-solid fa-layer-group"></i> SOLUCIONES DE SOFTWARE A LA MEDIDA';
+      if (titleEl) titleEl.innerHTML = '¿Tienes una idea? <br><span class="text-gold">Yo te ayudo a plasmarla.</span>';
+      if (descEl) descEl.textContent = 'Desarrollo software de alto impacto: aplicaciones móviles, plataformas web, automatizaciones y sistemas escalables para impulsar tu negocio.';
+      if (avatarEl) avatarEl.innerHTML = '<i class="fa-solid fa-laptop-code"></i>';
+      if (nameEl) nameEl.innerHTML = 'Maycol Sánchez Salazar <i class="fa-solid fa-circle-check" style="color: var(--gold); margin-left: 5px;" title="Verificado"></i>';
+      if (roleEl) roleEl.textContent = 'Senior Software Engineer · Arquitecto de Soluciones';
+      if (btnPrimary) {
+        btnPrimary.href = 'https://mayc1030.github.io/';
+        btnPrimary.innerHTML = '<i class="fa-solid fa-arrow-up-right-from-square"></i> Visita mi web';
+      }
+      if (btnIg) btnIg.style.display = 'none';
+      if (btnSecondary) {
+        btnSecondary.href = 'https://wa.me/573194100343?text=Hola%20Maycol,%20tengo%20una%20idea%20de%20software%20y%20me%20gustar%C3%ADa%20plasmarla%20contigo';
+        btnSecondary.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Hablar por WhatsApp';
+      }
+    }
+
+    try { localStorage.setItem('promo_last_shown', nextPromo); } catch (_) {}
+
+    setTimeout(() => {
+      modal.classList.remove('hidden');
+    }, 700);
   }
 }
 
