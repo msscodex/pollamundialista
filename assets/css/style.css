@@ -3025,7 +3025,8 @@ h3 .fa-solid, h3 .fa-regular,
 }
 
 /* Ensure admin picker fields match bracket aesthetic and prevent clipping */
-.admin-bracket-container .bracket-match {
+.admin-bracket-container .bracket-match,
+#admin-third-match {
   overflow: visible !important;
 }
 
