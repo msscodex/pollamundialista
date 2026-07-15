@@ -3756,12 +3756,19 @@ function recalcAdminGroup(letter) {
 
 /* ---------- ELIMINATORIAS ---------- */
 function _wireAdminBracketPicker(picker, teams, key) {
+  // Save original placeholder text for reset
+  const origPlaceholder = picker.querySelector('.tp-name')?.textContent || 'Seleccionar equipo';
+  if (!picker._origPlaceholder) {
+    picker._origPlaceholder = origPlaceholder;
+  }
+
+  if (picker._wired) return;
+  picker._wired = true;
+
   const trigger = picker.querySelector('.team-picker-trigger');
   const dropdown = picker.querySelector('.team-picker-dropdown');
   const search = picker.querySelector('.tp-search');
   const list = picker.querySelector('.tp-list');
-  // Save original placeholder text for reset
-  const origPlaceholder = picker.querySelector('.tp-name')?.textContent || 'Seleccionar equipo';
 
   const clearPicker = () => {
     const nameEl = picker.querySelector('.tp-name');
@@ -3842,7 +3849,18 @@ function renderAdminBracket() {
   document.querySelectorAll('.admin-bracket-picker').forEach(picker => {
     const key = picker.dataset.adminKey;
     const val = ADMIN_RESULTS.bracket[key] || '';
-    if (val) _setTeamPickerValue(picker, val, allTeams);
+    if (val) {
+      _setTeamPickerValue(picker, val, allTeams);
+    } else {
+      const nameEl = picker.querySelector('.tp-name');
+      const flagEl = picker.querySelector('.tp-flag');
+      if (nameEl) {
+        const orig = picker._origPlaceholder || nameEl.textContent || 'Seleccionar equipo';
+        nameEl.textContent = orig;
+        nameEl.classList.add('tp-placeholder');
+      }
+      if (flagEl) flagEl.innerHTML = '';
+    }
     _wireAdminBracketPicker(picker, allTeams, key);
   });
 
@@ -4230,7 +4248,8 @@ async function toggleBracketRound(roundId) {
 /* ---------- TABS & INIT ---------- */
 function initAdminResultsTabs() {
   const tabsNav = document.getElementById('admin-results-tabs');
-  if (!tabsNav) return;
+  if (!tabsNav || tabsNav._wired) return;
+  tabsNav._wired = true;
   tabsNav.querySelectorAll('.inner-tab[data-admin-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
       tabsNav.querySelectorAll('.inner-tab').forEach(b => b.classList.remove('active'));
@@ -4244,12 +4263,20 @@ function initAdminResultsTabs() {
 }
 
 function initAdminSaveBtns() {
-  document.getElementById('btn-save-grupos')
-    ?.addEventListener('click', () => saveAdminSection('save-grupos-msg'));
-  document.getElementById('btn-save-bracket')
-    ?.addEventListener('click', () => saveAdminSection('save-bracket-msg'));
-  document.getElementById('btn-save-bonos')
-    ?.addEventListener('click', () => saveAdminSection('save-bonos-msg'));
+  const btnSaveGrupos = document.getElementById('btn-save-grupos');
+  if (!btnSaveGrupos || btnSaveGrupos._wired) return;
+  btnSaveGrupos._wired = true;
+
+  btnSaveGrupos.addEventListener('click', () => saveAdminSection('save-grupos-msg'));
+
+  const btnSaveBracket = document.getElementById('btn-save-bracket');
+  if (btnSaveBracket) {
+    btnSaveBracket.addEventListener('click', () => saveAdminSection('save-bracket-msg'));
+  }
+  const btnSaveBonos = document.getElementById('btn-save-bonos');
+  if (btnSaveBonos) {
+    btnSaveBonos.addEventListener('click', () => saveAdminSection('save-bonos-msg'));
+  }
 }
 
 /* legacy — ya no se usa pero evita errores si algo lo referencia */
