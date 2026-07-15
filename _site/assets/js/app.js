@@ -1756,7 +1756,7 @@ function _syncVerEditUI() {
   const actionBar = document.getElementById('ver-admin-action-bar');
   const enableBtn = document.getElementById('btn-ver-edit-enable');
   if (!actionBar || !enableBtn) return;
-  enableBtn.classList.toggle('hidden', _verEditMode);
+  enableBtn.classList.add('hidden');
   actionBar.classList.toggle('hidden', !_verEditMode);
   if (_verEditMode) {
     document.getElementById('ver-edit-msg').textContent = '';
