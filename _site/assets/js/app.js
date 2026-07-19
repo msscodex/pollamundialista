@@ -347,7 +347,7 @@ const BONUS_GROUPS = [
 ];
 const MANUAL_BONUS_KEYS = new Set(['goleador', 'mejorJugador', 'mejorArquero']);
 
-const ROUND_KEY = { r32: 'r32', r16: 'r16', qf: 'qf', sf: 'sf', fin: 'fin', third: 'third' };
+const ROUND_KEY = { r32: 'r32', r16: 'r16', qf: 'qf', sf: 'sf', fin: 'fin', '3rd': 'third', third: 'third' };
 
 /* ----------------------------------------------------------------
    ESTADO
